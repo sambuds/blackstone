@@ -28,7 +28,9 @@ import "agreements/AgreementSignatureCheck.sol";
 contract ActiveAgreementWorkflowTest {
 
 	using TypeUtilsAPI for bytes32;
-	
+
+	string constant EMPTY_STRING = "";
+
 	// test data
 	bytes32 activityId1 = "activity1";
 	bytes32 activityId2 = "activity2";
@@ -179,8 +181,8 @@ contract ActiveAgreementWorkflowTest {
 		userAccount2 = new AgreementPartyAccount(user2Id, this, address(0));
 		userAccount3 = new AgreementPartyAccount(user3Id, this, address(0));
 
-		org1 = new DefaultOrganization(approvers);
-		org2 = new DefaultOrganization(approvers);
+		org1 = new DefaultOrganization(approvers, EMPTY_STRING);
+		org2 = new DefaultOrganization(approvers, EMPTY_STRING);
 		org1.addUser(userAccount2);
 		org2.addDepartment(departmentId1, "Department 1");
 		org2.addUserToDepartment(userAccount3, departmentId1);

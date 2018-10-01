@@ -18,6 +18,7 @@ jobs:
     contract: MappingsLib.bin
     libraries: TypeUtilsAPI:$TypeUtilsAPI, ArrayUtilsAPI:$ArrayUtilsAPI
 
+
 ##########
 # SecureNativeAuthorizations Tests
 
@@ -126,6 +127,7 @@ jobs:
 #     relation: eq
 #     val: success
 
+
 ##########
 # ParticipantsManager Tests
 
@@ -208,41 +210,18 @@ jobs:
     relation: eq
     val: success
 
-##########
-# Organization Creation Tests
+- name: testOrganizationAuthorization
+  call:
+    destination: $ParticipantsManagerTest
+    bin: ParticipantsManagerTest
+    function: testOrganizationAuthorization
 
-- name: Organization1
-  deploy:
-    contract: DefaultOrganization.bin
-    instance: DefaultOrganization
-    libraries: MappingsLib:$MappingsLib
-    data:
-      - [$defaultAddr, "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000", "0000000000000000000000000000000000000000"]
-
-- name: organization1ApproversSize
-  query-contract:
-    destination: $Organization1
-    bin: DefaultOrganization
-    function: getNumberOfApprovers
-
-- name: assertOrganization1ApproversSize
+- name: assertOrganizationAuthorization
   assert:
-    key: $organization1ApproversSize
+    key: $testOrganizationAuthorization
     relation: eq
-    val: 1
+    val: success
 
-- name: organization1Approver1
-  query-contract:
-    destination: $Organization1
-    bin: DefaultOrganization
-    function: getApproverAtIndex
-    data: [0]
-
-- name: assertOrganization1Approver1d
-  assert:
-    key: $organization1Approver1
-    relation: eq
-    val: $defaultAddr
 
 ##########
 # Ecosystem Tests

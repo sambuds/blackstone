@@ -36,6 +36,8 @@ contract BpmServiceTest {
 	using BpmRuntimeLib for BpmRuntime.Transition;
 	using BpmRuntimeLib for ProcessDefinition;
 
+	string constant EMPTY_STRING = "";
+
 	// test data
 	bytes32 activityId1 = "activity1";
 	bytes32 activityId2 = "activity2";
@@ -906,7 +908,7 @@ contract BpmServiceTest {
 
 		WorkflowUserAccount proxy1 = new WorkflowUserAccount("user1", this, 0x0);
 		WorkflowUserAccount organizationUser = new WorkflowUserAccount("TomHanks", this, 0x0);
-		DefaultOrganization org1 = new DefaultOrganization(emptyAddressArray);
+		DefaultOrganization org1 = new DefaultOrganization(emptyAddressArray, EMPTY_STRING);
 		if (!org1.addUser(organizationUser)) return "Unable to add user account to organization";
 
 		// Register a typical WEB application with only a webform

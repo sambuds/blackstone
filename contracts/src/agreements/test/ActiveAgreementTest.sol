@@ -11,7 +11,8 @@ import "agreements/DefaultArchetype.sol";
 
 contract ActiveAgreementTest {
   
-  string constant SUCCESS = "success";
+  	string constant SUCCESS = "success";
+	string constant EMPTY_STRING = "";
 
 	DefaultArchetype archetype;
 	address falseAddress = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
@@ -78,7 +79,7 @@ contract ActiveAgreementTest {
 		// Signer1 is a direct signer
 		// Signer 2 is signing on behalf of an organization
 		address[10] memory emptyAddressArray;
-		DefaultOrganization org1 = new DefaultOrganization(emptyAddressArray);
+		DefaultOrganization org1 = new DefaultOrganization(emptyAddressArray, EMPTY_STRING);
 		if (!org1.addUser(signer2)) return "Unable to add user account to organization";
 		delete parties;
 		parties.push(address(signer1));

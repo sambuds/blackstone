@@ -28,11 +28,17 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 	// The approvers list is intended to be used as a "board" or admin permission list to make changes to this organization
 	address[] approvers;
 	Mappings.AddressBoolMap users;
+	string public defaultDepartmentName = "Default";
 
 	/**
-	 *
+	 * @dev Creates a new DefaultOrganization with the provided list of initial approvers.
+	 * If the approvers list is empty, the msg.sender is registered as an approver for this Organization.
+	 * Also, a default department is automatically created which cannot be removed as it serves as the catch-all
+	 * for authorizations that cannot otherwise be matched with existing departments.
+	 * @param _approvers an array of addresses that should be registered as approvers for this Organization
+	 * @param _defaultDepartmentName an optional custom name/label for the default department of this organization.
 	 */
-	constructor(address[10] _approvers) public {
+	constructor(address[10] _approvers, string _defaultDepartmentName) public {
 		for (uint i=0; i<_approvers.length; i++) {
 			if (_approvers[i] != 0x0) {
 				approvers.push(_approvers[i]);
@@ -42,10 +48,15 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 		if (approvers.length == 0) {
 			approvers.push(msg.sender);
 		}
+		// creating the default department
+		if (bytes(_defaultDepartmentName).length > 0) {
+			defaultDepartmentName = _defaultDepartmentName;
+		}
+		addDepartment(DEFAULT_DEPARTMENT_ID, defaultDepartmentName);
 		addInterfaceSupport(ERC165_ID_Organization);
 	}
 
-	function addDepartment(bytes32 _id, string _name) external returns (uint error) {
+	function addDepartment(bytes32 _id, string _name) public returns (uint error) {
 		if (self.departments[_id].exists) {
 			return BaseErrors.RESOURCE_ALREADY_EXISTS();
 		}
@@ -130,7 +141,7 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 	/**
 	 * @dev Adds the specified user to this organization if they do not already exist within it.
 	 * @param _userAccount the user to add
-	 * @return bool true if successful
+	 * @return true if successfully added, false otherwise (e.g. if the user was already part of this organization)
 	 */
     function addUser(address _userAccount) public returns (bool) {
 		if (!users.exists(_userAccount)) {
@@ -142,20 +153,20 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 
 	/**
 	 * @dev Adds the specified user to the organization if they aren't already registered, then adds the user to the department if they aren't already in it.
+	 * An empty department ID will result in the user being added to the default department.
 	 * @param _userAccount the user to add
 	 * @param _department department id to which the user should be added
-	 * @return bool true if successful
+	 * @return true if successfully added, false otherwise (e.g. if the department does not exist or if the user had already been added)
 	 */
 	function addUserToDepartment(address _userAccount, bytes32 _department) external returns (bool) {
-		if (_department == "") return false;
-		addUser(_userAccount);
-		if (!self.departments[_department].exists) {
-			return false;
-		} else if (self.departments[_department].users.exists(_userAccount)) {
+		bytes32 targetDepartment = (_department == "") ? DEFAULT_DEPARTMENT_ID : _department;
+		if (!self.departments[targetDepartment].exists ||
+			self.departments[targetDepartment].users.exists(_userAccount)) {
 			return false;
 		}
-		self.departments[_department].users.insert(_userAccount, true);
-		emitEvent(EVENT_UPDATE_DEPARTMENT_USER, this, _department, _userAccount);
+		addUser(_userAccount);
+		self.departments[targetDepartment].users.insert(_userAccount, true);
+		emitEvent(EVENT_UPDATE_DEPARTMENT_USER, this, targetDepartment, _userAccount);
 		return true;
 	}
 
@@ -177,8 +188,13 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 		return false;
 	}
 
+	/**
+	 * @dev Removes the department with the specified ID, if it exists and is not the DEFAULT_DEPARTMENT_ID.
+	 * @param _depId a department ID
+	 * @return true if a department with that ID existed and was successfully removed, false otherwise
+	 */
 	function removeDepartment(bytes32 _depId) external returns (bool) {
-		if (self.departments[_depId].exists) {
+		if (self.departments[_depId].exists && _depId != DEFAULT_DEPARTMENT_ID) {
 			uint256 depKeyIdx = self.departments[_depId].keyIdx;
 			bytes32 swapKey = Mappings.deleteInKeys(self.departmentKeys, depKeyIdx);
 			if (swapKey != "") {
@@ -201,19 +217,28 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 	}
 
 	/**
-	 * @dev Returns whether the given user account is active in this organization and is authorized.
+	 * @dev Returns whether the given user account is authorized within this Organization.
 	 * The optional department/role identifier can be used to provide an additional authorization scope
-	 * against which to authorize the user.
+	 * against which to authorize the user. The following special cases exist:
+	 * - If the provided department matches the keccak256 hash of the address of this organization, the user
+	 * is regarded as authorized, if belonging to this organization (without having to be associated with a
+	 * - If the department is empty or if it is an unknown (non-existent) department, the user will be evaluated
+	 * against the DEFAULT department.
+	 * particular department).
 	 * @param _userAccount the user account
 	 * @param _department an optional department/role context
 	 * @return true if authorized, false otherwise
 	 */
 	function authorizeUser(address _userAccount, bytes32 _department) external view returns (bool) {
-		if (_department == "") {
+		if (_department != "" &&_department == keccak256(abi.encodePacked(address(this)))) {
 			return users.exists(_userAccount);
 		}
-		return (self.departments[_department].exists &&
-				self.departments[_department].users.exists(_userAccount));
+		else if (_department == "" || !self.departments[_department].exists) {
+			return self.departments[DEFAULT_DEPARTMENT_ID].users.exists(_userAccount);
+		}
+		else {
+			return self.departments[_department].users.exists(_userAccount);
+		}			
 	}
 
 }

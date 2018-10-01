@@ -22,6 +22,7 @@ contract ParticipantsManagerTest {
     ParticipantsManager participantsManager;
 
     bytes32 EMPTY = "";
+    string constant EMPTY_STRING = "";
 
     // TODO: Remove below func, create Accounts Manager in test contract instead of injecting
     function setParticipantsManager(address _accountsManager) external {
@@ -63,10 +64,10 @@ contract ParticipantsManagerTest {
         bytes32 dep2Id = "dep2Id";
         string memory dep2Name = "dep1Name";
 
-        // create the required organization
+        // create the required organizations
         address[10] memory approvers;
-        DefaultOrganization org1 = new DefaultOrganization(approvers);
-        DefaultOrganization org2 = new DefaultOrganization(approvers);
+        DefaultOrganization org1 = new DefaultOrganization(approvers, EMPTY_STRING);
+        DefaultOrganization org2 = new DefaultOrganization(approvers, EMPTY_STRING);
 
         UserAccount account1 = new DefaultUserAccount(acc1Id, participantsManager, 0x0);
         UserAccount account2 = new DefaultUserAccount(acc2Id, participantsManager, 0x0);
@@ -105,20 +106,20 @@ contract ParticipantsManagerTest {
         if (!org1.addUser(account2)) return "Adding account2 to org1 failed";
         if (oldSize+1 != org1.getNumberOfUsers()) return "Expected number of user in org1 to have increased after account2 added.";
         if (org1.getUserAtIndex(0) != address(account2)) return "Expected second user of org1 to be account2";
-        if (!org1.authorizeUser(account2, EMPTY)) return "account2 expected to be active in org1";
+        if (!org1.authorizeUser(account2, keccak256(abi.encodePacked(address(org1))))) return "account2 expected to be active in org1";
         if (!org1.removeUser(account2)) return "Removing account2 from org1 failed.";
-        if (org1.authorizeUser(account2, EMPTY)) return "account2 expected to be inactive in org1";
+        if (org1.authorizeUser(account2, keccak256(abi.encodePacked(address(org1))))) return "account2 expected to be inactive in org1";
         if (!org1.addUser(account2)) return "Failed adding account2 back into org1";
-        if (!org1.authorizeUser(account2, EMPTY)) return "account2 expected to be active again in org1";
+        if (!org1.authorizeUser(account2, keccak256(abi.encodePacked(address(org1))))) return "account2 expected to be active again in org1";
 
         // user can be added to multiple organizations
         oldSize = org2.getNumberOfUsers();
         if (!org2.addUser(account2)) return "Adding account2 to org2 failed";
         if (oldSize+1 != org2.getNumberOfUsers()) return "Expected number of user in org2 to have increased after account2 added.";
         if (org2.getUserAtIndex(0) != address(account2)) return "Expected second user of org2 to be account2";
-        if (!org2.authorizeUser(account2, EMPTY)) return "account2 expected to be active in org2";
+        if (!org2.authorizeUser(account2, keccak256(abi.encodePacked(address(org2))))) return "account2 expected to be active in org2";
         if (!org2.removeUser(account2)) return "Removing account2 from org2 failed.";
-        if (org2.authorizeUser(account2, EMPTY)) return "account2 expected to be inactive in org2";
+        if (org2.authorizeUser(account2, keccak256(abi.encodePacked(address(org2))))) return "account2 expected to be inactive in org2";
 
         // users can be added to departments in organization
         if (org1.addDepartment(dep1Id, dep1Name) != BaseErrors.NO_ERROR()) return "Failed adding dep1 to org1";
@@ -161,11 +162,19 @@ contract ParticipantsManagerTest {
         string memory dep1Name = "Department 1 Name";
 		
 		// externally created organizations
-		Organization org1 = new DefaultOrganization(emptyAdmins);
+		Organization org1 = new DefaultOrganization(emptyAdmins, "Unassigned");
 
         UserAccount user1 = new DefaultUserAccount(acc1Id, participantsManager, 0x0);
         UserAccount user2 = new DefaultUserAccount(acc2Id, participantsManager, 0x0);
 		
+        // Test special handling of the default department in the organization
+        if (!org1.departmentExists(org1.DEFAULT_DEPARTMENT_ID()))
+            return "The default department should have been created when creating the organization";
+        if (keccak256(abi.encodePacked(DefaultOrganization(org1).defaultDepartmentName())) != keccak256(abi.encodePacked("Unassigned")))
+            return "The default department name should have been overwritten";
+        if (org1.removeDepartment(org1.DEFAULT_DEPARTMENT_ID()))
+            return "It should not be possible to remove the default department";
+
 		// 1. Test adding existing organization contract
 
 		error = participantsManager.addOrganization(org1);
@@ -182,8 +191,9 @@ contract ParticipantsManagerTest {
 
         // departments
         if (org1.addDepartment(dep1Id, dep1Name) != BaseErrors.NO_ERROR()) return "Failed adding department to org1";
-        if (org1.getNumberOfDepartments() != 1) return "Failed to get number of departments in org1";
-        if (org1.getDepartmentAtIndex(0) != dep1Id) return "Failed to get department id at pos 0 in org1";
+        // reminder: number of deps is +1 due to the default department
+        if (org1.getNumberOfDepartments() != 2) return "Failed to get number of departments in org1";
+        if (org1.getDepartmentAtIndex(1) != dep1Id) return "Failed to get department id at pos 0 in org1";
         if (!org1.departmentExists(dep1Id)) return "Failed to find existance of dep1 in org1";
         (uint retUserCount, string memory retDepName) = org1.getDepartmentData(dep1Id);
         if (retUserCount != 0) return "Failed to get department data (user count) for dep1 in org1";
@@ -214,7 +224,7 @@ contract ParticipantsManagerTest {
 		knownAdmins[1] = org1;
 		
 		address orgAddress2;
-        (error, orgAddress2) = participantsManager.createOrganization(knownAdmins);
+        (error, orgAddress2) = participantsManager.createOrganization(knownAdmins, EMPTY_STRING);
         if (BaseErrors.NO_ERROR() != error) return "Unexpected error creating organization 2 (known admins)";
 		if (Organization(orgAddress2).getNumberOfApprovers() != 2) return "Number of approvers in organization 2 not correct";
 		if (Organization(orgAddress2).getApproverAtIndex(0) != tx.origin) return "Approver 1 in organization 2 should be tx.origin";
@@ -222,7 +232,7 @@ contract ParticipantsManagerTest {
 		if (participantsManager.getOrganization(orgAddress2) != true) return "Failed retrieving organization 2 by its address";
 		// create with emptyAdmins again, so that msg.sender is automatically used for approver
 		address orgAddress3;
-        (error, orgAddress3) = participantsManager.createOrganization(emptyAdmins);
+        (error, orgAddress3) = participantsManager.createOrganization(emptyAdmins, EMPTY_STRING);
         if (BaseErrors.NO_ERROR() != error) return "Unexpected error creating organization 3 (empty admins)";
 		if (Organization(orgAddress3).getNumberOfApprovers() != 1) return "Number of approvers in organization 3 not correct";
 		if (Organization(orgAddress3).getApproverAtIndex(0) != address(participantsManager)) return "Approver in organization 3 should be the ecoparticipantsManager as the creator.";
@@ -236,6 +246,46 @@ contract ParticipantsManagerTest {
 
 		return SUCCESS;
 	}
+
+    /**
+     * @dev Tests the variations of the organization's authorizeUser function
+     */
+    function testOrganizationAuthorization() external returns (string) {
+
+		address[10] memory emptyAdmins;
+
+        Organization org = new DefaultOrganization(emptyAdmins, EMPTY_STRING);
+        bytes32 user1Id = "user1";
+        bytes32 user2Id = "user2";
+        bytes32 user3Id = "user3";
+        bytes32 dep1Id = "department";
+
+        UserAccount user1 = new DefaultUserAccount(user1Id, participantsManager, 0x0);
+        UserAccount user2 = new DefaultUserAccount(user2Id, participantsManager, 0x0);
+        UserAccount user3 = new DefaultUserAccount(user3Id, participantsManager, 0x0);
+
+        // User1 -> default department
+        // User2 -> Department 1
+        // User3 -> Organization only 
+        if (org.addDepartment(dep1Id, "Department 1") != BaseErrors.NO_ERROR()) return "Failed adding department to org1";
+        if (!org.addUserToDepartment(user1, EMPTY)) return "Failed to add user1 to default department";
+        if (!org.addUserToDepartment(user2, dep1Id)) return "Failed to add user2 to department1";
+        if (!org.addUser(user3)) return "Failed to add user3 to organization";
+
+        if (org.getNumberOfDepartmentUsers(dep1Id) != 1) return "There should be 1 user in department 1";
+        // auth failure
+        if (org.authorizeUser(address(user1), dep1Id)) return "User1 should not be authorized for department1";
+        if (org.authorizeUser(address(user3), EMPTY)) return "User3 should not be authorized for empty department (default)";
+        if (org.authorizeUser(address(this), keccak256(abi.encodePacked(address(org))))) return "Test address should not be authorized for the organization";
+        // auth success
+        if (!org.authorizeUser(address(user1), EMPTY)) return "User1 should be authorized for empty department (default)";
+        if (!org.authorizeUser(address(user1), "fakeDepartmentXYZ")) return "User1 should be authorized for non-existent department (default)";
+        if (!org.authorizeUser(address(user2), dep1Id)) return "User2 should be authorized for department1";
+        if (!org.authorizeUser(address(user3), keccak256(abi.encodePacked(address(org))))) return "User3 should be authorized for the organization";
+        if (!org.authorizeUser(address(user1), keccak256(abi.encodePacked(address(org))))) return "User1 should be authorized for the organization";
+
+        return SUCCESS;
+    }
 
 }
 

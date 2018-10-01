@@ -6,6 +6,7 @@ import "commons-events/EventEmitter.sol";
 /**
  * @title Organization Interface
  * @dev Describes functionality of a contract representing an organization in an ecosystem application.
+ * Also provides access to constants required when dealing with organizations.
  */
 contract Organization is EventEmitter, ERC165 {
 
@@ -13,8 +14,10 @@ contract Organization is EventEmitter, ERC165 {
 	bytes4 public constant ERC165_ID_Organization = bytes4(keccak256(abi.encodePacked("addUser(address)"))) ^
 													bytes4(keccak256(abi.encodePacked("removeUser(address)"))) ^
 													bytes4(keccak256(abi.encodePacked("authorizeUser(address,bytes32)")));
+
+	bytes32 public constant DEFAULT_DEPARTMENT_ID = "DEFAULT_DEPARTMENT";
 	
-	function addDepartment(bytes32 _id, string _name) external returns (uint error);
+	function addDepartment(bytes32 _id, string _name) public returns (uint error);
 
 	function getNumberOfDepartments() external view returns (uint size);
 

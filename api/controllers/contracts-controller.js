@@ -207,7 +207,7 @@ const getOrganization = orgAddr => getContract(global.__abi, global.__monax_bund
  */
 const createOrganization = org => new Promise((resolve, reject) => {
   log.trace(`Creating organization with: ${JSON.stringify(org)}`);
-  appManager.contracts['ParticipantsManager'].factory.createOrganization(org.approvers ? org.approvers : [], (error, data) => {
+  appManager.contracts['ParticipantsManager'].factory.createOrganization(org.approvers ? org.approvers : [], "TODO_DEFAULT_DEPARTMENT_LABEL", (error, data) => {
     if (error || !data.raw) return reject(boom.badImplementation(`Failed to create organization ${org.name}: ${error}`));
     if (parseInt(data.raw[0], 10) === 1002) return reject(boom.badRequest('Organization id must be unique'));
     if (parseInt(data.raw[0], 10) !== 1) {

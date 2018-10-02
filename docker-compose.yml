@@ -43,6 +43,7 @@ services:
     - .:/app
     ports:
     - "3080:3080"
+    - "9222:9222"
     expose:
     - "10997"
     working_dir: /app

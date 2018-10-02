@@ -23,6 +23,10 @@ const log = logger.getLogger('agreements.contracts');
 
 const events = {
   NEW_MESSAGE: 'newMessage',
+  USER_CREATED: 'userCreated',
+  ARCHETYPE_CREATED: 'archetypeCreated',
+  AGREEMENT_CREATED: 'agreementCreated',
+  AGREEMENT_SIGNED: 'agreementSigned',
 };
 
 // Set up event emitter
@@ -246,6 +250,7 @@ const createArchetype = (type) => {
       (error, data) => {
         if (error || !data.raw) return reject(boomify(error, `Failed to create archetype ${archetype.name}`));
         log.info(`Created new archetype ${archetype.name} at address ${data.raw[0]}`);
+        chainEvents.emit(events.ARCHETYPE_CREATED, { name: archetype.name, author: archetype.author });
         return resolve(data.raw[0]);
       },
     );
@@ -509,6 +514,7 @@ const createAgreement = agreement => new Promise((resolve, reject) => {
           return reject(boomify(error, `Failed to create agreement ${agreement.name} from archetype at ${agreement.archetype}`));
         }
         log.info(`Created agreement ${agreement.name} at address ${data.raw[0]}`);
+        chainEvents.emit(events.AGREEMENT_CREATED, { name, creator });
         return resolve(data.raw[0]);
       });
 });
@@ -614,6 +620,7 @@ const createUser = user => new Promise((resolve, reject) => {
         return reject(boom.badImplementation(`Error code creating new user with id ${user.id}: ${data.raw[0]}`));
       }
       log.info(`Created new user ${user.id} at address ${data.raw[1]}`);
+      chainEvents.emit(events.USER_CREATED, { address: data.raw[1] });
       return resolve(data.raw[1]);
     });
 });
@@ -958,6 +965,7 @@ const signAgreementByUser = (userAddr, agreementAddr) => new Promise((resolve, r
       return reject(boomify(err, `Failed to sign agreement ${agreementAddr} by user at ${userAccount}`));
     }
     log.info(`Agreement at ${agreementAddr} signed by user at ${userAddr}`);
+    chainEvents.emit(events.AGREEMENT_SIGNED, { userAddr, agreementAddr });
     return resolve();
   });
 });

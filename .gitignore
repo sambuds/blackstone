@@ -33,6 +33,9 @@ public-abi
 jobs_output.json
 bundle_cache
 
+# MP Plugins
+api/plugins/mp-notifications
+
 # chain stuff
 **/.burrow
 burrow.log

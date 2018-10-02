@@ -18,6 +18,7 @@ const seeds = require(`${global.__data}/seeds`);
 (function startApp() {
   const log = logger.getLogger('agreements.web');
 
+  require(`${global.__controllers}/notifications-controller`);
   require(path.join(global.__common, 'passport'))(passport);
 
   const portHTTP = global.__settings.monax.server.port_http || 3080;

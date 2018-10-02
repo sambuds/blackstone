@@ -6,6 +6,14 @@ const { getModelFromHoard } = require(`${global.__controllers}/hoard-controller`
 const sqlCache = require('./sqlsol-query-helper');
 const pool = require(`${global.__common}/postgres-db`);
 
+const getUserDetails = async (userAddress) => {
+  const { rows } = await pool.query({
+    text: 'SELECT username, email, first_name as firstname, last_name as lastname FROM USERS WHERE address = $1',
+    values: [userAddress],
+  });
+  return rows[0];
+};
+
 const parseBpmnModel = async (rawXml) => {
   const anParser = parser.getNewParser();
   try {
@@ -121,4 +129,5 @@ const populateProcessNames = processDefinitions => new Promise((resolve, reject)
 module.exports = {
   populateTaskNames,
   populateProcessNames,
+  getUserDetails,
 };

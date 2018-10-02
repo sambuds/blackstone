@@ -19,6 +19,7 @@ const monax = require('@monax/burrow');
   global.__data = path.resolve(global.__appDir, 'data');
   global.__lib = path.resolve(global.__appDir, 'lib');
   global.__schemas = path.resolve(global.__appDir, 'schemas');
+  global.__plugins = path.resolve(global.__appDir, 'plugins');
 
   // Read configuration
   const configFilePath = process.env.MONAX_CONFIG || `${global.__config}/settings.toml`;

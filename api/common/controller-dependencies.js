@@ -131,7 +131,6 @@ const dependencies = {
         if (element.processDefinitionId) element.processDefinitionId = global.hexToString(element.processDefinitionId);
         if (element.modelId) element.modelId = global.hexToString(element.modelId);
         if (element.processName) element.processName = global.hexToString(element.processName);
-        if (element.agreementName) element.agreementName = global.hexToString(element.agreementName);
         if (element.application) element.application = global.hexToString(element.application);
         if (element.webForm) element.webForm = global.hexToString(element.webForm || '');
         if (element.created) element.created *= 1000;

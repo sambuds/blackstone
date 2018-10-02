@@ -13,6 +13,11 @@
       "dependent": "processAddress",
       "deserialize": "getActivityInstanceAtIndex",
       "len": { "call": "getNumberOfActivityInstances", "field": "size" }
+    },
+    "addressScopeKey": {
+      "dependent": "processAddress",
+      "deserialize": "getAddressScopeKeyAtIndex",
+      "len": { "call": "getNumberOfAddressScopes", "field": "size" }
     }
   },
   "tables": {
@@ -27,6 +32,10 @@
     "PROCESS_DATA": {
       "call": "getProcessDataDetails",
       "keys": ["processAddress", "dataId"]
+    },
+    "PROCESS_INSTANCE_ADDRESS_SCOPES": {
+      "call": "getAddressScopeDetails",
+      "keys": ["processAddress", "addressScopeKey"]
     }
   }
 }

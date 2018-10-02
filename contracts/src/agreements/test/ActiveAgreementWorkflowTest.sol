@@ -183,7 +183,7 @@ contract ActiveAgreementWorkflowTest {
 
 		org1 = new DefaultOrganization(approvers, EMPTY_STRING);
 		org2 = new DefaultOrganization(approvers, EMPTY_STRING);
-		org1.addUser(userAccount2);
+		org1.addUserToDepartment(userAccount2, EMPTY);
 		org2.addDepartment(departmentId1, "Department 1");
 		org2.addUserToDepartment(userAccount3, departmentId1);
 

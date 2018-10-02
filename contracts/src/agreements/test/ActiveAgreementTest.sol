@@ -13,6 +13,7 @@ contract ActiveAgreementTest {
   
   	string constant SUCCESS = "success";
 	string constant EMPTY_STRING = "";
+	bytes32 constant EMPTY = "";
 
 	DefaultArchetype archetype;
 	address falseAddress = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
@@ -77,10 +78,10 @@ contract ActiveAgreementTest {
 
 		// set up the parties.
 		// Signer1 is a direct signer
-		// Signer 2 is signing on behalf of an organization
+		// Signer 2 is signing on behalf of an organization (default department)
 		address[10] memory emptyAddressArray;
 		DefaultOrganization org1 = new DefaultOrganization(emptyAddressArray, EMPTY_STRING);
-		if (!org1.addUser(signer2)) return "Unable to add user account to organization";
+		if (!org1.addUserToDepartment(signer2, EMPTY)) return "Unable to add user account to organization";
 		delete parties;
 		parties.push(address(signer1));
 		parties.push(address(org1));

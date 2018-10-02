@@ -248,7 +248,7 @@ contract BpmService is Upgradeable {
 	 * @param _processInstance the address of a ProcessInstance
 	 * @return the number of scopes
 	 */
-	function getNumberOfAddressDataScopes(address _processInstance) external view returns (uint size);
+	function getNumberOfAddressScopes(address _processInstance) external view returns (uint size);
 
 	/**
 	 * @dev Returns the address scope key at the given index position of the specified ProcessInstance.

@@ -530,7 +530,7 @@ contract DefaultBpmService is Versioned(1,0,0), AbstractDbUpgradeable, ContractL
 	 * @param _processInstance the address of a ProcessInstance
 	 * @return the number of scopes
 	 */
-	function getNumberOfAddressDataScopes(address _processInstance) external view returns (uint size) {
+	function getNumberOfAddressScopes(address _processInstance) external view returns (uint size) {
         size = ProcessInstance(_processInstance).getAddressScopeKeys().length;
     }
 

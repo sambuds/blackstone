@@ -444,9 +444,9 @@ contract DefaultBpmService is Versioned(1,0,0), AbstractDbUpgradeable, ContractL
     }
 
     /**
-    * @dev Returns the number of activity instances.
-    * @return the activity instance count as size
-    */
+     * @dev Returns the number of activity instances.
+     * @return the activity instance count as size
+     */
     function getNumberOfActivityInstances(address _address) external view returns (uint size) {
         return ProcessInstance(_address).getNumberOfActivityInstances();
     }
@@ -523,6 +523,48 @@ contract DefaultBpmService is Versioned(1,0,0), AbstractDbUpgradeable, ContractL
         bytes32Value = ProcessInstance(_address).getDataValueAsBytes32(_dataId);
         addressValue = ProcessInstance(_address).getDataValueAsAddress(_dataId);
         boolValue = ProcessInstance(_address).getDataValueAsBool(_dataId);
+    }
+
+	/**
+	 * @dev Returns the number of address scopes for the given ProcessInstance.
+	 * @param _processInstance the address of a ProcessInstance
+	 * @return the number of scopes
+	 */
+	function getNumberOfAddressDataScopes(address _processInstance) external view returns (uint size) {
+        size = ProcessInstance(_processInstance).getAddressScopeKeys().length;
+    }
+
+	/**
+	 * @dev Returns the address scope key at the given index position of the specified ProcessInstance.
+	 * @param _processInstance the address of a ProcessInstance
+	 * @param _index the index position
+	 * @return the bytes32 scope key
+	 */
+	function getAddressScopeKeyAtIndex(address _processInstance, uint _index) external view returns (bytes32) {
+        return ProcessInstance(_processInstance).getAddressScopeKeys()[_index];
+    }
+
+	/**
+	 * @dev Returns detailed information about the address scope with the given key in the specified ProcessInstance
+	 * @param _processInstance the address of a ProcessInstance
+	 * @param _key a scope key
+	 * @return keyAddress - the address encoded in the key
+	 * @return keyContext - the context encoded in the key
+	 * @return fixedScope - a bytes32 representing a fixed scope
+	 * @return dataPath - the dataPath of a ConditionalData defining the scope
+	 * @return dataStorageId - the dataStorageId of a ConditionalData defining the scope
+	 * @return dataStorage - the dataStorgage address of a ConditionalData defining the scope
+	 */
+	function getAddressScopeDetails(address _processInstance, bytes32 _key)
+		external view
+		returns (address keyAddress,
+				 bytes32 keyContext,
+				 bytes32 fixedScope,
+				 bytes32 dataPath,
+				 bytes32 dataStorageId,
+				 address dataStorage)
+    {
+        return ProcessInstance(_processInstance).getAddressScopeDetailsForKey(_key);
     }
 
     /**

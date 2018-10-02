@@ -909,7 +909,7 @@ contract BpmServiceTest {
 		WorkflowUserAccount proxy1 = new WorkflowUserAccount("user1", this, 0x0);
 		WorkflowUserAccount organizationUser = new WorkflowUserAccount("TomHanks", this, 0x0);
 		DefaultOrganization org1 = new DefaultOrganization(emptyAddressArray, EMPTY_STRING);
-		if (!org1.addUser(organizationUser)) return "Unable to add user account to organization";
+		if (!org1.addUserToDepartment(organizationUser, EMPTY)) return "Unable to add user account to organization default department";
 
 		// Register a typical WEB application with only a webform
 		error = applicationRegistry.addApplication("Webform1", BpmModel.ApplicationType.WEB, 0x0, bytes4(EMPTY), "MyCustomWebform");

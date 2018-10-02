@@ -165,14 +165,14 @@ contract BpmService is Upgradeable {
 	 * @dev Returns the number of Process Instances.
 	 * @return the process instance count as size
 	 */
-  function getNumberOfProcessInstances() external view returns (uint size);
+	function getNumberOfProcessInstances() external view returns (uint size);
 
 	/**
 	 * @dev Returns the process instance address at the specified index
 	 * @param _pos the index
 	 * @return the process instance address or or BaseErrors.INDEX_OUT_OF_BOUNDS(), 0x0
 	 */
-  function getProcessInstanceAtIndex(uint _pos) external view returns (address processInstanceAddress);
+	function getProcessInstanceAtIndex(uint _pos) external view returns (address processInstanceAddress);
 
 	/**
 	 * @dev Returns information about the process intance with the specified address
@@ -181,13 +181,13 @@ contract BpmService is Upgradeable {
 	 * @return state the BpmRuntime.ProcessInstanceState as uint8
 	 * @return startedBy the address of the account who started the process
 	 */
-  function getProcessInstanceData(address _address) external view returns (address processDefinition, uint8 state, address startedBy);
+	function getProcessInstanceData(address _address) external view returns (address processDefinition, uint8 state, address startedBy);
 
 	/**
-   * @dev Returns the number of activity instances.
-   * @return the activity instance count as size
-   */
-  function getNumberOfActivityInstances(address _address) external view returns (uint size);
+	 * @dev Returns the number of activity instances.
+	 * @return the activity instance count as size
+	 */
+	function getNumberOfActivityInstances(address _address) external view returns (uint size);
 
 	/**
 	 * @dev Returns the ActivityInstance ID at the specified index
@@ -195,20 +195,20 @@ contract BpmService is Upgradeable {
 	 * @param _pos the activity instance index
 	 * @return the ActivityInstance ID
 	 */
-  function getActivityInstanceAtIndex(address _address, uint _pos) external view returns (bytes32 activityId);
+	function getActivityInstanceAtIndex(address _address, uint _pos) external view returns (bytes32 activityId);
 
  	/**
-   * @dev Returns ActivityInstance data for the given ActivityInstance ID
-   * @param _processInstance the process instance address to which the ActivityInstance belongs
-   * @param _id the global ID of the activity instance
-   * @return activityId - the ID of the activity as defined by the process definition
-   * @return created - the creation timestamp
-   * @return completed - the completion timestamp
-   * @return performer - the account who is performing the activity (for interactive activities only)
-   * @return completedBy - the account who completed the activity (for interactive activities only) 
-   * @return state - the uint8 representation of the BpmRuntime.ActivityInstanceState of this activity instance
-   */
-  function getActivityInstanceData(address _processInstance, bytes32 _id) external view returns (
+ 	 * @dev Returns ActivityInstance data for the given ActivityInstance ID
+	 * @param _processInstance the process instance address to which the ActivityInstance belongs
+	 * @param _id the global ID of the activity instance
+	 * @return activityId - the ID of the activity as defined by the process definition
+	 * @return created - the creation timestamp
+	 * @return completed - the completion timestamp
+	 * @return performer - the account who is performing the activity (for interactive activities only)
+	 * @return completedBy - the account who completed the activity (for interactive activities only) 
+	 * @return state - the uint8 representation of the BpmRuntime.ActivityInstanceState of this activity instance
+	 */
+	function getActivityInstanceData(address _processInstance, bytes32 _id) external view returns (
         bytes32 activityId, 
         uint created,
         uint completed,
@@ -220,14 +220,14 @@ contract BpmService is Upgradeable {
 	 * @dev Returns the number of process data entries.
 	 * @return the process data size
 	 */
-  function getNumberOfProcessData(address _address) external view returns (uint size);
+	function getNumberOfProcessData(address _address) external view returns (uint size);
 
 	/**
 	 * @dev Returns the process data ID at the specified index
 	 * @param _pos the index
 	 * @return the data ID
 	 */
-  function getProcessDataAtIndex(address _address, uint _pos) external view returns (bytes32 dataId);
+	function getProcessDataAtIndex(address _address, uint _pos) external view returns (bytes32 dataId);
 
 	/**
 	 * @dev Returns information about the process data entry for the specified process and data ID
@@ -235,38 +235,74 @@ contract BpmService is Upgradeable {
 	 * @param _dataId the data ID
 	 * @return (process,id,uintValue,bytes32Value,addressValue,boolValue)
 	 */
-  function getProcessDataDetails(address _address, bytes32 _dataId) external view returns (
-		uint uintValue,
-		int intValue,
-		bytes32 bytes32Value,
-		address addressValue,
-		bool boolValue);
+	function getProcessDataDetails(address _address, bytes32 _dataId)
+		external view
+		returns (uint uintValue,
+				 int intValue,
+				 bytes32 bytes32Value,
+				 address addressValue,
+				 bool boolValue);
 
 	/**
-   * @dev Returns the address of the ProcessInstance of the specified ActivityInstance ID
-   * @param _aiId the ID of an ActivityInstance
-   * @return the ProcessInstance address or 0x0 if it cannot be found
-   */
-  function getProcessInstanceForActivity(bytes32 _aiId) external view returns (address);
+	 * @dev Returns the number of address scopes for the given ProcessInstance.
+	 * @param _processInstance the address of a ProcessInstance
+	 * @return the number of scopes
+	 */
+	function getNumberOfAddressDataScopes(address _processInstance) external view returns (uint size);
+
+	/**
+	 * @dev Returns the address scope key at the given index position of the specified ProcessInstance.
+	 * @param _processInstance the address of a ProcessInstance
+	 * @param _index the index position
+	 * @return the bytes32 scope key
+	 */
+	function getAddressScopeKeyAtIndex(address _processInstance, uint _index) external view returns (bytes32);
+
+	/**
+	 * @dev Returns detailed information about the address scope with the given key in the specified ProcessInstance
+	 * @param _processInstance the address of a ProcessInstance
+	 * @param _key a scope key
+	 * @return keyAddress - the address encoded in the key
+	 * @return keyContext - the context encoded in the key
+	 * @return fixedScope - a bytes32 representing a fixed scope
+	 * @return dataPath - the dataPath of a ConditionalData defining the scope
+	 * @return dataStorageId - the dataStorageId of a ConditionalData defining the scope
+	 * @return dataStorage - the dataStorgage address of a ConditionalData defining the scope
+	 */
+	function getAddressScopeDetails(address _processInstance, bytes32 _key)
+		external view
+		returns (address keyAddress,
+				 bytes32 keyContext,
+				 bytes32 fixedScope,
+				 bytes32 dataPath,
+				 bytes32 dataStorageId,
+				 address dataStorage);
+
+	/**
+	 * @dev Returns the address of the ProcessInstance of the specified ActivityInstance ID
+	 * @param _aiId the ID of an ActivityInstance
+	 * @return the ProcessInstance address or 0x0 if it cannot be found
+	 */
+	function getProcessInstanceForActivity(bytes32 _aiId) external view returns (address);
 
 	/**
 	 * @dev Returns a reference to the BpmServiceDb currently used by this BpmService
 	 * @return the BpmServiceDb
 	 */
-  function getBpmServiceDb() external view returns (BpmServiceDb);
+	function getBpmServiceDb() external view returns (BpmServiceDb);
 
 	/**
 	 * @dev Fires the UpdateActivities event to update sqlsol with given activity
 	 * @param _piAddress - the address of the process instance to which the activity belongs
 	 * @param _activityId - the bytes32 Id of the activity
 	 */
-  function fireActivityUpdateEvent(address _piAddress, bytes32 _activityId) external;
+	function fireActivityUpdateEvent(address _piAddress, bytes32 _activityId) external;
 
 	/**
-   * @dev Fires the UpdateProcessData event to update sqlsol with given information
-   * @param _piAddress - the address of the process instance to which the activity belongs
-   * @param _dataId - the ID of the data entry
-   */
-  function fireProcessDataUpdateEvent(address _piAddress, bytes32 _dataId) external;
+	 * @dev Fires the UpdateProcessData event to update sqlsol with given information
+	 * @param _piAddress - the address of the process instance to which the activity belongs
+	 * @param _dataId - the ID of the data entry
+	 */
+	function fireProcessDataUpdateEvent(address _piAddress, bytes32 _dataId) external;
 
 }

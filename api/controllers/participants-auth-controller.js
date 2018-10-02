@@ -66,7 +66,7 @@ const createRecoveryCode = asyncMiddleware(async (req, res) => {
   try {
     await client.query('BEGIN');
     const { rows } = await client.query({
-      text: 'SELECT id FROM users WHERE email = $1',
+      text: 'SELECT id FROM users WHERE LOWER(email) = LOWER($1)',
       values: [req.body.email],
     });
     let msg;

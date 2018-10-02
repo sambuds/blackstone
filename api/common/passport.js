@@ -70,7 +70,7 @@ module.exports = (passport) => {
   Return success
   */
  const authenticate = async (id, idType, password, done) => {
-   const text = `SELECT username, email, address, password_digest, created_at FROM users WHERE ${idType} = $1`;
+   const text = `SELECT username, email, address, password_digest, created_at FROM users WHERE LOWER(${idType}) = LOWER($1)`;
    try {
      const { rows } = await pool.query({
        text,
@@ -110,8 +110,7 @@ module.exports = (passport) => {
      return done(boom.badImplementation(err));
    }
  }
-  const usernameStrategy = new LocalStrategy(usernameOpts, async (req, _username, password, done) => {
-    const username = _username.toLowerCase();
+  const usernameStrategy = new LocalStrategy(usernameOpts, async (req, username, password, done) => {
     await authenticate(username, 'username', password, done);
   });
 

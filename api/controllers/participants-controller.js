@@ -207,12 +207,18 @@ const registerUser = asyncMiddleware(async ({ body }, res) => {
   const {
     username: id, email, password, isProducer,
   } = value;
-  // check if email is registered in pg
+  // check if email or username already registered in pg
   const { rows } = await pool.query({
-    text: 'SELECT email FROM users WHERE email = $1',
-    values: [email],
+    text: 'SELECT LOWER(email) AS email, LOWER(username) AS username FROM users WHERE LOWER(email) = LOWER($1) OR LOWER(username) = LOWER($2);',
+    values: [email, id],
   });
-  if (rows[0]) throw boom.badData(`Email ${email} already registered`);
+  if (rows[0]){
+    if (rows[0].email === email.toLowerCase()) {
+      throw boom.badData(`Email ${email} already registered`);
+    } else if (rows[0].username === id.toLowerCase()) {
+      throw boom.badData(`Username ${id} already registered`);
+    }
+  }
 
   // check if username is registered on chain
   const userInCache = await _userExistsOnChain(id);

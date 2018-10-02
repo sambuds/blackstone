@@ -195,8 +195,8 @@ describe('User Profile', () => {
           if (err) return done(err)
           res.body.should.be.a('object')
           res.body.address.toUpperCase().should.equal(userData.address)
-          res.body.id.should.equal(credentials.username.toLowerCase())
-          res.body.email.should.equal(credentials.email.toLowerCase())
+          res.body.id.should.equal(credentials.username)
+          res.body.email.should.equal(credentials.email)
           res.body.firstName.should.equal(newProfileInfo.firstName)
           res.body.lastName.should.equal(newProfileInfo.lastName)
           res.body.should.have.property('firstName')
@@ -347,7 +347,7 @@ describe('Organizations', () => {
                 res.body.users[0].address.should.exist;
                 res.body.users[0].address.should.equal(approver.address);
                 res.body.users[0].id.should.exist;
-                res.body.users[0].id.should.equal(approver.username.toLowerCase());
+                res.body.users[0].id.should.equal(approver.username);
                 done();
               });
           }, 2000);

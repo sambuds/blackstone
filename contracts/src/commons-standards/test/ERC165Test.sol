@@ -15,9 +15,9 @@ contract ERC165Test {
 
         // fail
         if (myImplAddress.call(bytes4(keccak256(abi.encodePacked("addIllegalSupport()")))))
-            return "$1";
+            return "Custom contract should throw when adding illegal 0xffffffff interface";
         if (ERC165Utils.implementsInterface(myImplAddress, bytes4(keccak256(abi.encodePacked("unknownFunction(bytes32)")))) == true)
-            return "$1";
+            return "Custom contract should not support an unknown interface";
 
         // success
         if (ERC165Utils.implementsInterface(myImplAddress, 0x01ffc9a7) == false)

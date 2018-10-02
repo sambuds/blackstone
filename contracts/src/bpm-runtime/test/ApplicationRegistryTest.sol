@@ -37,20 +37,20 @@ contract ApplicationRegistryTest {
 
         // add applications
         error = registry.addApplication(serviceApp1Id, BpmModel.ApplicationType.SERVICE, app1, bytes4(EMPTY), EMPTY);
-        if (error != BaseErrors.NO_ERROR()) return "$1";
+        if (error != BaseErrors.NO_ERROR()) return "Unexpected error adding application1 to the registry";
         error = registry.addApplication(serviceApp1Id, BpmModel.ApplicationType.SERVICE, app1, bytes4(EMPTY), EMPTY);
-        if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "$1";
+        if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "Expected RESOURCE_ALREADY_EXISTS for adding an already existing application1";
         error = registry.addApplication(serviceApp2Id, BpmModel.ApplicationType.SERVICE, app2, customCompletionFunction, EMPTY);
-        if (error != BaseErrors.NO_ERROR()) return "$1";
+        if (error != BaseErrors.NO_ERROR()) return "Unexpected error adding an application2 to the registry";
 
         if (registry.getNumberOfApplications() != 2) return "There should be 2 applications registered";
 
         error = registry.addAccessPoint(serviceApp1Id, app1AccessPoint1, DataTypes.BYTES32(), BpmModel.Direction.IN);
-        if (error != BaseErrors.NO_ERROR()) return "$1";
+        if (error != BaseErrors.NO_ERROR()) return "Unexpected error adding access point app1InData to ServiceApp1";
         error = registry.addAccessPoint(serviceApp1Id, app1AccessPoint2, DataTypes.STRING(), BpmModel.Direction.OUT);
-        if (error != BaseErrors.NO_ERROR()) return "$1";
+        if (error != BaseErrors.NO_ERROR()) return "Unexpected error adding access point app1OutData to ServiceApp1";
         error = registry.addAccessPoint(serviceApp1Id, app1AccessPoint1, DataTypes.UINT(), BpmModel.Direction.IN);
-        if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "$1";
+        if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "Expected error when trying to add duplicate access point";
         
         if (registry.getNumberOfAccessPoints(serviceApp1Id) != 2) return "Wrong access point count for ServiceApp1";
 
@@ -58,8 +58,8 @@ contract ApplicationRegistryTest {
         BpmModel.Direction direction;
 
         (dataType, direction) = registry.getAccessPointData(serviceApp1Id, app1AccessPoint1);
-        if (dataType != DataTypes.BYTES32()) return "$1";
-        if (direction != BpmModel.Direction.IN) return "$1";
+        if (dataType != DataTypes.BYTES32()) return "Expected bytes32 dataType for access point app1AccessPoint1";
+        if (direction != BpmModel.Direction.IN) return "Expected direction IN for access point app1AccessPoint1";
 
         uint8 myType;
         address location;

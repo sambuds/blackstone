@@ -166,7 +166,7 @@ contract ActiveAgreementWorkflowTest {
 		TestSignatureCheck signatureCheckApp = new TestSignatureCheck();
 		applicationRegistry.addApplication("AgreementSignatureCheck", BpmModel.ApplicationType.WEB, signatureCheckApp, bytes4(EMPTY), EMPTY);
 		doug.deployContract("AgreementSignatureCheck", signatureCheckApp);
-		if (signatureCheckApp.getBpmService() != address(bpmService)) return "$1";
+		if (signatureCheckApp.getBpmService() != address(bpmService)) return "BpmService not injected successfully into AgreementSignatureCheck application";
 
 		//
 		// ORGS/USERS
@@ -185,7 +185,7 @@ contract ActiveAgreementWorkflowTest {
 		org2 = new DefaultOrganization(approvers, EMPTY_STRING);
 		org1.addUserToDepartment(userAccount2, EMPTY);
 		org2.addDepartment(departmentId1, "Department 1");
-		org2.addUserToDepartment(userAccount3, departmentId1);
+		if (!org2.addUserToDepartment(userAccount3, departmentId1)) return "Failed to add user3 to department1";
 
 		delete parties;
 		// the parties to the agreement are: one user, one org, and one org with department scope
@@ -206,7 +206,7 @@ contract ActiveAgreementWorkflowTest {
 		if (addr == 0x0) return "Unable to create FormationProcess definition";
 		formationPD = ProcessDefinition(addr);
 		error = formationPD.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.USER, BpmModel.TaskBehavior.SENDRECEIVE, participantId1, true, appIdSignatureCheck, EMPTY, EMPTY);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error creating USER task for formation process definition";
 		formationPD.createDataMapping(activityId1, BpmModel.Direction.IN, "agreement", "agreement", EMPTY, 0x0);
 		(valid, errorMsg) = formationPD.validate();
 		if (!valid) return errorMsg.toString();
@@ -215,7 +215,7 @@ contract ActiveAgreementWorkflowTest {
 		if (addr == 0x0) return "Unable to create ExecutionProcess definition";
 		executionPD = ProcessDefinition(addr);
 		error = executionPD.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error creating SERVICE task for execution process definition";
 		(valid, errorMsg) = executionPD.validate();
 		if (!valid) return errorMsg.toString();
 
@@ -237,63 +237,67 @@ contract ActiveAgreementWorkflowTest {
 		//
 		// FORMATION / EXECUTION
 		//
-		if (bpmService.getNumberOfProcessInstances() != 0) return "$1";
+		if (bpmService.getNumberOfProcessInstances() != 0) return "here should be 0 PIs in the system at test start";
 		(error, addr) = agreementRegistry.startFormation(ActiveAgreement(agreement));
 		if (error != BaseErrors.NO_ERROR()) return "Error starting the formation on agreement";
 		if (ActiveAgreement(agreement).getLegalState() != uint8(Agreements.LegalState.FORMULATED)) return "The agreement should be in FORMULATED state";
 
 		ProcessInstance pi;
-		if (bpmService.getNumberOfProcessInstances() != 1) return "$1";
+		if (bpmService.getNumberOfProcessInstances() != 1) return "There should be 1 PI in the system after agreement formation start";
 		if (bpmService.getBpmServiceDb().getNumberOfActivityInstances() != 3) return "There should be 3 AIs total";
 		pi = ProcessInstance(bpmService.getProcessInstanceAtIndex(0));
 		if (pi.getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI should be active";
 		( , , , addr, , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
-		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "$1";
-		if (addr != address(userAccount1)) return "$1";
+		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "Activity1 in Formation Process should be suspended";
+		if (addr != address(userAccount1)) return "userAccount1 should be the performer of activity1";
 
 		// the agreement should NOT be available as IN data via the application at this point since the user is still the performer!
 		if (address(signatureCheckApp).call(keccak256(abi.encodePacked("getInDataAgreement(bytes32)")), pi.getActivityInstanceAtIndex(0)))
-			return "$1";
+			return "Retrieving IN data via the application should REVERT while the user is still the performer";
 
 		// test fail on invalid user
 		error = nonPartyAccount.completeActivity(pi.getActivityInstanceAtIndex(0), bpmService);
-		if (error != BaseErrors.INVALID_ACTOR()) return "$1";
+		if (error != BaseErrors.INVALID_ACTOR()) return "Attempting to complete the Sign activity with an unassigned user should fail.";
 		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
-		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "$1";
+		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "Activity1 in Formation Process should still be suspended after wrong user attempt";
 		// test fail on unsigned agreement
 		error = userAccount1.completeActivity(pi.getActivityInstanceAtIndex(0), bpmService);
-		if (error != BaseErrors.RUNTIME_ERROR()) return "$1";
+		if (error != BaseErrors.RUNTIME_ERROR()) return "Attempting to complete the Sign activity without signing the agreement should fail";
 		( , , , addr, , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
-		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "$1";
-		if (addr != address(userAccount1)) return "$1";
+		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "Activity1 in Formation Process should still be suspended after completion attempt without signing";
+		if (addr != address(userAccount1)) return "userAccount1 should still be the performer of activity1 even after completion failed";
 
 		// test successful completion
 		userAccount1.signAgreement(agreement);
 		error = userAccount1.completeActivity(pi.getActivityInstanceAtIndex(0), bpmService);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Unexpected error attempting to complete Activity1 in Formation Process by user1";
 		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
-		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "$1";
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "ActivityInstance 1 in Formation Process should be completed";
 
 		// verify that the signature app had access to the agreement data mapping
-		if (signatureCheckApp.lastAgreement() != address(agreement)) return "$1";
+		if (signatureCheckApp.lastAgreement() != address(agreement)) return "The agreement should've been processed by the TestSignatureCheck app.";
 
 		// complete the missing signatures and tasks
 		userAccount2.signAgreement(agreement);
 		error = userAccount2.completeActivity(pi.getActivityInstanceAtIndex(1), bpmService);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Unexpected error attempting to complete Activity1 in Formation Process by user2 in org1";
 		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(1));
-		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "$1";
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "ActivityInstance 2 in Formation Process should be completed";
 
 		userAccount3.signAgreement(agreement);
 
-		if (pi.resolveAddressScope(address(org2), activityId1, pi) != departmentId1) return "$1";
+		( , , ,addr , , ) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(2));
+		if (addr != address(org2)) return "ActivityInstance3 should have org2 as performer";
+		if (pi.resolveAddressScope(address(org2), activityId1, pi) != departmentId1) return "Org2 in context of activity1 should show the additional department scope";
+		// check upfront if the user/org/department context is authorized which is used in the following completeActivity() invocation
+		if (!org2.authorizeUser(userAccount3, departmentId1)) return "User3 should be authorized for dep1 in org2";
 		error = userAccount3.completeActivity(pi.getActivityInstanceAtIndex(2), bpmService);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return string(abi.encodePacked("Unexpected error attempting to complete Activity1 in Formation Process by user3 in org2: ",TypeUtilsAPI.toBytes32(error)));
 		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(2));
-		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "$1";
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "ActivityInstance 3 in Formation Process should be completed";
 
 		// AIs 1-3 should all be completed now and the process has moved into execution
-		if (bpmService.getNumberOfProcessInstances() != 2) return "$1";
+		if (bpmService.getNumberOfProcessInstances() != 2) return "There should be 2 PIs in the system after agreement formation is completed";
 		if (bpmService.getBpmServiceDb().getNumberOfActivityInstances() != 4) return "There should be 4 AIs total";
 		pi = ProcessInstance(bpmService.getProcessInstanceAtIndex(1));
 		if (pi.getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Execution PI should be completed";
@@ -341,7 +345,7 @@ contract ActiveAgreementWorkflowTest {
 		if (addr == 0x0) return "Unable to create FormationProcess definition";
 		formationPD = ProcessDefinition(addr);
 		error = formationPD.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.RECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error creating NONE task for formation process definition";
 		(valid, errorMsg) = formationPD.validate();
 		if (!valid) return errorMsg.toString();
 		// Execution Process
@@ -349,7 +353,7 @@ contract ActiveAgreementWorkflowTest {
 		if (addr == 0x0) return "Unable to create ExecutionProcess definition";
 		executionPD = ProcessDefinition(addr);
 		error = executionPD.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.RECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error creating SERVICE task for execution process definition";
 		(valid, errorMsg) = executionPD.validate();
 		if (!valid) return errorMsg.toString();
 
@@ -375,47 +379,47 @@ contract ActiveAgreementWorkflowTest {
 		numberOfPIs = bpmService.getNumberOfProcessInstances();
 		ProcessInstance[3] memory pis; // to collect the created PIs
 		(error, addr) = agreementRegistry.startFormation(ActiveAgreement(agreement1));
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error starting the formation process 1 on agreement1";
 		pis[0] = ProcessInstance(addr);
-		if (agreementRegistry.getTrackedFormationProcess(agreement1) == 0x0) return "$1";
-		if (agreementRegistry.getTrackedExecutionProcess(agreement1) != 0x0) return "$1";
-		if (agreementRegistry.getTrackedFormationProcess(agreement1) != address(pis[0])) return "$1";
+		if (agreementRegistry.getTrackedFormationProcess(agreement1) == 0x0) return "There should be a tracked formation process for agreement1";
+		if (agreementRegistry.getTrackedExecutionProcess(agreement1) != 0x0) return "There should be NO tracked execution process for agreement1";
+		if (agreementRegistry.getTrackedFormationProcess(agreement1) != address(pis[0])) return "The tracked formation process should match the started formation PI for agreement1";
 		(error, addr) = agreementRegistry.startFormation(ActiveAgreement(agreement2));
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error starting the formation process 2 on agreement2";
 		pis[1] = ProcessInstance(addr);
-		if (agreementRegistry.getTrackedFormationProcess(agreement2) == 0x0) return "$1";
-		if (agreementRegistry.getTrackedExecutionProcess(agreement2) != 0x0) return "$1";
-		if (agreementRegistry.getTrackedFormationProcess(agreement2) != address(pis[1])) return "$1";
+		if (agreementRegistry.getTrackedFormationProcess(agreement2) == 0x0) return "There should be a tracked formation process for agreement2";
+		if (agreementRegistry.getTrackedExecutionProcess(agreement2) != 0x0) return "There should be NO tracked execution process for agreement2";
+		if (agreementRegistry.getTrackedFormationProcess(agreement2) != address(pis[1])) return "The tracked formation process should match the started formation PI for agreement2";
 
 		// sign agreement2 and move PI2 into execution phase
 		userAccount1.signAgreement(agreement2);
 		userAccount2.signAgreement(agreement2);
-		if (ActiveAgreement(agreement2).getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "$1";
+		if (ActiveAgreement(agreement2).getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "The agreement2 should be in EXECUTED after signing";
 		error = pis[1].completeActivity(pis[1].getActivityInstanceAtIndex(0), bpmService);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Error completing wait activity in formation process 2";
 	
-		if (bpmService.getNumberOfProcessInstances() != numberOfPIs+3) return "$1";
+		if (bpmService.getNumberOfProcessInstances() != numberOfPIs+3) return "There should be 3 additional PIs in the system";
 		numberOfPIs = bpmService.getNumberOfProcessInstances();
 		// the last added PI should be the execution process of agreement2
 		pis[2] = ProcessInstance(bpmService.getProcessInstanceAtIndex(numberOfPIs-1));
-		if (agreementRegistry.getTrackedExecutionProcess(agreement2) == 0x0) return "$1";
-		if (agreementRegistry.getTrackedExecutionProcess(agreement2) != address(pis[2])) return "$1";
-		if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "$1";
-		if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "$1";
-		if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "$1";
+		if (agreementRegistry.getTrackedExecutionProcess(agreement2) == 0x0) return "There should now be a tracked execution process for agreement2 after signing";
+		if (agreementRegistry.getTrackedExecutionProcess(agreement2) != address(pis[2])) return "The tracked execution process for agreement2 should match the last PI";
+		if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI for agreement1 should be active";
+		if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should be completed";
+		if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Execution PI for agreement2 should be active";
 
 		// cancel the first agreement BEFORE its execution phase (uni-lateral cancellation)
 		userAccount2.cancelAgreement(agreement1);
 		if (ActiveAgreement(agreement1).getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "agreement1 should be CANCELED";
-		if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "$1";
+		if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement1 should be aborted after canceling";
 		
 		// cancel the second agreement AFTER it reaches execution phase (multi-lateral cancellation required)
 		userAccount2.cancelAgreement(agreement2);
-		if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "$1";
-		if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "$1";
+		if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 1st cancellation";
+		if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI for agreement2 should still be active after 1st cancellation";
 		userAccount1.cancelAgreement(agreement2);
-		if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "$1";
-		if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "$1";
+		if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 2nd cancellation";
+		if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement2 should be aborted after 2nd cancellation";
 
 		return SUCCESS;
 	}

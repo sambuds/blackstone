@@ -34,15 +34,15 @@ contract ServiceUpgradeabilityTest {
 			TestApplication app2 = new TestApplication();
 
 			error = registryV1.addApplication(serviceApp1Id, BpmModel.ApplicationType.SERVICE, app1, bytes4(EMPTY), EMPTY);
-			if (error != BaseErrors.NO_ERROR()) return "$1";
+			if (error != BaseErrors.NO_ERROR()) return "Unexpected error adding application1 to registryV1";
 			error = registryV1.addApplication(serviceApp2Id, BpmModel.ApplicationType.SERVICE, app2, customCompletionFunction, EMPTY);
-			if (error != BaseErrors.NO_ERROR()) return "$1";
-			if (registryV1.getNumberOfApplications() != 2) return "$1";
+			if (error != BaseErrors.NO_ERROR()) return "Unexpected error adding application2 to registryV1";
+			if (registryV1.getNumberOfApplications() != 2) return "There should be 2 applications registered via registryV1";
 
 			ApplicationRegistry registryV2 = new  DefaultApplicationRegistry();
-			if (!AbstractDbUpgradeable(registryV1).migrateTo(registryV2)) return "$1";
-			if (registryV2.getNumberOfApplications() != 2) return "$1";
-			if (registryDb.getSystemOwner() != address(registryV2)) return "$1";
+			if (!AbstractDbUpgradeable(registryV1).migrateTo(registryV2)) return "Unexpected error while migrating from registryV1 to registryV2";
+			if (registryV2.getNumberOfApplications() != 2) return "There should be 2 applications registered via registryV2";
+			if (registryDb.getSystemOwner() != address(registryV2)) return "ApplicationRegistryDb owner is not set to registryV2";
 
 			return SUCCESS;
 	}

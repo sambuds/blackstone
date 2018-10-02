@@ -61,9 +61,9 @@ contract ActiveAgreementTest {
 		// test parties array retrieval via DataStorage (needed for workflow participants)
 		address[100] memory partiesArr = agreement.getDataValueAsAddressArray(DATA_FIELD_AGREEMENT_PARTIES);
 		address[100] memory bogusArr = agreement.getDataValueAsAddressArray(bogusId);
-		if (partiesArr[0] != address(signer1)) return "$1";
-		if (bogusArr[0] != address(0xCcD5bA65282C3dafB69b19351C7D5B77b9fDDCA6)) return "$1";
-		if (agreement.getNumberOfArrayEntries(DATA_FIELD_AGREEMENT_PARTIES, false) != agreement.getNumberOfParties()) return "$1";
+		if (partiesArr[0] != address(signer1)) return "address[] retrieval via DATA_FIELD_AGREEMENT_PARTIES did not yield first element as expected";
+		if (bogusArr[0] != address(0xCcD5bA65282C3dafB69b19351C7D5B77b9fDDCA6)) return "address[] retrieval via regular ID did not yield first element as expected";
+		if (agreement.getNumberOfArrayEntries(DATA_FIELD_AGREEMENT_PARTIES, false) != agreement.getNumberOfParties()) return "Array size count via DATA_FIELD_AGREEMENT_PARTIES did not match the number of parties";
 
 		return SUCCESS;
 	}
@@ -95,8 +95,8 @@ contract ActiveAgreementTest {
 		if (address(agreement).call(bytes4(keccak256(abi.encodePacked("sign()")))))
 			return "Signing from test address should REVERT due to invalid actor";
 		(signee, timestamp) = agreement.getSignatureDetails(signer1);
-		if (timestamp != 0) return "$1";
-		if (AgreementsAPI.isFullyExecuted(agreement)) return "$1";
+		if (timestamp != 0) return "Signature timestamp for signer1 should be 0 before signing";
+		if (AgreementsAPI.isFullyExecuted(agreement)) return "AgreementsAPI.isFullyExecuted should be false before signing";
 		if (agreement.getLegalState() == uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should NOT be EXECUTED";
 
 		// Signing with Signer1 as party
@@ -104,9 +104,9 @@ contract ActiveAgreementTest {
 		if (!agreement.isSignedBy(signer1)) return "Agreement should be signed by signer1";
 		(signee, timestamp) = agreement.getSignatureDetails(signer1);
 		if (signee != address(signer1)) return "Signee for signer1 should be signer1";
-		if (timestamp == 0) return "$1";
-		if (AgreementsAPI.isFullyExecuted(agreement)) return "$1";
-		if (agreement.getLegalState() == uint8(Agreements.LegalState.EXECUTED)) return "$1";
+		if (timestamp == 0) return "Signature timestamp for signer1 should be set after signing";
+		if (AgreementsAPI.isFullyExecuted(agreement)) return "AgreementsAPI.isFullyExecuted should be false after signer1";
+		if (agreement.getLegalState() == uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should NOT be EXECUTED after signer1";
 
 		// Signing with Signer2 via the organization
 		signer2.signAgreement(agreement);
@@ -114,9 +114,9 @@ contract ActiveAgreementTest {
 		if (agreement.isSignedBy(org1)) return "Agreement should NOT be signed by org1";
 		(signee, timestamp) = agreement.getSignatureDetails(org1);
 		if (signee != address(signer2)) return "Signee for org1 should be signer1";
-		if (timestamp == 0) return "$1";
-		if (!AgreementsAPI.isFullyExecuted(agreement)) return "$1";
-		if (agreement.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "$1";
+		if (timestamp == 0) return "Signature timestamp for org1 should be set after signing";
+		if (!AgreementsAPI.isFullyExecuted(agreement)) return "AgreementsAPI.isFullyExecuted should be true after signer2";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should be EXECUTED after signer2";
 
 		return SUCCESS;
 	}
@@ -146,16 +146,16 @@ contract ActiveAgreementTest {
 
 		// Agreement1 is canceled during formation
 		signer2.cancelAgreement(agreement1);
-		if (agreement1.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "$1";
+		if (agreement1.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "Agreement1 legal state should be CANCELED after unilateral cancellation in formation";
 
 		// Agreement2 is canceled during execution
 		signer1.signAgreement(agreement2);
 		signer2.signAgreement(agreement2);
-		if (agreement2.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "$1";
+		if (agreement2.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "Agreemen2 legal state should be EXECUTED after parties signed";
 		signer1.cancelAgreement(agreement2);
-		if (agreement2.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "$1";
+		if (agreement2.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "Agreement2 legal state should still be EXECUTED after unilateral cancellation";
 		signer2.cancelAgreement(agreement2);
-		if (agreement2.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "$1";
+		if (agreement2.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "Agreement2 legal state should be CANCELED after bilateral cancellation";
 
 		return SUCCESS;
 	}

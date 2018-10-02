@@ -230,7 +230,7 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 	 * @return true if authorized, false otherwise
 	 */
 	function authorizeUser(address _userAccount, bytes32 _department) external view returns (bool) {
-		if (_department != "" &&_department == keccak256(abi.encodePacked(address(this)))) {
+		if (_department == keccak256(abi.encodePacked(address(this)))) {
 			return users.exists(_userAccount);
 		}
 		else if (_department == "" || !self.departments[_department].exists) {

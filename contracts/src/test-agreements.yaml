@@ -49,6 +49,7 @@ jobs:
     instance: IsoCountries100
     libraries: ErrorsLib:$ErrorsLib
 
+
 # ArchetypeRegistryTest
 - name: ArchetypeRegistryTest
   deploy:
@@ -122,6 +123,7 @@ jobs:
     key: $testGoverningArchetypes
     relation: eq
     val: success
+
 
 # ActiveAgreementTest
 - name: ActiveAgreementTest

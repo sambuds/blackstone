@@ -47,23 +47,23 @@ contract ProcessDefinitionTest {
 		ProcessDefinition pd = ProcessDefinition(newAddress);
 		
 		// setup
-		if (pm.getProcessDefinition("p1") != address(pd)) return "$1";
+		if (pm.getProcessDefinition("p1") != address(pd)) return "Returned ProcessDefinition address does not match.";
 
 		// test process interface handling
 		error = pd.addProcessInterfaceImplementation(pm, "AgreementFormation");
-		if (error != BaseErrors.RESOURCE_NOT_FOUND()) return "$1";
+		if (error != BaseErrors.RESOURCE_NOT_FOUND()) return "Expected error for adding non-existent process interface.";
 		error = pm.addProcessInterface("AgreementFormation");
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Unable to add process interface Formation to model";
 		error = pm.addProcessInterface("AgreementExecution");
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Unable to add process interface Execution to model";
 		error = pd.addProcessInterfaceImplementation(pm, "AgreementFormation");
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Unable to add valid process interface Formation to process definition.";
 		error = pd.addProcessInterfaceImplementation(pm, "AgreementExecution");
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Unable to add valid process interface Execution to process definition.";
 		if (pd.getNumberOfImplementedProcessInterfaces() != 2) return "Number of implemented interfaces should be 2";
 		(pId, pInterface, modelId) = pm.getProcessDefinitionData(pd);
 		if (pId != "p1") return "Expected process definition id to equal p1";
-		if (pInterface != "AgreementFormation") return "$1";
+		if (pInterface != "AgreementFormation") return "Expected process definition interface to equal AgreementFormation";
 
 		bool valid;
 		bytes32 errorMsg;
@@ -72,41 +72,41 @@ contract ProcessDefinitionTest {
 
 		// Invalid participant
 		error = pd.createActivityDefinition("activity999", BpmModel.ActivityType.TASK, BpmModel.TaskType.USER, BpmModel.TaskBehavior.SENDRECEIVE, "fakeParticipantXYZ", false, EMPTY, EMPTY, EMPTY);
-		if (error != BaseErrors.RESOURCE_NOT_FOUND()) return "$1";
+		if (error != BaseErrors.RESOURCE_NOT_FOUND()) return "Creating activity with unknown participant should fail";
 
 		error = pm.addParticipant(participantId1, assignee1, EMPTY, EMPTY, 0x0);
 		if (error != BaseErrors.NO_ERROR()) return "Unable to add a valid participant";
 
 		error = pd.createActivityDefinition("activity999", BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, participantId1, false, EMPTY, EMPTY, EMPTY);
-		if (error != BaseErrors.INVALID_PARAM_VALUE()) return "$1";
+		if (error != BaseErrors.INVALID_PARAM_VALUE()) return "Expected INVALID_PARAM_VALUE for non-USER activity with specified assignee";
 		error = pd.createActivityDefinition("activity999", BpmModel.ActivityType.TASK, BpmModel.TaskType.USER, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
-		if (error != BaseErrors.NULL_PARAM_NOT_ALLOWED()) return "$1";
+		if (error != BaseErrors.NULL_PARAM_NOT_ALLOWED()) return "Expected NULL_PARAM_NOT_ALLOWED for TaskType.USER activity without an assignee";
 
 		// Activity 1
 		error = pd.createActivityDefinition(activity1Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.USER, BpmModel.TaskBehavior.SENDRECEIVE, participantId1, true, "app1", EMPTY, EMPTY);
 		if (error != BaseErrors.NO_ERROR()) return "Creating activity1 failed";
 
 		(valid, errorMsg) = pd.validate();
-		if (!valid) return "$1";
-		if (pd.getStartActivity() != activity1Id) return "$1";
+		if (!valid) return "The process definition has a single user task and should be valid";
+		if (pd.getStartActivity() != activity1Id) return "Start activity should be activity1 after first validation";
 		error = pd.createActivityDefinition(activity1Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.USER, BpmModel.TaskBehavior.SENDRECEIVE, participantId1, false, "app1", EMPTY, EMPTY);
-		if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "$1";
+		if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "Expected RESOURCE_ALREADY_EXISTS for duplicate activity1 creation";
 
 		// Activity 2
 		error = pd.createActivityDefinition(activity2Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, "app1", EMPTY, EMPTY);
 		if (error != BaseErrors.NO_ERROR()) return "Creating activity2 failed";
-		if (pd.getNumberOfActivities() != 2) return "$1";
+		if (pd.getNumberOfActivities() != 2) return "The process should have two activity definitions at this point";
 
 		(valid, errorMsg) = pd.validate();
-		if (valid) return "$1";
+		if (valid) return "The process definition has duplicate start activities and should not be valid";
 		
 		// Scenario 1: Sequential Process
 		if (address(pd).call(bytes4(keccak256(abi.encodePacked("createTransition(bytes32,bytes32)"))), "blablaActivity", activity2Id))
-			return "$1";
+			return "Expected REVERT when creating transition for non-existent source element";
 		if (address(pd).call(bytes4(keccak256(abi.encodePacked("createTransition(bytes32,bytes32)"))), activity1Id, "blablaActivity"))
-			return "$1";
+			return "Expected REVERT when creating transition for non-existent target element";
 		error = pd.createTransition(activity1Id, activity2Id);
-		if (error != BaseErrors.NO_ERROR()) return "$1";
+		if (error != BaseErrors.NO_ERROR()) return "Creating transition activity1 -> activity2 failed";
 
 		(valid, errorMsg) = pd.validate();
 		if (!valid) return errorMsg.toString(); // should be valid at this point
@@ -116,13 +116,13 @@ contract ProcessDefinitionTest {
 		// create gateway to allow valid setup
 		pd.createGateway("gateway1", BpmModel.GatewayType.XOR);
 		(valid, errorMsg) = pd.validate();
-		if (valid) return "$1";
+		if (valid) return "The process definition has an unreachable gateway and should not be valid";
 
 		// Activity 3
 		error = pd.createActivityDefinition(activity3Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		if (error != BaseErrors.NO_ERROR()) return "Creating activity3 failed";
 		if (address(pd).call(bytes4(keccak256(abi.encodePacked("createTransition(bytes32,bytes32)"))), activity1Id, activity3Id))
-			return "$1";
+			return "Expected REVERT when attempting to overwrite existing outgoing transition";
 		// Activity 4
 		error = pd.createActivityDefinition(activity4Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		if (error != BaseErrors.NO_ERROR()) return "Creating activity4 failed";
@@ -133,7 +133,7 @@ contract ProcessDefinitionTest {
 		if (address(pd).call(bytes4(keccak256(abi.encodePacked("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)"))), "gateway1", "fakeXX", EMPTY, EMPTY, 0x0, 0, 0x0))
 			return "Adding condition for non-existent activity should fail";
 		if (address(pd).call(bytes4(keccak256(abi.encodePacked("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)"))), "gateway1", activity3Id, EMPTY, EMPTY, 0x0, 0, 0x0))
-			return "$1";
+			return "Adding condition for non-existent transition connection should fail";
 
 		pd.createTransition(activity2Id, "gateway1");
 		pd.createTransition("gateway1", activity3Id);
@@ -155,8 +155,8 @@ contract ProcessDefinitionTest {
 		bytes32[] memory outputs;
 		bytes32 defaultOutput;
 		(inputs, outputs, , defaultOutput) = pd.getGatewayGraphDetails("gateway1");
-		if (inputs.length != 1) return "$1";
-		if (outputs.length != 2) return "$1";
+		if (inputs.length != 1) return "XOR SPLIT gateway should have 1 incoming transitions";
+		if (outputs.length != 2) return "XOR SPLIT gateway should have 2 outgoing transitions";
 		if (defaultOutput != activity3Id) return "activity3 should be set as default transition";
 
 		(valid, errorMsg) = pd.validate();
@@ -178,7 +178,7 @@ contract ProcessDefinitionTest {
 		if (activityIds.length != 1)
 			return "There should be 1 activity using participant1 as assignee";
 		if (pd.getActivitiesForParticipant(participantId1)[0] != activity1Id)
-			return "$1";
+			return "getActivitiesForParticipant should return activity1 for participant1";
 
 		return SUCCESS;
 	}

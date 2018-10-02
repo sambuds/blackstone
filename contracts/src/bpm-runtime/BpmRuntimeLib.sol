@@ -97,10 +97,10 @@ library BpmRuntimeLib {
             else if (taskType == uint8(BpmModel.TaskType.USER)) {
                 // A new CREATED user task is configured to be completed by a designated task perfomer and then SUSPENDED
                 if (_activityInstance.state == BpmRuntime.ActivityInstanceState.CREATED) {
-                    // TODO require(_activityInstance.performer != 0x0)
                     if (!setPerformer(_activityInstance, _processDefinition, _rootDataStorage)) {
                         return BaseErrors.INVALID_STATE();
                     }
+                    // TODO require(_activityInstance.performer != 0x0)
                     // USER tasks are always suspended to wait for external completion
                     _activityInstance.state = BpmRuntime.ActivityInstanceState.SUSPENDED;
                 }
@@ -431,10 +431,12 @@ library BpmRuntimeLib {
         }
         // if the performer cannot be determined directly (i.e. via msg.sender or tx.origin), check against a potential organization + scope (department/role)
         if (authorizedPerformer == 0x0 && ERC165Utils.implementsInterface(performer, getERC165IdOrganization())) {
-            if (Organization(performer).authorizeUser(msg.sender, _processInstance.resolveAddressScope(msg.sender, activityId, _processInstance))) {
+            // check if this organization performer and activity context require a restrictive scope (department)
+            bytes32 scope = _processInstance.resolveAddressScope(performer, activityId, _processInstance);
+            if (Organization(performer).authorizeUser(msg.sender, scope)) {
                 authorizedPerformer = msg.sender;
             }
-            else if (Organization(performer).authorizeUser(tx.origin, _processInstance.resolveAddressScope(tx.origin, activityId, _processInstance))) {
+            else if (Organization(performer).authorizeUser(tx.origin, scope)) {
                 authorizedPerformer = tx.origin;
             }
         }

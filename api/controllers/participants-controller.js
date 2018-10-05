@@ -27,9 +27,9 @@ const getOrganizations = asyncMiddleware(async (req, res) => {
     // Sqlsol query has join that results in multiple rows for each org
     // Consolidate data by storing in object 'aggregated'
     const aggregated = {};
-    data.forEach(({ address, approver }) => {
+    data.forEach(({ address, organizationKey, approver }) => {
       if (!aggregated[address]) {
-        aggregated[address] = { address, approvers: [] };
+        aggregated[address] = { address, organizationKey, approvers: [] };
       }
       aggregated[address].approvers.push(approver);
     });
@@ -76,10 +76,10 @@ const getOrganization = asyncMiddleware(async (req, res) => {
     if (!approvers.find(({ address }) => address === req.user.address) && !users.find(({ address }) => address === req.user.address)) {
       throw boom.forbidden('User is not an approver or member of this organization and not allowed access');
     }
-    const { address } = data[0];
+    const { address, organizationKey } = data[0];
     const { 0: { name } } = await getNamesOfOrganizations([{ address }]);
     const org = {
-      address, name, approvers, users, departments,
+      address, organizationKey, name, approvers, users, departments,
     };
     org.approvers = await setUserIds(org.approvers);
     org.users = await setUserIds(org.users);
@@ -256,9 +256,11 @@ const getProfile = asyncMiddleware(async (req, res) => {
   // Multiple rows returned because of left join for organization departments.
   // Consolidating data in object.
   const organizations = {};
-  data.forEach(({ organization, department, departmentName }) => {
+  data.forEach(({
+    organization, organizationKey, department, departmentName,
+  }) => {
     if (organization && !organizations[organization]) {
-      organizations[organization] = { address: organization, departments: [] };
+      organizations[organization] = { address: organization, organizationKey, departments: [] };
     }
     if (department) {
       const { id } = format('Department', { id: department });

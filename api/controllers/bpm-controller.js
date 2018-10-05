@@ -35,7 +35,7 @@ const _getDataMappingDetails = async (userAddress, activityInstanceId, dataMappi
     let dataMappingDetails;
     let accessPointDetails;
     // validations
-    const aiData = await sqlCache.getActivityInstanceData(activityInstanceId);
+    const aiData = await sqlCache.getActivityInstanceData(activityInstanceId, userAddress);
     const {
       performer,
       processDefinitionAddress,
@@ -178,18 +178,8 @@ const _getOutDataForActivity = async (userAddress, activityInstanceId, dataMappi
 };
 
 const getActivityInstance = asyncMiddleware(async (req, res) => {
-  let activityInstanceResult = await sqlCache.getActivityInstanceData(req.params.id);
-  if (!activityInstanceResult) throw boom.notFound(`Activity instance ${req.params.id} not found`);
-  const profileData = await sqlCache.getProfile(req.user.address);
-  if (activityInstanceResult.isModelPrivate &&
-    activityInstanceResult.modelAuthor !== req.user.address &&
-    !profileData.find(({ organization }) => organization === activityInstanceResult.modelAuthor)) {
-    throw boom.forbidden('Task belongs to a process model the user is not authorized to access');
-  } else if (activityInstanceResult.taskType === 1 &&
-    activityInstanceResult.performer !== req.user.address &&
-    !profileData.find(({ organization }) => organization === activityInstanceResult.performer)) {
-    throw boom.forbidden('Task can only be accessed by the assigned performer');
-  }
+  let activityInstanceResult = await sqlCache.getActivityInstanceData(req.params.id, req.user.address);
+  if (!activityInstanceResult) throw boom.notFound(`Activity instance ${req.params.id} not found or user not authorized`);
   activityInstanceResult = format('Task', activityInstanceResult);
   activityInstanceResult = (await pgCache.populateTaskNames([activityInstanceResult]))[0];
   activityInstanceResult.data = {};

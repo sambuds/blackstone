@@ -22,7 +22,7 @@ const { hoard } = require(`${global.__controllers}/hoard-controller`);
 const logger = require(`${global.__common}/monax-logger`);
 const log = logger.getLogger('agreements');
 const sqlCache = require('./sqlsol-query-helper');
-const { PARAMETER_TYPE: PARAM_TYPE } = global.__monax_constants;
+const { PARAMETER_TYPE: PARAM_TYPE, AGREEMENT_PARTIES } = global.__monax_constants;
 
 const analytics = new Analytics(global.__settings.monax.analyticsID);
 
@@ -375,12 +375,15 @@ const createAgreement = asyncMiddleware(async (req, res) => {
   await contracts.setMaxNumberOfEvents(agreementAddress, parseInt(req.body.maxNumberOfEvents, 10));
   await contracts.updateAgreementEventLog(agreementAddress, hoardRef);
   await setAgreementParameters(agreementAddress, req.body.archetype, parameters);
+  await contracts.setAddressScopeForAgreementParameters(agreementAddress, parameters.filter(({ scope }) => scope));
+  await contracts.setAddressScopeForAgreementParameters(agreementAddress, parameters
+    .filter(({ scope, value: paramVal }) => scope && parties.includes(paramVal))
+    .map(param => ({ ...param, name: AGREEMENT_PARTIES })));
   const { formation } = await contracts.getArchetypeProcesses(req.body.archetype);
   if (!formation) {
     throw boom.badImplementation(`No formation process found for archetype ${req.body.archetype}`);
   }
   const piAddress = await contracts.startProcessFromAgreement(agreementAddress);
-  await contracts.setAddressScopeForAgreementParameters(agreementAddress, parameters.filter(({ scope }) => scope));
   log.debug(`Process Instance Address: ${piAddress}`);
   analytics.track({
     event: 'Agreement created',

@@ -83,7 +83,7 @@ contract ParticipantsManager is EventListener, Upgradeable {
 	 * @param _organization the address of an organization
 	 * @return the organization's ID and name
 	 */
-    function getOrganizationData(address _organization) external view returns (uint numApprovers);
+    function getOrganizationData(address _organization) external view returns (uint numApprovers, bytes32 organizationKey);
 
     function departmentExists(address _organization, bytes32 _departmentId) external view returns (bool);
 

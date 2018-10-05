@@ -199,7 +199,7 @@ contract ParticipantsManagerTest {
 		error = participantsManager.addOrganization(org1);
 		if (error != BaseErrors.RESOURCE_ALREADY_EXISTS()) return "Expected error for adding already registered org1.";
 		if (participantsManager.getNumberOfOrganizations() != 1) return "Number of Orgs in participantsManager should be 1";
-
+    
         // departments
         if (org1.addDepartment(dep1Id, dep1Name) != BaseErrors.NO_ERROR()) return "Failed adding department to org1";
         // reminder: number of deps is +1 due to the default department
@@ -211,7 +211,8 @@ contract ParticipantsManagerTest {
         if (keccak256(abi.encodePacked(retDepName)) != keccak256(abi.encodePacked(dep1Name))) return "Failed to get department data (name) for dep1 in org1";
 		address orgAddr = participantsManager.getOrganizationAtIndex(0);
 		if (orgAddr != address(org1)) return "Expected org1 address";
-		if (participantsManager.getOrganizationData(orgAddr) != 1) return "Expected number of approvers for orgAddr to be 1";
+    (retUserCount, ) = participantsManager.getOrganizationData(orgAddr);
+		if (retUserCount != 1) return "Expected number of approvers for orgAddr to be 1";
 
         // department users
         if (!org1.addUserToDepartment(user1, dep1Id)) return "Failed to add user1 to dep1";
@@ -254,7 +255,8 @@ contract ParticipantsManagerTest {
 
 		orgAddr = participantsManager.getOrganizationAtIndex(2);
 		if (orgAddr != orgAddress3) return "Expected orgAddress3";
-		if (participantsManager.getOrganizationData(orgAddress3) != 1) return "Expected number of approvers for orgAddress3 to be 1";
+    (retUserCount, ) = participantsManager.getOrganizationData(orgAddress3);
+		if (retUserCount != 1) return "Expected number of approvers for orgAddress3 to be 1";
 
 		return SUCCESS;
 	}

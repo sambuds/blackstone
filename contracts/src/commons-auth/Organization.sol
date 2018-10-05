@@ -114,4 +114,6 @@ contract Organization is EventEmitter, ERC165 {
 	 * @return true if authorized, false otherwise
 	 */
 	function authorizeUser(address _userAccount, bytes32 _department) external view returns (bool);
+
+  function getOrganizationDetails() external view returns (uint numberOfApprovers, bytes32 organizationKey);
 }

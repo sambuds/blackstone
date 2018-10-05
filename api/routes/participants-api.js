@@ -84,11 +84,13 @@ module.exports = (app) => {
    *     curl -i /organizations/9F24307DA7E74BC54D1E829764E2DE7AD0D8DF6E
    *
    * @apiSuccess {String} address Organization's Controller Contract
+   * @apiSuccess {String} organizationKey Hashed address (keccak256)
    * @apiSuccess {String} id  Organization's machine readable ID
    * @apiSuccess {String} name  Organization's human readable name
    * @apiSuccessExample {json} Success Object
     {
       "address": "DAE988ADED111E6AE82DBFD9AE4FFFE97ADBC23D",
+      "organizationKey": "55D40E05C91F484E0F4104774F528D131DFC0990A7A18124DA5666E1F5EA2EAA",
       "name": "orgone",
       "approvers": [{
           "address": "AB3399395E9CAB5434022D1992D31BB3ACC2E3F1",

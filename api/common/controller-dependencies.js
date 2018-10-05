@@ -134,6 +134,11 @@ const dependencies = {
         if (element.agreementName) element.agreementName = global.hexToString(element.agreementName);
         if (element.application) element.application = global.hexToString(element.application);
         if (element.webForm) element.webForm = global.hexToString(element.webForm || '');
+        if (element.scope && element.scope !== element.organizationKey) {
+          // organizationKey was originally entered in bytes32 and doesn't need to be converted to string
+          element.scope = global.hexToString(element.scope || '');
+        }
+        delete element.organizationKey;
         if (element.created) element.created *= 1000;
         if (element.completed) element.completed *= 1000;
         break;

@@ -31,6 +31,7 @@ contract DefaultBpmService is Versioned(1,0,0), AbstractDbUpgradeable, ContractL
     string constant TABLE_PROCESS_INSTANCES = "PROCESS_INSTANCES";
     string constant TABLE_ACTIVITY_INSTANCES = "ACTIVITY_INSTANCES";
     string constant TABLE_PROCESS_DATA = "PROCESS_DATA";
+    string constant TABLE_PROCESS_INSTANCE_ADDRESS_SCOPES = "PROCESS_INSTANCE_ADDRESS_SCOPES";
 
     //TODO these string should not be hardcoded. Inject via constructor after AN-307 fixed
     string constant serviceIdProcessModelRepository = "ProcessModelRepository";
@@ -147,6 +148,10 @@ contract DefaultBpmService is Versioned(1,0,0), AbstractDbUpgradeable, ContractL
         for (uint i=0; i<_pi.getSize(); i++) {
             ( ,dataId) = _pi.getDataIdAtIndex(i);
             emit UpdateProcessData(TABLE_PROCESS_DATA, _pi, dataId);
+        }
+        bytes32[] memory keys = _pi.getAddressScopeKeys();
+        for (i = 0; i<keys.length; i++) {
+            emit UpdateProcessInstanceAddressScopes(TABLE_PROCESS_INSTANCE_ADDRESS_SCOPES, _pi, keys[i]);
         }
         error = _pi.execute(this);
         emit UpdateProcesses(TABLE_PROCESS_INSTANCES, _pi);

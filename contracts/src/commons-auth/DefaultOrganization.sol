@@ -228,7 +228,7 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 	 * @return true if authorized, false otherwise
 	 */
 	function authorizeUser(address _userAccount, bytes32 _department) external view returns (bool) {
-		if (_department == keccak256(abi.encodePacked(address(this)))) {
+		if (_department == getOrganizationKey()) {
 			return users.exists(_userAccount);
 		}
 		else if (_department == "" || !self.departments[_department].exists) {
@@ -239,4 +239,12 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 		}			
 	}
 
+  function getOrganizationKey() internal view returns (bytes32) {
+    return keccak256(abi.encodePacked(address(this)));
+  }
+
+  function getOrganizationDetails() external view returns (uint numberOfApprovers, bytes32 organizationKey) {
+    organizationKey = getOrganizationKey();
+    numberOfApprovers = approvers.length;
+  }
 }

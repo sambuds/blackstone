@@ -448,13 +448,15 @@ describe('Organizations', () => {
                 res.should.have.status(200);
                 res.body.should.be.a('object');
                 res.body.departments.should.be.a('array');
-                res.body.departments.should.have.length(1);
-                res.body.departments[0].should.be.a('object');
-                res.body.departments[0].id.should.exist;
-                res.body.departments[0].id.should.equal(accounting.id);
-                res.body.departments[0].name.should.exist;
-                res.body.departments[0].name.should.equal(accounting.name);
-                res.body.departments[0].users.should.be.a('array');
+                // Length should be 2 now because the default department should have been created upon organization creation
+                res.body.departments.should.have.length(2);
+                const acctDep = res.body.departments[1];
+                acctDep.should.be.a('object');
+                acctDep.id.should.exist;
+                acctDep.id.should.equal(accounting.id);
+                acctDep.name.should.exist;
+                acctDep.name.should.equal(accounting.name);
+                acctDep.users.should.be.a('array');
                 done();
               });
           }, 2000);
@@ -485,7 +487,7 @@ describe('Organizations', () => {
           .end((err, res) => {
             if (err) return done(err);
             res.should.have.status(200);
-            res.body.departments[0].users[0].should.equal(accountant.address);
+            res.body.departments[1].users[0].should.equal(accountant.address);
             done();
           });
       }, 2000);

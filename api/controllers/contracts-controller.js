@@ -207,7 +207,7 @@ const getOrganization = orgAddr => getContract(global.__abi, global.__monax_bund
  */
 const createOrganization = org => new Promise((resolve, reject) => {
   log.trace(`Creating organization with: ${JSON.stringify(org)}`);
-  appManager.contracts['ParticipantsManager'].factory.createOrganization(org.approvers ? org.approvers : [], "TODO_DEFAULT_DEPARTMENT_LABEL", (error, data) => {
+  appManager.contracts['ParticipantsManager'].factory.createOrganization(org.approvers ? org.approvers : [], org.defaultDepartmentName || '', (error, data) => {
     if (error || !data.raw) return reject(boom.badImplementation(`Failed to create organization ${org.name}: ${error}`));
     if (parseInt(data.raw[0], 10) === 1002) return reject(boom.badRequest('Organization id must be unique'));
     if (parseInt(data.raw[0], 10) !== 1) {
@@ -530,7 +530,7 @@ const setAddressScopeForAgreementParameters = async (agreementAddr, parameters) 
   log.trace(`Adding scopes to agreement ${agreementAddr} parameters: ${JSON.stringify(parameters)}`);
   const agreement = getContract(global.__abi, global.__monax_bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddr);
   const promises = parameters.map(({ name, value, scope }) => new Promise((resolve, reject) => {
-    agreement.setAddressScope(value, name, scope, "", "", "0x0", (err) => {
+    agreement.setAddressScope(value, name, scope, '', '', '0x0', (err) => {
       if (err) {
         return reject(boomify(err, `Failed to add scope ${scope} to address ${value} in context ${name}`));
       }

@@ -7,6 +7,7 @@ const {
   rightPad,
   getNamesOfOrganizations,
 } = require(`${global.__common}/controller-dependencies`);
+const { DEFAULT_DEPARTMENT_ID } = global.__monax_constants;
 
 const getOrganizations = queryParams => new Promise((resolve, reject) => {
   const queryString = 'SELECT o.organization AS address, oa.approverKey as approver ' +
@@ -19,7 +20,7 @@ const getOrganizations = queryParams => new Promise((resolve, reject) => {
 
 const getOrganization = orgAddress => new Promise((resolve, reject) => {
   const queryString =
-      'SELECT o.organization AS address, oa.approverKey AS approver, ou.userKey AS user, od.departmentKey AS department, od.name AS departmentName, du.departmentUserKey ' +
+      'SELECT o.organization AS address, o.organizationKey, oa.approverKey AS approver, ou.userKey AS user, od.departmentKey AS department, od.name AS departmentName, du.departmentUserKey ' +
       'FROM organizations o JOIN organization_approvers oa ON (o.organization = oa.organization) ' +
       'LEFT JOIN organization_users ou ON (o.organization = ou.organization) ' +
       'LEFT JOIN organization_departments od ON (o.organization = od.organization) ' +
@@ -46,8 +47,9 @@ const getUsers = queryParams => new Promise((resolve, reject) => {
 
 const getProfile = userAddress => new Promise((resolve, reject) => {
   const queryString =
-      'SELECT u.userAccount AS address, ou.organization, du.departmentKey AS department, od.name AS departmentName ' +
+      'SELECT u.userAccount AS address, o.organizationKey, ou.organization, du.departmentKey AS department, od.name AS departmentName ' +
       'FROM USERS u LEFT JOIN ORGANIZATION_USERS ou ON u.userAccount = ou.userKey ' +
+      'LEFT JOIN organizations o ON o.organization = ou.organization ' +
       'LEFT JOIN organization_departments od ON ou.organization = od.organization ' +
       'LEFT JOIN department_users du ON (od.departmentKey = du.departmentKey) AND (du.departmentUserKey = ou.userKey) AND (ou.organization = du.organization) ' +
       'WHERE u.userAccount = ?';
@@ -380,22 +382,51 @@ const getActivityInstances = ({ processAddress, agreementAddress }) => new Promi
   });
 });
 
-const getActivityInstanceData = id => new Promise((resolve, reject) => {
-  const queryString =
-      'SELECT ai.state, ai.processAddress, ai.activityInstanceId, ai.activityId, ai.created, ai.performer, ai.completed, ad.taskType, ad.application as application, ' +
-      'pd.modelAddress as modelAddress, pm.id as modelId, pd.id as processDefinitionId, pd.processDefinitionAddress as processDefinitionAddress, app.webForm, app.applicationType, ' +
-      'pdat.addressValue as agreementAddress, pm.author as modelAuthor, pm.isPrivate AS isModelPrivate, agr.name as agreementName ' +
-      'FROM activity_instances ai ' +
-      'JOIN process_instances pi ON ai.processAddress = pi.processAddress ' +
-      'JOIN activity_definitions ad ON ai.activityId = ad.activityDefinitionId AND pi.processDefinition = ad.processDefinitionAddress ' +
-      'JOIN process_definitions pd ON pd.processDefinitionAddress = pi.processDefinition ' +
-      'JOIN process_models pm ON pm.modelAddress = pd.modelAddress ' +
-      'LEFT JOIN process_data pdat ON ai.processAddress = pdat.processAddress ' +
-      'LEFT JOIN agreements agr ON agr.address = pdat.addressValue ' +
-      'LEFT JOIN applications app ON app.applicationId = ad.application ' +
-      'WHERE ai.activityInstanceId = ? ' +
-      "AND pdat.dataId = '61677265656D656E740000000000000000000000000000000000000000000000'"; // Hard-coded hex-value of dataId 'agreement' which all processes in the Agreements Network have
-  contracts.cache.db.get(queryString, id, (err, data) => {
+const getActivityInstanceData = (id, userAddress) => new Promise((resolve, reject) => {
+  const hexedDefDepId = rightPad(global.stringToHex(DEFAULT_DEPARTMENT_ID), 32);
+  const queryString = `SELECT ai.state, ai.processAddress, ai.activityInstanceId, ai.activityId, ai.created, ai.performer, ai.completed, ad.taskType, ad.application as application,
+    pd.modelAddress as modelAddress, pm.id as modelId, pd.id as processDefinitionId, pd.processDefinitionAddress as processDefinitionAddress, app.webForm, app.applicationType,
+    pdat.addressValue as agreementAddress, pm.author as modelAuthor, pm.isPrivate AS isModelPrivate, agr.name as agreementName, scopes.fixedScope AS scope, o.organizationKey 
+    FROM activity_instances ai
+    JOIN process_instances pi ON ai.processAddress = pi.processAddress
+    JOIN activity_definitions ad ON ai.activityId = ad.activityDefinitionId AND pi.processDefinition = ad.processDefinitionAddress
+    JOIN process_definitions pd ON pd.processDefinitionAddress = pi.processDefinition
+    JOIN process_models pm ON pm.modelAddress = pd.modelAddress
+    LEFT JOIN process_data pdat ON ai.processAddress = pdat.processAddress
+    LEFT JOIN agreements agr ON agr.address = pdat.addressValue
+    LEFT JOIN applications app ON app.applicationId = ad.application
+    LEFT JOIN organizations o ON o.organization = ai.performer 
+    LEFT JOIN process_instance_address_scopes scopes ON (
+      scopes.processAddress = pdat.processAddress 
+      AND scopes.keyAddress = ai.performer 
+      AND scopes.keyContext = ai.activityId
+    )
+    WHERE ai.activityInstanceId = ?
+    AND (
+      ai.performer = ? OR (
+        ai.performer IN (
+          select organization FROM organization_users ou WHERE ou.userKey = ?
+        ) AND (
+          (
+            scopes.fixedScope IS NULL AND UPPER('${hexedDefDepId}') IN (
+              SELECT departmentKey FROM department_users du WHERE du.departmentUserKey = ? AND du.organization = ai.performer
+            )
+          ) OR scopes.fixedScope IN (
+            select departmentKey FROM department_users du WHERE du.departmentUserKey = ? AND du.organization = ai.performer
+          ) OR scopes.fixedScope = (
+            select organizationKey FROM organizations o WHERE o.organization = ai.performer
+          ) OR (
+            scopes.fixedScope IS NOT NULL AND scopes.fixedScope NOT IN (
+              select departmentKey FROM organization_departments od WHERE od.organization = ai.performer
+            ) AND UPPER('${hexedDefDepId}') IN (
+              SELECT departmentKey FROM department_users du WHERE du.departmentUserKey = ? AND du.organization = performer
+            )
+          )
+        )
+      )
+    )
+    AND pdat.dataId = '61677265656D656E740000000000000000000000000000000000000000000000'`; // Hard-coded hex-value of dataId 'agreement' which all processes in the Agreements Network have
+  contracts.cache.db.get(queryString, id, userAddress, userAddress, userAddress, userAddress, userAddress, (err, data) => {
     if (err) return reject(boom.badImplementation(`Failed to get activity instance ${id}`));
     if (!data) return reject(boom.notFound(`Activity ${id} not found`));
     return resolve(data);
@@ -418,21 +449,50 @@ const getTasksByUserAddress = userAddress => new Promise((resolve, reject) => {
   // IMPORTANT: The below query uses two LEFT JOIN to retrieve data from the agreement that is attached to the process in one single query.
   // This relies on the fact that all processes in the Agreements Network have a process data with the ID "agreement".
   // If we ever want to retrieve more process data (from other data objects in the process or flexibly retrieve data based on a future process configuration aka 'descriptors'), multiple queries will have to be used
-  const queryString =
-    'SELECT ai.state, ai.processAddress, ai.activityInstanceId, ai.activityId, ai.created, ai.performer, pd.modelAddress as modelAddress, pm.id as modelId, pd.processDefinitionAddress as processDefinitionAddress, pd.id as processDefinitionId, pdat.addressValue as agreementAddress, agr.name as agreementName ' +
-    'FROM activity_instances ai ' +
-    'JOIN process_instances pi ON ai.processAddress = pi.processAddress ' +
-    'JOIN activity_definitions ad ON ai.activityId = ad.activityDefinitionId AND pi.processDefinition = ad.processDefinitionAddress ' +
-    'JOIN process_definitions pd ON pd.processDefinitionAddress = pi.processDefinition ' +
-    'JOIN process_models pm ON pm.modelAddress = pd.modelAddress ' +
-    'LEFT JOIN process_data pdat ON ai.processAddress = pdat.processAddress ' +
-    'LEFT JOIN agreements agr ON agr.address = pdat.addressValue ' +
-    'WHERE ad.taskType = 1 ' +
-      'AND ai.state = 4 ' +
-      'AND (performer = ? ' +
-      'OR performer IN (select organization FROM organization_users WHERE userKey = ?))' +
-      "AND pdat.dataId = '61677265656D656E740000000000000000000000000000000000000000000000'"; // Hard-coded hex-value of dataId 'agreement' which all processes in the Agreements Network have
-  contracts.cache.db.all(queryString, userAddress, userAddress, (err, data) => {
+  const hexedDefDepId = rightPad(global.stringToHex(DEFAULT_DEPARTMENT_ID), 32);
+  const queryString = `SELECT ai.state, ai.processAddress, ai.activityInstanceId, ai.activityId, ai.created, ai.performer, 
+    pd.modelAddress as modelAddress, pd.processDefinitionAddress as processDefinitionAddress, pd.id as processDefinitionId, 
+    agr.name as agreementName, pm.id as modelId, pdat.addressValue as agreementAddress, scopes.fixedScope AS scope, o.organizationKey
+    FROM activity_instances ai
+    JOIN process_instances pi ON ai.processAddress = pi.processAddress
+    JOIN activity_definitions ad ON ai.activityId = ad.activityDefinitionId AND pi.processDefinition = ad.processDefinitionAddress
+    JOIN process_definitions pd ON pd.processDefinitionAddress = pi.processDefinition
+    JOIN process_models pm ON pm.modelAddress = pd.modelAddress
+    LEFT JOIN process_data pdat ON ai.processAddress = pdat.processAddress
+    LEFT JOIN agreements agr ON agr.address = pdat.addressValue
+    LEFT JOIN organizations o ON o.organization = ai.performer 
+    LEFT JOIN process_instance_address_scopes scopes ON (
+      scopes.processAddress = pdat.processAddress 
+      AND scopes.keyAddress = ai.performer 
+      AND scopes.keyContext = ai.activityId
+    )
+    WHERE ad.taskType = 1
+    AND ai.state = 4
+    AND (
+      performer = ? OR (
+        performer IN (
+          select organization FROM organization_users ou WHERE ou.userKey = ?
+        ) AND (
+          (
+            scopes.fixedScope IS NULL AND UPPER('${hexedDefDepId}') IN (
+              SELECT departmentKey FROM department_users du WHERE du.departmentUserKey = ? AND du.organization = performer
+            )
+          ) OR scopes.fixedScope IN (
+            select departmentKey FROM department_users du WHERE du.departmentUserKey = ? AND du.organization = performer
+          ) OR scopes.fixedScope = (
+            select organizationKey FROM organizations o WHERE o.organization = performer
+          ) OR (
+            scopes.fixedScope IS NOT NULL AND scopes.fixedScope NOT IN (
+              select departmentKey FROM organization_departments od WHERE od.organization = ai.performer
+            ) AND UPPER('${hexedDefDepId}') IN (
+              SELECT departmentKey FROM department_users du WHERE du.departmentUserKey = ? AND du.organization = performer
+            )
+          )
+        )
+      )
+    )
+    AND pdat.dataId = '61677265656D656E740000000000000000000000000000000000000000000000';`; // Hard-coded hex-value of dataId 'agreement' which all processes in the Agreements Network have
+  contracts.cache.db.all(queryString, userAddress, userAddress, userAddress, userAddress, userAddress, (err, data) => {
     if (err) return reject(boom.badImplementation(`Failed to get tasks assigned to user: ${err}`));
     return resolve(data);
   });

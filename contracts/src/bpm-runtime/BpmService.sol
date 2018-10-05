@@ -17,6 +17,7 @@ contract BpmService is Upgradeable {
 	event UpdateActivities(string name, address key1, bytes32 key2);
 	event UpdateProcesses(string name, address key1);
 	event UpdateProcessData(string name, address key1, bytes32 key2);
+	event UpdateProcessInstanceAddressScopes(string name, address key1, bytes32 key2);
 
     /**
      * @dev Gets the ProcessModelRepository address for this BpmService

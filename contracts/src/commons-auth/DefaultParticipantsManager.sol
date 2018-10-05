@@ -97,6 +97,7 @@ contract DefaultParticipantsManager is Versioned(1,0,0), AbstractEventListener, 
             Organization(_address).addEventListener(EVENT_REMOVE_DEPARTMENT_USER);
             emit UpdateOrganization(TABLE_ORGANIZATIONS, _address);
             fireOrganizationApproverEvents(_address);
+            fireDepartmentEvents(_address);
         }
     }
 
@@ -127,6 +128,7 @@ contract DefaultParticipantsManager is Versioned(1,0,0), AbstractEventListener, 
             Organization(organization).addEventListener(EVENT_REMOVE_DEPARTMENT_USER);
             emit UpdateOrganization(TABLE_ORGANIZATIONS, organization);
             fireOrganizationApproverEvents(organization);
+            fireDepartmentEvents(organization);
 		}
     }
 
@@ -170,9 +172,9 @@ contract DefaultParticipantsManager is Versioned(1,0,0), AbstractEventListener, 
 	 * @param _organization the address of an organization
 	 * @return the organization's ID and name
 	 */
-    function getOrganizationData(address _organization) external view returns (uint numApprovers) {
+    function getOrganizationData(address _organization) external view returns (uint numApprovers, bytes32 organizationKey) {
         Organization org = Organization(_organization);
-        numApprovers = org.getNumberOfApprovers();
+        (numApprovers, organizationKey) = org.getOrganizationDetails();
     }
 
     function departmentExists(address _organization, bytes32 _departmentId) external view returns (bool) {
@@ -363,6 +365,16 @@ contract DefaultParticipantsManager is Versioned(1,0,0), AbstractEventListener, 
     function fireOrganizationApproverEvents(address _address) internal {
         for (uint i=0; i<Organization(_address).getNumberOfApprovers(); i++) {
             emit UpdateOrganizationApprover(TABLE_ORGANIZATION_APPROVERS, _address, Organization(_address).getApproverAtIndex(i));
+        }
+    }
+
+	/**
+	 * @dev Internal convenience function to emit a UpdateDepartment event for each of the current departments of the given organization.
+	 * @param _address the organization address
+	 */
+    function fireDepartmentEvents(address _address) internal {
+        for (uint i=0; i<Organization(_address).getNumberOfDepartments(); i++) {
+            emit UpdateOrganizationDepartment(TABLE_ORGANIZATION_DEPARTMENTS, _address, Organization(_address).getDepartmentAtIndex(i));
         }
     }
 

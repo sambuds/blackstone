@@ -48,7 +48,7 @@ contract ActiveAgreementWorkflowTest {
 	bytes32 departmentId1 = "Dep1";
 
 	address[] parties;
-    address[10] approvers;
+    address[] approvers;
 
 	// tests should overwrite the users and orgs as needed
 	Organization org1;

@@ -99,15 +99,24 @@ contract DefaultParticipantsManager is Versioned(1,0,0), AbstractEventListener, 
             fireOrganizationApproverEvents(_address);
         }
     }
+
 	/**
 	 * @dev Creates and adds a new Organization with the specified parameters
-	 * @param _approvers the initial owners. If left empty, the msg.sender will be added as an owner.
+	 * @param _initialApprovers the initial owners/admins of the Organization. If left empty, the msg.sender will be set as an approver.
 	 * @param _defaultDepartmentName an optional custom name/label for the default department of this organization.
 	 * @return BaseErrors.NO_ERROR() if successful
 	 * @return the address of the newly created Organization, or 0x0 if not successful
 	 */
-    function createOrganization(address[10] _approvers, string _defaultDepartmentName) external returns (uint error, address organization) {
-        organization = new DefaultOrganization(_approvers, _defaultDepartmentName);
+    function createOrganization(address[] _initialApprovers, string _defaultDepartmentName) external returns (uint error, address organization) {
+        address[] memory approvers;
+        if (_initialApprovers.length == 0) {
+            approvers = new address[](1);
+            approvers[0] = msg.sender;
+        }
+        else {
+            approvers = _initialApprovers;
+        }
+        organization = new DefaultOrganization(approvers, _defaultDepartmentName);
         error = ParticipantsManagerDb(database).addOrganization(organization);
         if (error == BaseErrors.NO_ERROR()) {
             Organization(organization).addEventListener(EVENT_UPDATE_ORGANIZATION_USER);

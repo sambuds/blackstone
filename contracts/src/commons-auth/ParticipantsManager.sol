@@ -45,11 +45,11 @@ contract ParticipantsManager is EventListener, Upgradeable {
 
 	/**
 	 * @dev Creates and adds a new Organization with the specified parameters
-	 * @param _approvers the initial owners.
+	 * @param _initialApprovers the initial owners/admins of the Organization.
 	 * @param _defaultDepartmentName an optional custom name/label for the default department of this organization.
 	 * @return error code and the address of the newly created organization, if successful
 	 */
-    function createOrganization(address[10] _approvers, string _defaultDepartmentName) external returns (uint, address);
+    function createOrganization(address[] _initialApprovers, string _defaultDepartmentName) external returns (uint, address);
 
 	/**
 		* @dev Indicates whether the specified organization exists for the given organization id

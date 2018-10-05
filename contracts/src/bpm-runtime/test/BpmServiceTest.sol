@@ -902,7 +902,7 @@ contract BpmServiceTest {
 		address addr;
 		bool valid;
 		bytes32 errorMsg;
-		address[10] memory emptyAddressArray;
+		address[] memory emptyAddressArray;
 
 		TestBpmService service = getNewTestBpmService();
 

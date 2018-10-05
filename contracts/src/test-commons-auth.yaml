@@ -137,43 +137,6 @@ jobs:
     instance: ParticipantsManagerTest
     libraries: ErrorsLib:$ErrorsLib, TypeUtilsAPI:$TypeUtilsAPI, ArrayUtilsAPI:$ArrayUtilsAPI, MappingsLib:$MappingsLib
 
-- name: ParticipantsManager
-  deploy:
-    contract: DefaultParticipantsManager.bin
-    libraries: ErrorsLib:$ErrorsLib, TypeUtilsAPI:$TypeUtilsAPI, MappingsLib:$MappingsLib
-
-- name: ParticipantsManagerDb
-  deploy:
-    contract: ParticipantsManagerDb.bin
-    libraries: ErrorsLib:$ErrorsLib, ArrayUtilsAPI:$ArrayUtilsAPI, MappingsLib:$MappingsLib
-
-- name: ChangeParticipantsManagerDbOwnership
-  call:
-    destination: $ParticipantsManagerDb
-    bin: ParticipantsManagerDb
-    function: transferSystemOwnership
-    data: [$ParticipantsManager]
-
-- name: SetParticipantsManagerDb
-  call:
-    destination: $ParticipantsManager
-    bin: DefaultParticipantsManager
-    function: acceptDatabase
-    data: [$ParticipantsManagerDb]
-
-- name: AssertParticipantsManagerDb
-  assert:
-    key: $SetParticipantsManagerDb
-    relation: eq
-    val: "true"
-
-- name: setParticipantsManagerInTest
-  call:
-    destination: $ParticipantsManagerTest
-    bin: ParticipantsManagerTest
-    function: setParticipantsManager
-    data: [$ParticipantsManager]
-
 - name: testUserAccountSecurity
   call:
     destination: $ParticipantsManagerTest

@@ -246,7 +246,7 @@ contract ArchetypeRegistryTest {
 		addrArrayWithDupes.push(archetype);
 		
 		if (address(registry).call(bytes4(keccak256(abi.encodePacked(
-			"createArchetype(bytes32,address,string,bool,bool,address,address,bytes32,address[100])"))), 
+			"createArchetype(bytes32,address,string,bool,bool,address,address,bytes32,address[])"))), 
 			name, falseAddress, description, false, true, falseAddress, falseAddress, EMPTY, addrArrayWithDupes)) {
 				return "Creating archetype with duplicate governing archetypes should fail";
 		}

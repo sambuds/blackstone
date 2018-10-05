@@ -35,18 +35,16 @@ contract DefaultOrganization is Organization, DefaultEventEmitter, AbstractERC16
 	 * If the approvers list is empty, the msg.sender is registered as an approver for this Organization.
 	 * Also, a default department is automatically created which cannot be removed as it serves as the catch-all
 	 * for authorizations that cannot otherwise be matched with existing departments.
-	 * @param _approvers an array of addresses that should be registered as approvers for this Organization
+	 * @param _initialApprovers an array of addresses that should be registered as approvers for this Organization
 	 * @param _defaultDepartmentName an optional custom name/label for the default department of this organization.
 	 */
-	constructor(address[10] _approvers, string _defaultDepartmentName) public {
-		for (uint i=0; i<_approvers.length; i++) {
-			if (_approvers[i] != 0x0) {
-				approvers.push(_approvers[i]);
-			}
-		}
-		// if no _approvers were passed, register msg.sender as an approver
-		if (approvers.length == 0) {
+	constructor(address[] _initialApprovers, string _defaultDepartmentName) public {
+		// if no _initialApprovers were passed, register msg.sender as an approver
+		if (_initialApprovers.length == 0) {
 			approvers.push(msg.sender);
+		}
+		else {
+			approvers = _initialApprovers;
 		}
 		// creating the default department
 		if (bytes(_defaultDepartmentName).length > 0) {

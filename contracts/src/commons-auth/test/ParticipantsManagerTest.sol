@@ -1,6 +1,8 @@
 pragma solidity ^0.4.23;
 
 import "commons-utils/TypeUtilsAPI.sol";
+import "commons-base/SystemOwned.sol";
+import "commons-management/AbstractDbUpgradeable.sol";
 
 import "commons-auth/Ecosystem.sol";
 import "commons-auth/DefaultEcosystem.sol";
@@ -24,9 +26,14 @@ contract ParticipantsManagerTest {
     bytes32 EMPTY = "";
     string constant EMPTY_STRING = "";
 
-    // TODO: Remove below func, create Accounts Manager in test contract instead of injecting
-    function setParticipantsManager(address _accountsManager) external {
-		participantsManager = ParticipantsManager(_accountsManager);
+    /**
+     * @dev Internal helper function to initiate a new ParticipantsManager with an empty database.
+     */
+    function createNewParticipantsManager() internal returns (ParticipantsManager manager) {
+		manager =  new DefaultParticipantsManager();
+		ParticipantsManagerDb database = new ParticipantsManagerDb();
+		SystemOwned(database).transferSystemOwnership(manager);
+		AbstractDbUpgradeable(manager).acceptDatabase(database);
 	}
 
     /**
@@ -55,6 +62,9 @@ contract ParticipantsManagerTest {
     }
 
     function testParticipantsManager() external returns (string) {
+
+        participantsManager = createNewParticipantsManager();
+
         // generate unique names for this test
         bytes32 acc1Id = TypeUtilsAPI.toBytes32(block.number+34);
         bytes32 acc2Id = "dummyId";
@@ -65,7 +75,7 @@ contract ParticipantsManagerTest {
         string memory dep2Name = "dep1Name";
 
         // create the required organizations
-        address[10] memory approvers;
+        address[] memory approvers;
         DefaultOrganization org1 = new DefaultOrganization(approvers, EMPTY_STRING);
         DefaultOrganization org2 = new DefaultOrganization(approvers, EMPTY_STRING);
 
@@ -153,9 +163,10 @@ contract ParticipantsManagerTest {
 
     function testOrganizationsManagement() external returns (string) {
 		
+        participantsManager = createNewParticipantsManager();
+
 		// reusable variables in this test
-		address[10] memory knownAdmins;
-		address[10] memory emptyAdmins;
+		address[] memory emptyAdmins;
         bytes32 acc1Id = TypeUtilsAPI.toBytes32(block.number+34);
         bytes32 acc2Id = "dummyId";
         bytes32 dep1Id = "dep1Id";
@@ -220,10 +231,11 @@ contract ParticipantsManagerTest {
 		// 2. Test factory function
 
 		// create with known admins
+   		address[] memory knownAdmins = new address[](2);
 		knownAdmins[0] = tx.origin;
-		knownAdmins[1] = org1;
-		
-		address orgAddress2;
+		knownAdmins[1] = address(org1);
+
+        address orgAddress2;
         (error, orgAddress2) = participantsManager.createOrganization(knownAdmins, EMPTY_STRING);
         if (BaseErrors.NO_ERROR() != error) return "Unexpected error creating organization 2 (known admins)";
 		if (Organization(orgAddress2).getNumberOfApprovers() != 2) return "Number of approvers in organization 2 not correct";
@@ -235,7 +247,7 @@ contract ParticipantsManagerTest {
         (error, orgAddress3) = participantsManager.createOrganization(emptyAdmins, EMPTY_STRING);
         if (BaseErrors.NO_ERROR() != error) return "Unexpected error creating organization 3 (empty admins)";
 		if (Organization(orgAddress3).getNumberOfApprovers() != 1) return "Number of approvers in organization 3 not correct";
-		if (Organization(orgAddress3).getApproverAtIndex(0) != address(participantsManager)) return "Approver in organization 3 should be the ecoparticipantsManager as the creator.";
+		if (Organization(orgAddress3).getApproverAtIndex(0) != address(this)) return "Approver in organization 3 should be the test contract as the creator.";
 		if (participantsManager.getOrganization(orgAddress3) != true) return "Failed retrieving organization 3 by its address";
 
 		if (participantsManager.getNumberOfOrganizations() != 3) return "Number of Orgs in participantsManager should be 3 at this point.";
@@ -252,7 +264,7 @@ contract ParticipantsManagerTest {
      */
     function testOrganizationAuthorization() external returns (string) {
 
-		address[10] memory emptyAdmins;
+		address[] memory emptyAdmins;
 
         Organization org = new DefaultOrganization(emptyAdmins, EMPTY_STRING);
         bytes32 user1Id = "user1";

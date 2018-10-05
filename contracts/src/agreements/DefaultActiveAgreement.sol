@@ -252,29 +252,26 @@ contract DefaultActiveAgreement is ActiveAgreement, AbstractDataStorage, Abstrac
 	 * @param _id the bytes32 ID of an address array
 	 * @return the address array
 	 */
-	function getDataValueAsAddressArray(bytes32 _id) external view returns (address[100]) {
+	function getDataValueAsAddressArray(bytes32 _id) external view returns (address[]) {
 		if (_id == DATA_FIELD_AGREEMENT_PARTIES) {
-			address[100] memory response;
-			for (uint i = 0; i < parties.length; i++) {
-				response[i] = parties[i];
-			}
-			return response;
-		} else {
+			return parties;
+		}
+		else {
 			return dataStorageMap.get(_id).addressArrayValue;
 		}
 	}
 
 	/**
-	 * @dev Overridden method of DataStorage to return the number of parties for special ID DATA_FIELD_AGREEMENT_PARTIES.
+	 * @dev Overrides DataStorage.getArrayLength(bytes32).
+	 * Returns the number of parties for special ID DATA_FIELD_AGREEMENT_PARTIES. Otherwise behaves identical to DataStorage.getArrayLength(bytes32).
 	 * @param _id the ID of the data field
-	 * @param _fullscan whether to scan beyond non-default values
 	 * @return the size of the specified array
 	 */
-	function getNumberOfArrayEntries(bytes32 _id, bool _fullscan) public view returns (uint) {
+	function getArrayLength(bytes32 _id) public view returns (uint) {
 		if (_id == DATA_FIELD_AGREEMENT_PARTIES) {
 			return parties.length;
 		}
-		return super.getNumberOfArrayEntries(_id, _fullscan);
+		return super.getArrayLength(_id);
 	}
 
 	/**

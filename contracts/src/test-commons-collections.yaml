@@ -27,167 +27,167 @@ jobs:
     instance: DataStorageUtils
     libraries: ErrorsLib:$ErrorsLib, TypeUtilsAPI:$TypeUtilsAPI, MappingsLib:$MappingsLib
 
-- name: MappingsLibTest
-  deploy:
-    contract: MappingsLibTest.bin
-    instance: MappingsLibTest
-    libraries: MappingsLib:$MappingsLib
+# - name: MappingsLibTest
+#   deploy:
+#     contract: MappingsLibTest.bin
+#     instance: MappingsLibTest
+#     libraries: MappingsLib:$MappingsLib
 
-- name: testBytes32AddressMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testBytes32AddressMap
+# - name: testBytes32AddressMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testBytes32AddressMap
 
-- name: assertBytes32AddressMap
-  assert:
-    key: $testBytes32AddressMap
-    relation: eq
-    val: success
+# - name: assertBytes32AddressMap
+#   assert:
+#     key: $testBytes32AddressMap
+#     relation: eq
+#     val: success
 
-- name: testBytes32Bytes32Map
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testBytes32Bytes32Map
+# - name: testBytes32Bytes32Map
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testBytes32Bytes32Map
 
-- name: assertBytes32Bytes32Map
-  assert:
-    key: $testBytes32Bytes32Map
-    relation: eq
-    val: success
+# - name: assertBytes32Bytes32Map
+#   assert:
+#     key: $testBytes32Bytes32Map
+#     relation: eq
+#     val: success
 
-- name: testBytes32UintMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testBytes32UintMap
+# - name: testBytes32UintMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testBytes32UintMap
 
-- name: assertBytes32UintMap
-  assert:
-    key: $testBytes32UintMap
-    relation: eq
-    val: success
+# - name: assertBytes32UintMap
+#   assert:
+#     key: $testBytes32UintMap
+#     relation: eq
+#     val: success
 
-- name: testBytes32AddressArrayMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testBytes32AddressArrayMap
+# - name: testBytes32AddressArrayMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testBytes32AddressArrayMap
 
-- name: assertBytes32AddressArrayMap
-  assert:
-    key: $testBytes32AddressArrayMap
-    relation: eq
-    val: success
+# - name: assertBytes32AddressArrayMap
+#   assert:
+#     key: $testBytes32AddressArrayMap
+#     relation: eq
+#     val: success
 
-- name: testAddressBytes32Map
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testAddressBytes32Map
+# - name: testAddressBytes32Map
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testAddressBytes32Map
 
-- name: assertAddressBytes32Map
-  assert:
-    key: $testAddressBytes32Map
-    relation: eq
-    val: success
+# - name: assertAddressBytes32Map
+#   assert:
+#     key: $testAddressBytes32Map
+#     relation: eq
+#     val: success
 
-- name: testAddressBoolMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testAddressBoolMap
+# - name: testAddressBoolMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testAddressBoolMap
 
-- name: assertAddressBoolMap
-  assert:
-    key: $testAddressBoolMap
-    relation: eq
-    val: success
+# - name: assertAddressBoolMap
+#   assert:
+#     key: $testAddressBoolMap
+#     relation: eq
+#     val: success
 
-- name: testAddressBytes32ArrayMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testAddressBytes32ArrayMap
+# - name: testAddressBytes32ArrayMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testAddressBytes32ArrayMap
 
-- name: assertAddressBytes32ArrayMap
-  assert:
-    key: $testAddressBytes32ArrayMap
-    relation: eq
-    val: success
+# - name: assertAddressBytes32ArrayMap
+#   assert:
+#     key: $testAddressBytes32ArrayMap
+#     relation: eq
+#     val: success
 
-- name: testAddressAddressMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testAddressAddressMap
+# - name: testAddressAddressMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testAddressAddressMap
 
-- name: assertAddressAddressMap
-  assert:
-    key: $testAddressAddressMap
-    relation: eq
-    val: success
+# - name: assertAddressAddressMap
+#   assert:
+#     key: $testAddressAddressMap
+#     relation: eq
+#     val: success
 
-- name: testUintAddressMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testUintAddressMap
+# - name: testUintAddressMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testUintAddressMap
 
-- name: assertUintAddressMap
-  assert:
-    key: $testUintAddressMap
-    relation: eq
-    val: success
+# - name: assertUintAddressMap
+#   assert:
+#     key: $testUintAddressMap
+#     relation: eq
+#     val: success
 
-- name: testAddressAddressArrayMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testAddressAddressArrayMap
+# - name: testAddressAddressArrayMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testAddressAddressArrayMap
 
-- name: assertAddressAddressArrayMap
-  assert:
-    key: $testAddressAddressArrayMap
-    relation: eq
-    val: success
+# - name: assertAddressAddressArrayMap
+#   assert:
+#     key: $testAddressAddressArrayMap
+#     relation: eq
+#     val: success
 
-- name: testUintAddressArrayMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testUintAddressArrayMap
+# - name: testUintAddressArrayMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testUintAddressArrayMap
 
-- name: assertUintAddressArrayMap
-  assert:
-    key: $testUintAddressArrayMap
-    relation: eq
-    val: success
+# - name: assertUintAddressArrayMap
+#   assert:
+#     key: $testUintAddressArrayMap
+#     relation: eq
+#     val: success
 
-- name: testUintBytes32ArrayMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testUintBytes32ArrayMap
+# - name: testUintBytes32ArrayMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testUintBytes32ArrayMap
 
-- name: assertUintBytes32ArrayMap
-  assert:
-    key: $testUintBytes32ArrayMap
-    relation: eq
-    val: success
+# - name: assertUintBytes32ArrayMap
+#   assert:
+#     key: $testUintBytes32ArrayMap
+#     relation: eq
+#     val: success
 
-- name: testStringAddressMap
-  call:
-    destination: $MappingsLibTest
-    bin: MappingsLibTest
-    function: testStringAddressMap
+# - name: testStringAddressMap
+#   call:
+#     destination: $MappingsLibTest
+#     bin: MappingsLibTest
+#     function: testStringAddressMap
 
-- name: assertStringAddressMap
-  assert:
-    key: $testStringAddressMap
-    relation: eq
-    val: success
+# - name: assertStringAddressMap
+#   assert:
+#     key: $testStringAddressMap
+#     relation: eq
+#     val: success
 
 #####
 # DataStorage Test

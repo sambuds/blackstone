@@ -34,12 +34,11 @@ contract DataStorage {
   function removeData(bytes32 _id) external;
 
   /**
-   * @dev Returns the number of non-default entries in the specified array-type DataStorage field
-   * @param _key the key for the array-type value
-   * @param _fullscan if false the function will return as soon as a default value (0 for int/uint, 0x0 for address, "" for bytes32, etc.) is encountered, if true the array will be scanned to its end
-   * @return the number of non-default entries in the array
+   * @dev Returns the length of an array with the specified ID in this DataStorage.
+   * @param _id the ID of an array-type value
+   * @return the length of the array
    */
-  function getNumberOfArrayEntries(bytes32 _key, bool _fullscan) public view returns (uint);
+  function getArrayLength(bytes32 _id) public view returns (uint);
 
   /**
    * @dev Creates a Data object with the given value and inserts it into the DataMap
@@ -128,57 +127,57 @@ contract DataStorage {
   /**
    * @dev Creates a Data object with the given value and inserts it into the DataMap
    * @param _id the id of the data
-   * @param _value the address[100] value of the data
+   * @param _value the address[] value of the data
    */
-  function setDataValueAsAddressArray (bytes32 _id, address[100] _value) external;
+  function setDataValueAsAddressArray (bytes32 _id, address[] _value) external;
 
   /**
    * @dev Gets the value of the Data object identified by the given id
    * @param _id the id of the data
-   * @return address[100] the value of the data
+   * @return address[] the value of the data
    */
-  function getDataValueAsAddressArray (bytes32 _id) external view returns (address[100]);
+  function getDataValueAsAddressArray (bytes32 _id) external view returns (address[]);
 
   /**
    * @dev Creates a Data object with the given value and inserts it into the DataMap
    * @param _id the id of the data
-   * @param _value the uint[100] value of the data
+   * @param _value the uint[] value of the data
    */
-  function setDataValueAsUintArray (bytes32 _id, uint[100] _value) external;
+  function setDataValueAsUintArray (bytes32 _id, uint[] _value) external;
 
   /**
    * @dev Gets the value of the Data object identified by the given id
    * @param _id the id of the data
-   * @return uint256[100] the value of the data
+   * @return uint256[] the value of the data
    */
-  function getDataValueAsUintArray (bytes32 _id) external view returns (uint[100]);
+  function getDataValueAsUintArray (bytes32 _id) external view returns (uint[]);
 
   /**
    * @dev Creates a Data object with the given value and inserts it into the DataMap
    * @param _id the id of the data
-   * @param _value the int256[100] value of the data
+   * @param _value the int256[] value of the data
    */
-  function setDataValueAsIntArray (bytes32 _id, int[100] _value) external;
+  function setDataValueAsIntArray (bytes32 _id, int[] _value) external;
 
   /**
    * @dev Gets the value of the Data object identified by the given id
    * @param _id the id of the data
-   * @return int256[100] the value of the data
+   * @return int256[] the value of the data
    */
-  function getDataValueAsIntArray (bytes32 _id) external view returns (int[100]);
+  function getDataValueAsIntArray (bytes32 _id) external view returns (int[]);
 
   /**
    * @dev Creates a Data object with the given value and inserts it into the DataMap
    * @param _id the id of the data
-   * @param _value the bytes32[100] value of the data
+   * @param _value the bytes32[] value of the data
    */
-  function setDataValueAsBytes32Array (bytes32 _id, bytes32[100] _value) external;
+  function setDataValueAsBytes32Array (bytes32 _id, bytes32[] _value) external;
 
   /**
    * @dev Gets the value of the Data object identified by the given id
    * @param _id the id of the data
-   * @return bytes32[100] the value of the data
+   * @return bytes32[] the value of the data
    */
-  function getDataValueAsBytes32Array (bytes32 _id) external view returns (bytes32[100]);
+  function getDataValueAsBytes32Array (bytes32 _id) external view returns (bytes32[]);
 
 }

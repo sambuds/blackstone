@@ -12,31 +12,17 @@ contract DataStorageTest {
 	
 	string SUCCESS = "success";
 	bytes32 EMPTY = "";
-	FullDataStorage myStorage = new TestDataStorage();
-	FullDataStorage mySubDataStorage = new TestDataStorage();
 	
-	// address[]
-	address[100] addressArr;
-	address[100] retAddressArr;
-	address[] retAddressArrCopy;
+	// Storage contracts used in tests
+	FullDataStorage myStorage;
+	FullDataStorage mySubDataStorage;
 
-	// uint256[]
-	uint256[100] u256Arr;
-	uint256[100] retU256Arr;
-	uint256[] retU256ArrCopy;
+	// storage arrays used in tests
+	address[] addressArr;
+	uint[] u256Arr;
+	int[] i256Arr;
+	bytes32[] dcSuperheroes;
 
-	// int256[]
-	int256[100] i256Arr;
-	int256[100] retI256Arr;
-	int256[100] retI256Arr2;
-	int256[] retI256ArrCopy;
-	int256[] retI256ArrCopy2;
-
-	// bytes32[]
-	bytes32[100] dcSuperheroes;
-	bytes32[100] heroes;
-	bytes32[] heroesCopy;
-	
 	uint8 num = 200;
 	address addr = 0x64A6b18404251B0C8E88b0D8FbDE7145C72aFC75;
 
@@ -72,6 +58,8 @@ contract DataStorageTest {
 
 	function testPrimitivesDataStorageAndRetrieval() external returns (string) {
 		
+		myStorage = new TestDataStorage();
+
 		// bool
 		myStorage.setDataValueAsBool(boolId, myCoolBool);
 		if (myStorage.getDataType(boolId) != DataTypes.BOOL()) return "bool Data object dataType is not DataTypes.BOOL()";
@@ -108,103 +96,88 @@ contract DataStorageTest {
 
 	function testArraysDataStorageAndRetrieval() external returns (string) {
 
+		myStorage = new TestDataStorage();
+
 		// address[]
-		addressArr[0] = 0xd23B9DC1f8DFc5C722243b19dA46F9174e9409Ab;
-		addressArr[1] = 0x34266B66E9D8627213a2129Bb7c305DfC1Db8e04;
-		addressArr[2] = 0xdFcf0C7a89BF918F388F2D00f7D45f8C5aFB80f9;
+		delete addressArr;
+		addressArr.push(0xd23B9DC1f8DFc5C722243b19dA46F9174e9409Ab);
+		addressArr.push(0x34266B66E9D8627213a2129Bb7c305DfC1Db8e04);
+		addressArr.push(0xdFcf0C7a89BF918F388F2D00f7D45f8C5aFB80f9);
+
 		myStorage.setDataValueAsAddressArray(addressArrId, addressArr);
-		retAddressArr = myStorage.getDataValueAsAddressArray(addressArrId);
+		address[] memory retAddressArr = myStorage.getDataValueAsAddressArray(addressArrId);
 		if (myStorage.getDataType(addressArrId) != DataTypes.ADDRESSARRAY()) return "address[] datatype is not DataTypes.ADDRESSARRAY()";
-		if (retAddressArr.length != 100) return "data storage should return an array with length of 100";
-		for (uint a = 0; a < retAddressArr.length; a++) {
-			if (retAddressArr[a] != 0) {
-				retAddressArrCopy.push(retAddressArr[a]);
-			}
-		}
-		if (retAddressArrCopy.length > 3) return "dynamic array contains more then 3 elements";
-		if (retAddressArrCopy[2] != addressArr[2]) return "address[] value at index 2 does not match original";
-		// overwrite and test array entries count
-		addressArr[15] = 0xcf52c4C67020f2A8514cde7a391dFad67b629c23;
-		addressArr[99] = 0x4B4070A988e8D5444d1e167579F8eb304f4F2520;
-		myStorage.setDataValueAsAddressArray(addressArrId, addressArr);
-		if (myStorage.getNumberOfArrayEntries(addressArrId, false) != 3) return "getNumberOfArrayEntries for address[] returned wrong size";
-		if (myStorage.getNumberOfArrayEntries(addressArrId, true) != 5) return "getNumberOfArrayEntries fullscan for address[] returned wrong size";
+		if (retAddressArr.length != addressArr.length) return "Returned address array length should match input array length";
+		if (retAddressArr[2] != addressArr[2]) return "address[] value at index 2 does not match original";
 
 		// uint256[]
-		u256Arr[0] = 16;
-		u256Arr[1] = 64;
-		u256Arr[2] = 255;
+		delete u256Arr;
+		u256Arr.push(16);
+		u256Arr.push(64);
+		u256Arr.push(255);
 		myStorage.setDataValueAsUintArray(u256ArrId, u256Arr);
-		retU256Arr = myStorage.getDataValueAsUintArray(u256ArrId);
+		uint[] memory retU256Arr = myStorage.getDataValueAsUintArray(u256ArrId);
 		if (myStorage.getDataType(u256ArrId) != DataTypes.UINT256ARRAY()) return "uint256[] datatype is not DataTypes.UINT256ARRAY()";
-		if (retU256Arr.length != 100) return "data storage should return an array with length of 100";
-		for (uint u = 0; u < retU256Arr.length; u++) {
-			if (retU256Arr[u] != 0) {
-				retU256ArrCopy.push(retU256Arr[u]);
-			}
-		}
-		if (retU256ArrCopy.length > 3) return "dynamic array contains more then 3 elements";
-		if (retU256ArrCopy[2] != 255) return "uint256[] value at index 2 does not match original";
+		if (retU256Arr.length != u256Arr.length) return "Returned uint256 array length should match input array length";
+		if (retU256Arr[2] != u256Arr[2]) return "uint256[] value at index 2 does not match original";
 
 		// int256[]
-		i256Arr[0] = 16;
-		i256Arr[1] = 64;
-		i256Arr[2] = 255;
+		delete i256Arr;
+		i256Arr.push(16);
+		i256Arr.push(64);
+		i256Arr.push(255);
 		myStorage.setDataValueAsIntArray(i256ArrId, i256Arr);
-		retI256Arr = myStorage.getDataValueAsIntArray(i256ArrId);
+		int[] memory retI256Arr = myStorage.getDataValueAsIntArray(i256ArrId);
 		if (myStorage.getDataType(i256ArrId) != DataTypes.INT256ARRAY()) return "int256[] datatype is not DataTypes.INT256ARRAY()";
-		if (retI256Arr.length != 100) return "data storage should return an array with length of 100";
-		for (uint i = 0; i < retI256Arr.length; i++) {
-			if (retI256Arr[i] != 0) {
-				retI256ArrCopy.push(retI256Arr[i]);
-			}
-		}
-		if (retI256ArrCopy.length > 3) return "dynamic array contains more then 3 elements";
-		if (retI256ArrCopy[2] != 255) return "int256[] value at index 2 does not match original";
+		if (retI256Arr.length != i256Arr.length) return "Returned int256 array length should match input array length";
+		if (retI256Arr[2] != i256Arr[2]) return "int256[] value at index 2 does not match original";
 
 		// bytes32[]
-		dcSuperheroes[0] = batman;
-		dcSuperheroes[1] = superman;
-		dcSuperheroes[2] = wonderwoman;
+		delete dcSuperheroes;
+		dcSuperheroes.push(batman);
+		dcSuperheroes.push(superman);
+		dcSuperheroes.push(wonderwoman);
 		myStorage.setDataValueAsBytes32Array(bytesArrayId, dcSuperheroes);
-		heroes = myStorage.getDataValueAsBytes32Array(bytesArrayId);
+		bytes32[] memory heroes = myStorage.getDataValueAsBytes32Array(bytesArrayId);
 		if (myStorage.getDataType(bytesArrayId) != DataTypes.BYTES32ARRAY()) return "bytes32[] datatype is not DataTypes.BYTES32ARRAY()";
-		if (heroes.length != 100) return "data storage should return an array with length of 100";
-		for (uint j = 0; j < heroes.length; j++) {
-			if (heroes[j] != "") {
-				heroesCopy.push(heroes[j]);
-			}
-		}
-		if (heroesCopy.length > 3) return "dynamic array contains more then 3 elements";
-		if (heroesCopy[2] != wonderwoman) return "bytes32[] value at index 2 does not match original";
-		// overwrite and test array entries count
-		dcSuperheroes[10] = "Spiderman";
-		dcSuperheroes[78] = "Hulk";
-		myStorage.setDataValueAsBytes32Array(bytesArrayId, dcSuperheroes);
-		if (myStorage.getNumberOfArrayEntries(bytesArrayId, false) != 3) return "getNumberOfArrayEntries for bytes32[] returned wrong size";
-		if (myStorage.getNumberOfArrayEntries(bytesArrayId, true) != 5) return "getNumberOfArrayEntries fullscan for bytes32[] returned wrong size";
+		if (heroes.length != dcSuperheroes.length) return "Returned bytes32 array length should match input array length";
+		if (heroes[2] != dcSuperheroes[2]) return "bytes32[] value at index 2 does not match original";
 
 		return SUCCESS;
 	}
 
 	function testDataRemoval () external returns (string) {
-		if (myStorage.getSize() != 10) return "pre-removal storage size should be 10";
+
+		myStorage = new TestDataStorage();
+		delete u256Arr;
+		u256Arr.push(3);
+		u256Arr.push(55);
+		u256Arr.push(237);
+		u256Arr.push(88);
+	
+		myStorage.setDataValueAsAddress("key1", this);
+		myStorage.setDataValueAsBool("key2", true);
+		myStorage.setDataValueAsBytes32("key3", "bla");
+		myStorage.setDataValueAsUintArray(i256ArrId, u256Arr);
+
+		if (myStorage.getSize() != 4) return "pre-removal storage size should be 4";
 		
 		myStorage.removeData(i256ArrId);
-		retI256Arr2 = myStorage.getDataValueAsIntArray(i256ArrId);
-		for (uint i = 0; i < retI256Arr2.length; i++) {
-			if (retI256Arr2[i] != 0) {
-				retI256ArrCopy2.push(retI256Arr2[i]);
-			}
-		}
-		if (retI256ArrCopy2.length > 0) return "dynamic array should be empty, deletion failed";
+		uint[] memory retUintArray = myStorage.getDataValueAsUintArray(i256ArrId);
+		if (retUintArray.length > 0) return "Returned array should be empty due to entry having been deleted";
 		
-		if (myStorage.getSize() != 9) return "post-removal storage size should be 9";
+		if (myStorage.getSize() != 3) return "post-removal storage size should be 9";
 		
+		myStorage.removeData("fakeKeyTTTT");
+		if (myStorage.getSize() != 3) return "Storage size should not have changed when deleting non-existent entry";
+
 		return SUCCESS;
 	}
 
 	function testDataComparison() external returns (string) {
+
+		myStorage = new TestDataStorage();
+		mySubDataStorage = new TestDataStorage();
 		bool result;
 
 		myStorage.setDataValueAsAddress(subStorageId, mySubDataStorage);

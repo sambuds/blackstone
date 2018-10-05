@@ -50,35 +50,35 @@ library DataStorageUtils {
     address addressValue;
     bytes32 bytes32Value;
     
-    // string[] stringArrayValue;
+    string[] stringArrayValue;
+    address[] addressArrayValue;
+    bool[] boolArrayValue;
 
-    address[100] addressArrayValue;
+    uint8[] uint8ArrayValue;
+    uint16[] uint16ArrayValue;
+    uint32[] uint32ArrayValue;
+    uint64[] uint64ArrayValue;
+    uint128[] uint128ArrayValue;
+    uint256[] uint256ArrayValue;
 
-    uint8[100] uint8ArrayValue;
-    uint16[100] uint16ArrayValue;
-    uint32[100] uint32ArrayValue;
-    uint64[100] uint64ArrayValue;
-    uint128[100] uint128ArrayValue;
-    uint256[100] uint256ArrayValue;
-
-    int8[100] int8ArrayValue;
-    int16[100] int16ArrayValue;
-    int32[100] int32ArrayValue;
-    int64[100] int64ArrayValue;
-    int128[100] int128ArrayValue;
-    int256[100] int256ArrayValue;
+    int8[] int8ArrayValue;
+    int16[] int16ArrayValue;
+    int32[] int32ArrayValue;
+    int64[] int64ArrayValue;
+    int128[] int128ArrayValue;
+    int256[] int256ArrayValue;
 
     // bytes bytesArrayValue;
-    bytes1[100] bytes1ArrayValue;
-    bytes2[100] bytes2ArrayValue;
-    bytes3[100] bytes3ArrayValue;
-    bytes4[100] bytes4ArrayValue;
-    bytes8[100] bytes8ArrayValue;
-    bytes16[100] bytes16ArrayValue;
-    bytes20[100] bytes20ArrayValue;
-    bytes24[100] bytes24ArrayValue;
-    bytes28[100] bytes28ArrayValue;
-    bytes32[100] bytes32ArrayValue;
+    bytes1[] bytes1ArrayValue;
+    bytes2[] bytes2ArrayValue;
+    bytes3[] bytes3ArrayValue;
+    bytes4[] bytes4ArrayValue;
+    bytes8[] bytes8ArrayValue;
+    bytes16[] bytes16ArrayValue;
+    bytes20[] bytes20ArrayValue;
+    bytes24[] bytes24ArrayValue;
+    bytes28[] bytes28ArrayValue;
+    bytes32[] bytes32ArrayValue;
   }
 
   /**
@@ -95,14 +95,25 @@ library DataStorageUtils {
       bool exists;
   }
 
+  /**
+   * @dev Modifier to restrict function access to using only equality comparison operators.
+   * REVERTS if:
+   * - the operator is not EQ or NEQ
+   */
   modifier pre_onlySupportsEqualityOperations(COMPARISON_OPERATOR _current) {
     ErrorsLib.revertIf(_current != COMPARISON_OPERATOR.EQ && _current != COMPARISON_OPERATOR.NEQ,
       ErrorsLib.INVALID_INPUT(), "DataStorageUtils.pre_onlySupportsEqualityOperations", "Operator must be EQ or NEQ");
     _;
   }
 
+  /**
+   * @dev Modifier to prevent function access if the parameters required to resolve a comparison expression are empty.
+   * REVERTS if:
+   * - _dataStorage is a zero address
+   * - _dataPath is an empty bytes32
+   */
   modifier pre_verifyExpressionParametersExist(address _dataStorage, bytes32 _dataPath) {
-    ErrorsLib.revertIf(_dataStorage == 0x0,
+    ErrorsLib.revertIf(_dataStorage == address(0),
       ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(), "DataStorageUtils.pre_verifyExpressionParametersExist", "dataStorage is NULL");
     ErrorsLib.revertIf(_dataPath == "",
       ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(), "DataStorageUtils.pre_verifyExpressionParametersExist", "dataPath is NULL");
@@ -171,52 +182,92 @@ library DataStorageUtils {
   }
 
   /**
-   * @dev Returns the number of non-default entries in the array-type field specified in the given DataMap.
-   * Empty values are: 0 for int/uint, 0x0 for address, "" for bytes32, etc.)
-   * Currently only DataTypes.ADDRESSARRAY() and DataTypes.BYTES32ARRAY() are supported by this function
+   * @dev Returns the length of an array with the specified ID in the given DataMap.
+   * It is expected that the data value at the given ID is an array type, otherwise length 0 is returned.
    * @param _map the DataMap
    * @param _key a key pointing to a supported array-type field
-   * @param _fullscan if true the array will be scanned to its end, otherwise the function returns on the first encountered default value
-   * @return the number of non-default entries
+   * @return the length of the array
    */
-  function getNumberOfArrayEntries(DataMap storage _map, bytes32 _key, bool _fullscan) public view returns (uint) {
-    if (getDataType(_map, _key) == DataTypes.ADDRESSARRAY()) {
-      return getNumberOfEntries(_map.rows[_key].value.addressArrayValue, _fullscan);
+  function getArrayLength(DataMap storage _map, bytes32 _key) public view returns (uint) {
+    if (getDataType(_map, _key) == DataTypes.BOOLARRAY()) {
+      return _map.rows[_key].value.boolArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.STRINGARRAY()) {
+      return _map.rows[_key].value.stringArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.ADDRESSARRAY()) {
+      return _map.rows[_key].value.addressArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.UINTARRAY() ||
+             getDataType(_map, _key) == DataTypes.UINT256ARRAY()) {
+      return _map.rows[_key].value.uint256ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.UINT8ARRAY()) {
+      return _map.rows[_key].value.uint8ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.UINT16ARRAY()) {
+      return _map.rows[_key].value.uint16ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.UINT32ARRAY()) {
+      return _map.rows[_key].value.uint32ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.UINT64ARRAY()) {
+      return _map.rows[_key].value.uint64ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.UINT128ARRAY()) {
+      return _map.rows[_key].value.uint128ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.INTARRAY() ||
+             getDataType(_map, _key) == DataTypes.INT256ARRAY()) {
+      return _map.rows[_key].value.int256ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.INT8ARRAY()) {
+      return _map.rows[_key].value.int8ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.INT16ARRAY()) {
+      return _map.rows[_key].value.int16ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.INT32ARRAY()) {
+      return _map.rows[_key].value.int32ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.INT64ARRAY()) {
+      return _map.rows[_key].value.int64ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.INT128ARRAY()) {
+      return _map.rows[_key].value.int128ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES1ARRAY() ||
+             getDataType(_map, _key) == DataTypes.BYTEARRAY()) {
+      return _map.rows[_key].value.bytes1ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES2ARRAY()) {
+      return _map.rows[_key].value.bytes2ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES3ARRAY()) {
+      return _map.rows[_key].value.bytes3ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES4ARRAY()) {
+      return _map.rows[_key].value.bytes4ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES8ARRAY()) {
+      return _map.rows[_key].value.bytes8ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES16ARRAY()) {
+      return _map.rows[_key].value.bytes16ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES20ARRAY()) {
+      return _map.rows[_key].value.bytes20ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES24ARRAY()) {
+      return _map.rows[_key].value.bytes24ArrayValue.length;
+    }
+    else if (getDataType(_map, _key) == DataTypes.BYTES28ARRAY()) {
+      return _map.rows[_key].value.bytes28ArrayValue.length;
     }
     else if (getDataType(_map, _key) == DataTypes.BYTES32ARRAY()) {
-      return getNumberOfEntries(_map.rows[_key].value.bytes32ArrayValue, _fullscan);
+      return _map.rows[_key].value.bytes32ArrayValue.length;
     }
   }
-
-	/**
-	 * @dev Returns the number of non-default entries in the given array.
-	 * @param _array the array to scan
-   * @param _fullscan whether to keep scanning to the end even if default values are encountered
-   * @return the number of non-empty entries in the array
-	 */
-	function getNumberOfEntries(bytes32[100] _array, bool _fullscan) public pure returns (uint size) {
-    for (uint i=0; i<100; i++) {
-      if (_array[i] != "")
-        size++;
-      else if (!_fullscan)
-        return;
-    }
-	}
-
-	/**
-	 * @dev Returns the number of non-default entries in the given array.
-	 * @param _array the array to scan
-   * @param _fullscan whether to keep scanning to the end even if default values are encountered
-   * @return the number of non-empty entries in the array
-	 */
-	function getNumberOfEntries(address[100] _array, bool _fullscan) public pure returns (uint size) {
-    for (uint i=0; i<100; i++) {
-      if (_array[i] != 0x0)
-        size++;
-      else if (!_fullscan)
-        return;
-    }
-	}
 
   /**
     * @dev Returns the ID of the Data at the specified index in the given map

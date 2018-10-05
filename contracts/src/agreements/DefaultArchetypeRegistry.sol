@@ -27,7 +27,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 	string constant TABLE_ARCHETYPE_TO_PACKAGE = "ARCHETYPE_TO_PACKAGE";
 	string constant TABLE_GOVERNING_ARCHETYPES = "GOVERNING_ARCHETYPES";
 
-	// Temporary mapping to detect duplicates in address[100] _governingArchetypes
+	// Temporary mapping to detect duplicates in governing archetypes
 	mapping(address => uint) duplicateMap;
 
 	/**

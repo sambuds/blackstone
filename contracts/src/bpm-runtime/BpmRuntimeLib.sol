@@ -307,7 +307,7 @@ library BpmRuntimeLib {
                         // _processInstance.graph.activities[activityId].instancesTotal = sizeOfArray;
                     }
                     //TODO assert targetAddress is a DataStorage and dataPath is not empty
-                    _processInstance.graph.activities[activityId].instancesTotal = DataStorage(targetAddress).getNumberOfArrayEntries(dataPath, false);
+                    _processInstance.graph.activities[activityId].instancesTotal = DataStorage(targetAddress).getArrayLength(dataPath);
                 }
                 else {
                     _processInstance.graph.activities[activityId].instancesTotal = 1;

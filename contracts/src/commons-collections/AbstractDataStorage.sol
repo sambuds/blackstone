@@ -40,13 +40,12 @@ contract AbstractDataStorage is DataStorage {
   }
 
   /**
-   * @dev Returns the number of non-default entries in the specified array-type DataStorage field
-   * @param _id the key under which to find the array-type value
-   * @param _fullscan if false the function will return as soon as a default value (0 for int/uint, 0x0 for address, "" for bytes32, etc.) is encountered, if true the array will be scanned to its end
-   * @return the number of non-default entries in the array
+   * @dev Returns the length of an array with the specified ID in this DataStorage.
+   * @param _id the ID of an array-type value
+   * @return the length of the array
    */
-  function getNumberOfArrayEntries(bytes32 _id, bool _fullscan) public view returns (uint) {
-    return dataStorageMap.getNumberOfArrayEntries(_id, _fullscan);
+  function getArrayLength(bytes32 _id) public view returns (uint) {
+    return dataStorageMap.getArrayLength(_id);
   }
 
   function setDataValueAsBool (bytes32 _id, bool _value) external {
@@ -121,7 +120,7 @@ contract AbstractDataStorage is DataStorage {
     return dataStorageMap.get(_id).bytes32Value;
   }
 
-  function setDataValueAsAddressArray (bytes32 _id, address[100] _value) external {
+  function setDataValueAsAddressArray (bytes32 _id, address[] _value) external {
     DataStorageUtils.Data memory data;
     data.id = _id;
     data.addressArrayValue = _value;
@@ -129,11 +128,11 @@ contract AbstractDataStorage is DataStorage {
     dataStorageMap.insertOrUpdate(data);
   }
 
-  function getDataValueAsAddressArray (bytes32 _id) external view returns (address[100]) {
+  function getDataValueAsAddressArray (bytes32 _id) external view returns (address[]) {
     return dataStorageMap.get(_id).addressArrayValue;
   }
 
- function setDataValueAsUintArray (bytes32 _id, uint[100] _value) external {
+ function setDataValueAsUintArray (bytes32 _id, uint[] _value) external {
     DataStorageUtils.Data memory data;
     data.id = _id;
     data.uint256ArrayValue = _value;
@@ -141,11 +140,11 @@ contract AbstractDataStorage is DataStorage {
     dataStorageMap.insertOrUpdate(data);
   }
 
-  function getDataValueAsUintArray (bytes32 _id) external view returns (uint[100]) {
+  function getDataValueAsUintArray (bytes32 _id) external view returns (uint[]) {
     return dataStorageMap.get(_id).uint256ArrayValue;
   }
 
-  function setDataValueAsIntArray (bytes32 _id, int[100] _value) external {
+  function setDataValueAsIntArray (bytes32 _id, int[] _value) external {
     DataStorageUtils.Data memory data;
     data.id = _id;
     data.int256ArrayValue = _value;
@@ -153,11 +152,11 @@ contract AbstractDataStorage is DataStorage {
     dataStorageMap.insertOrUpdate(data);
   }
 
-  function getDataValueAsIntArray (bytes32 _id) external view returns (int[100]) {
+  function getDataValueAsIntArray (bytes32 _id) external view returns (int[]) {
     return dataStorageMap.get(_id).int256ArrayValue;
   }
 
-  function setDataValueAsBytes32Array (bytes32 _id, bytes32[100] _value) external {
+  function setDataValueAsBytes32Array (bytes32 _id, bytes32[] _value) external {
     DataStorageUtils.Data memory data;
     data.id = _id;
     data.bytes32ArrayValue = _value;
@@ -165,6 +164,6 @@ contract AbstractDataStorage is DataStorage {
     dataStorageMap.insertOrUpdate(data);
   }
 
-  function getDataValueAsBytes32Array (bytes32 _id) external view returns (bytes32[100]) { return dataStorageMap.get(_id).bytes32ArrayValue; }
+  function getDataValueAsBytes32Array (bytes32 _id) external view returns (bytes32[]) { return dataStorageMap.get(_id).bytes32ArrayValue; }
   
 }

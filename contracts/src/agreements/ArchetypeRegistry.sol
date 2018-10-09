@@ -19,6 +19,99 @@ contract ArchetypeRegistry is Upgradeable {
 	event UpdateArchetypePackageMap(string name, bytes32 key1, address key2);
 	event UpdateGoverningArchetypes(string name, address key1, address key2);
 
+	event LogArchetypeCreation(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		string name,
+		string description,
+		uint32 price,
+		address author,
+		bool active,
+		bool isPrivate,
+		address successor,
+		address formationProcessDefinition,
+		address executionProcessDefinition
+	);
+
+	event LogArchetypeSuccessorUpdate(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		address successor
+	);
+
+	event LogArchetypePriceUpdate(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		uint32 price
+	);
+
+	event LogArchetypeActive(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		bool active
+	);
+
+	event LogArchetypePackageCreation(
+		bytes32 indexed eventId,
+		bytes32 id,
+		string name,
+		string description,
+		address author,
+		bool isPrivate,
+		bool active
+	);
+
+	event LogArchetypePackageActive(
+		bytes32 indexed eventId,
+		bytes32 id,
+		bool active
+	);
+
+	event LogArchetypeToPackageMapUpdate(
+		bytes32 indexed eventId,
+		bytes32 packageId,
+		address archetypeAddress,
+		string archetypeName
+	);
+
+	event LogArchetypeParameterUpdate(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		bytes32 parameterName,
+		uint8 parameterType,
+		uint position		
+	);
+
+	event LogArchetypeDocumentUpdate(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		bytes32 documentName,
+		bytes32 hoardAddress,
+		bytes32 hoardSecret
+	);
+
+	event LogArchetypeJurisdictionUpdate(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		bytes2 country,
+		bytes32 region
+	);
+
+	event LogGoverningArchetypeUpdate(
+		bytes32 indexed eventId,
+		address archetypeAddress,
+		address governingArchetypeAddress,
+		string governingArchetypeName
+	);
+
+	bytes32 public constant ARCHETYPE_EVENT_ID = "AN://archetype";
+	bytes32 public constant ARCHETYPE_PACKAGE_EVENT_ID = "AN://archetype/package";
+	bytes32 public constant ARCHETYPE_PACKAGE_MAP_EVENT_ID = "AN://archetype-to-package";
+	bytes32 public constant ARCHETYPE_PARAMETER_EVENT_ID = "AN://archetype/parameter";
+	bytes32 public constant ARCHETYPE_DOCUMENT_EVENT_ID = "AN://archetype/document";
+	bytes32 public constant ARCHETYPE_JURISDICTION_EVENT_ID = "AN://archetype/jurisdiction";
+	bytes32 public constant GOVERNING_ARCHETYPE_EVENT_ID = "AN://governing-archetype";
+
 	/**
 	 * @dev Creates a new archetype
 	 * @param _name name

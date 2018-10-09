@@ -92,7 +92,7 @@ contract ActiveAgreement is Named, DataStorage, AddressScopes, Signable, EventEm
 	 * @dev Returns the max number of events for the event log
 	 * @return the max number of events for the event log
 	 */
-	function getMaxNumberOfEvents() external view returns (uint maxNumberOfEvents);
+	function getMaxNumberOfEvents() external view returns (uint32);
 
 	/**
 	 * @dev Returns the creator

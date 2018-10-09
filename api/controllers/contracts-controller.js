@@ -350,7 +350,7 @@ const addArchetypeParameters = (address, parameters) => new Promise((resolve, re
   const paramNames = [];
   for (let i = 0; i < parameters.length; i += 1) {
     paramTypes[i] = parseInt(parameters[i].type, 10);
-    paramNames[i] = global.stringToHex(parameters[i].name);
+    paramNames[i] = parameters[i].name;
   }
   log.trace(`Adding archetype parameters to archetype add address ${address}. ` +
     `Parameter Types: ${JSON.stringify(paramTypes)}, Parameter Names: ${JSON.stringify(paramNames)}`);
@@ -461,11 +461,11 @@ const addJurisdictions = (address, jurisdictions) => new Promise((resolve, rejec
   jurisdictions.forEach((item) => {
     if (item.regions.length > 0) {
       item.regions.forEach((region) => {
-        countries.push(global.stringToHex(item.country));
+        countries.push(item.country);
         regions.push(region);
       });
     } else {
-      countries.push(global.stringToHex(item.country));
+      countries.push(item.country);
       regions.push('');
     }
   });

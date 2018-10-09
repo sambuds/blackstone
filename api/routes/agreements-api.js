@@ -199,39 +199,45 @@ module.exports = (app) => {
  * @apiBodyParameterExample {json} Success Object
 {
   "name": "Archetype 2",
-    "description": "Test Archetype",
-    "price": "19.55",
-    "isPrivate": 0,
+  "description": "Test Archetype",
+  "price": "19.55",
+  "isPrivate": 0,
   "password": "A Secret String",
-    "parameters": [
-      { "type": 8, "name": "Assignee", "signatory": true },
-      { "type": 2, "name": "NumberOfTeenageDaughters" },
-      { "type": 1, "name": "Exit Clause" }
-    ],
-    "documents": [
-      {
-        "name": "test&stuff.pdf",
-        "hoardAddress": "e73c56f6124813ef082d8cdd2c5ec63afff95e562f9be65720c9f69e3b3541a0",
-        "secretKey": "87a822883515b65247cbf5a2ee68af72cb7c2b65b7103cb4340e0c1202fd325e"
+  "parameters": [{
+      "type": 8,
+      "name": "Assignee",
+      "signatory": true
     },
     {
-        "name": "Untitled document.docx",
-        "hoardAddress": "1385440dd77393038d465314bb565d3fe8b7de2a97d122ddf4cbdb979716828e",
-        "secretKey": "06b35f914ef79d3fe890693d5f8af4cc58674ceb729f5b29df1166fad9de4a63"
+      "type": 2,
+      "name": "NumberOfTeenageDaughters"
+    },
+    {
+      "type": 1,
+      "name": "Exit Clause"
     }
   ],
-    "jurisdictions": [
-      {
-      "country": "US",
-        "regions": [
-          "281BAF100FF362D83EB90B4C84F978390AA0B063080858DBCA94546629974832",
-          "C45A6B6C560B1DD579D17FC80B8E320E9A400AE3CB7EF61EC0EA95A69302767F"
-        ]
+  "documents": [{
+      "name": "test&stuff.pdf",
+      "hoardAddress": "e73c56f6124813ef082d8cdd2c5ec63afff95e562f9be65720c9f69e3b3541a0",
+      "secretKey": "87a822883515b65247cbf5a2ee68af72cb7c2b65b7103cb4340e0c1202fd325e"
+    },
+    {
+      "name": "Untitled document.docx",
+      "hoardAddress": "1385440dd77393038d465314bb565d3fe8b7de2a97d122ddf4cbdb979716828e",
+      "secretKey": "06b35f914ef79d3fe890693d5f8af4cc58674ceb729f5b29df1166fad9de4a63"
     }
   ],
-    "formationProcessDefinition": "1671227FBC248B809F74D9BA29B4731F130BCD93",
-    "executionProcessDefinition": "E6534E45E2B26AF4FBB64E42CE7FC66688696483",
-    "governingArchetypes": ["ADB20020CE08E2DF5ABB3818590C3E2BA2035202"]
+  "jurisdictions": [{
+    "country": "US",
+    "regions": [
+      "281BAF100FF362D83EB90B4C84F978390AA0B063080858DBCA94546629974832",
+      "C45A6B6C560B1DD579D17FC80B8E320E9A400AE3CB7EF61EC0EA95A69302767F"
+    ]
+  }],
+  "formationProcessDefinition": "1671227FBC248B809F74D9BA29B4731F130BCD93",
+  "executionProcessDefinition": "E6534E45E2B26AF4FBB64E42CE7FC66688696483",
+  "governingArchetypes": ["ADB20020CE08E2DF5ABB3818590C3E2BA2035202"]
 }
 
 *
@@ -625,6 +631,7 @@ module.exports = (app) => {
  * @apiBodyParameter {Object[]} parameters The "custom-field-name" and values of the parameters.
  * Note- If a parameter with type 8 (Signing Party) is given, the corresponding value will be added to the agreement's parties.
  * @apiBodyParameter {String[]} governingAgreements If parent archetype has any governing archetypes, agreements for each one must
+ * @apiBodyParameter {String} collectionId Id of the collection that the agreement is intended to be part of
  * already exist, and their addresses should be given here.
  * @apiBodyParameterExample {json} Success Object
     {
@@ -644,7 +651,8 @@ module.exports = (app) => {
           "value": 10
         }
       ],
-      "governingAgreements": ["B3AEAD4717EFF80BDDF5E22110521029A8460FFB"]
+      "governingAgreements": ["B3AEAD4717EFF80BDDF5E22110521029A8460FFB"],
+      "collectionId": "BD8E2D998A9B829B5A6A10C8D0E47E3A178A214F862F8D79580C0B87F0650F88"
     }
   *
   *

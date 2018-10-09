@@ -20,12 +20,15 @@ contract Archetype is Named {
 	function addDocument(bytes32 _name, bytes32 _hoardAddress, bytes32 _secretKey) external returns (uint error);
 
 	/**
-	 * @dev Adds a parameter with the specified type and name to the archetype
+	 * @dev Adds parameter
 	 * @param _parameterType parameter type (enum)
-	 * @param _parameter parameter
-	 * @return error code indicating success or failure
+	 * @param _parameterName parameter name
+	 * @return 
+	 *	 		 BaseErrors.NO_ERROR() and position of parameter, if successful,
+	 *		   BaseErrors.NULL_PARAM_NOT_ALLOWED() if _parameter is empty,
+	 *		   BaseErrors.RESOURCE_ALREADY_EXISTS() if _parameter already exists
 	 */
-	function addParameter(Agreements.ParameterType _parameterType, bytes32 _parameter) external returns (uint error);
+	function addParameter(Agreements.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error, uint position);
 
 	/**
 	 * @dev Adds the given jurisdiction in the form of a country code and region identifier to this archetype.

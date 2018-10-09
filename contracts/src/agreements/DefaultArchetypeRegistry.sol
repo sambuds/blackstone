@@ -63,6 +63,12 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		registerArchetype(archetype, _name);
 		for (uint i = 0; i < _governingArchetypes.length; i++) {
 			emit UpdateGoverningArchetypes(TABLE_GOVERNING_ARCHETYPES, archetype, _governingArchetypes[i]);
+			emit LogGoverningArchetypeUpdate(
+				GOVERNING_ARCHETYPE_EVENT_ID, 
+				archetype, 
+				_governingArchetypes[i],
+				Archetype(_governingArchetypes[i]).getName()
+			);
 		}
 		if (_packageId != "") addArchetypeToPackage(_packageId, archetype);
 	}
@@ -83,6 +89,19 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		uint error = ArchetypeRegistryDb(database).addArchetype(_archetype, _name);
 		ErrorsLib.revertIf(error != BaseErrors.NO_ERROR(), 
 			ErrorsLib.RESOURCE_ALREADY_EXISTS(), "DefaultArchetypeRegistry.createArchetype", "Archetype already exists");
+		emit LogArchetypeCreation(
+			ARCHETYPE_EVENT_ID,
+			_archetype,
+			Archetype(_archetype).getName(),
+			Archetype(_archetype).getDescription(),
+			Archetype(_archetype).getPrice(),
+			Archetype(_archetype).getAuthor(),
+			Archetype(_archetype).isActive(),
+			Archetype(_archetype).isPrivate(),
+			Archetype(_archetype).getSuccessor(),
+			Archetype(_archetype).getFormationProcessDefinition(),
+			Archetype(_archetype).getExecutionProcessDefinition()
+		);
 		emit UpdateArchetypes(TABLE_ARCHETYPES, _archetype);
 	}
 
@@ -128,6 +147,12 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		uint error = ArchetypeRegistryDb(database).addArchetypeToPackage(_packageId, _archetype);
 		ErrorsLib.revertIf(error != BaseErrors.NO_ERROR(), ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultArchetypeRegistry.addArchetypeToPackage", "Package not found");
 		emit UpdateArchetypePackageMap(TABLE_ARCHETYPE_TO_PACKAGE, _packageId, _archetype);
+		emit LogArchetypeToPackageMapUpdate(
+			ARCHETYPE_PACKAGE_MAP_EVENT_ID,
+			_packageId,
+			_archetype,
+			Archetype(_archetype).getName()
+		);
 	}
 
 	/**
@@ -140,11 +165,20 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 	 * @return any error returned from the Archetype.addParameter() function
 	 */
 	function addParameter(address _archetype, Agreements.ParameterType _parameterType, bytes32 _parameterName) public returns (uint error) {
+		uint position;
 		if (!ArchetypeRegistryDb(database).archetypeExists(_archetype))
 			return BaseErrors.RESOURCE_NOT_FOUND();
-		error = Archetype(_archetype).addParameter(_parameterType, _parameterName);
-		if (error == BaseErrors.NO_ERROR())
+		(error, position) = Archetype(_archetype).addParameter(_parameterType, _parameterName);
+		if (error == BaseErrors.NO_ERROR()) {
 			emit UpdateArchetypeParameters(TABLE_ARCHETYPE_PARAMETERS, _archetype, _parameterName);
+			emit LogArchetypeParameterUpdate(
+				ARCHETYPE_PARAMETER_EVENT_ID,
+				_archetype,
+				_parameterName,
+				uint8(_parameterType),
+				position
+			);
+		}
 	}
 
 	/**
@@ -181,8 +215,15 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 			return BaseErrors.RESOURCE_NOT_FOUND();
 		bytes32 key;
 		(error, key) = Archetype(_archetype).addJurisdiction(_country, _region);
-		if (error == BaseErrors.NO_ERROR())
+		if (error == BaseErrors.NO_ERROR()) {
 			emit UpdateArchetypeJurisdictions(TABLE_ARCHETYPE_JURISDICTIONS, _archetype, key);
+			emit LogArchetypeJurisdictionUpdate(
+				ARCHETYPE_JURISDICTION_EVENT_ID,
+				_archetype,
+				_country,
+				_region
+			);
+		}
 	}
 
 	/**
@@ -215,6 +256,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		ErrorsLib.revertIf(_author != Archetype(_archetype).getAuthor(), ErrorsLib.UNAUTHORIZED(), "DefaultArchetypeRegistry.activate", "Given author address is not authorized to activate archetype");
 		Archetype(_archetype).activate();
 		emit UpdateArchetypes(TABLE_ARCHETYPES, _archetype);
+		emit LogArchetypeActive(ARCHETYPE_EVENT_ID, _archetype, true);
 	}
 
 	/**
@@ -226,6 +268,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		ErrorsLib.revertIf(_author != Archetype(_archetype).getAuthor(), ErrorsLib.UNAUTHORIZED(), "DefaultArchetypeRegistry.activate", "Given address is not authorized to deactivate archetype");
 		Archetype(_archetype).deactivate();
 		emit UpdateArchetypes(TABLE_ARCHETYPES, _archetype);
+		emit LogArchetypeActive(ARCHETYPE_EVENT_ID, _archetype, false);
 	}
 
 	/**
@@ -240,6 +283,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		ErrorsLib.revertIf(_successor != 0x0 && !ArchetypeRegistryDb(database).archetypeExists(_successor), ErrorsLib.INVALID_INPUT(), "DefaultArchetypeRegistry.setArchetypeSuccessor", "Successor must be a valid archetype");
 		Archetype(_archetype).setSuccessor(_successor);
 		emit UpdateArchetypes(TABLE_ARCHETYPES, _archetype);
+		emit LogArchetypeSuccessorUpdate(ARCHETYPE_EVENT_ID, _archetype, _successor);
 	}
 
 	/**
@@ -321,8 +365,16 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		if (!ArchetypeRegistryDb(database).archetypeExists(_archetype))
 			return BaseErrors.RESOURCE_NOT_FOUND();
 		error = Archetype(_archetype).addDocument(_name, _hoardAddress, _secretKey);
-		if (error == BaseErrors.NO_ERROR())
+		if (error == BaseErrors.NO_ERROR()) {
 			emit UpdateArchetypeDocuments(TABLE_ARCHETYPE_DOCUMENTS, _archetype, _name);
+			emit LogArchetypeDocumentUpdate(
+				ARCHETYPE_DOCUMENT_EVENT_ID,
+				_archetype,
+				_name,
+				_hoardAddress,
+				_secretKey
+			);
+		}
 	}
 
 	/**
@@ -333,6 +385,11 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 	function setArchetypePrice(address _archetype, uint32 _price) external {
 		Archetype(_archetype).setPrice(_price);
 		emit UpdateArchetypes(TABLE_ARCHETYPES, _archetype);
+		emit LogArchetypePriceUpdate(
+			ARCHETYPE_EVENT_ID,
+			_archetype,
+			_price
+		);
 	}
 
 	/**
@@ -351,6 +408,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		error = ArchetypeRegistryDb(database).createPackage(id, _name, _description, _author, _isPrivate, _active);
 		if (error == BaseErrors.NO_ERROR()) {
 			emit UpdateArchetypePackages(TABLE_ARCHETYPE_PACKAGES, id);
+			emit LogArchetypePackageCreation(ARCHETYPE_PACKAGE_EVENT_ID, id, _name, _description, _author, _isPrivate, _active);
 		}
 	}
 
@@ -366,6 +424,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		ErrorsLib.revertIf(_author != packageAuthor, ErrorsLib.UNAUTHORIZED(), "DefaultArchetypeRegistry.activatePackage", "Given address is not authorized to activate archetype package");
 		ArchetypeRegistryDb(database).activatePackage(_id);
 		emit UpdateArchetypePackages(TABLE_ARCHETYPE_PACKAGES, _id);
+		emit LogArchetypePackageActive(ARCHETYPE_PACKAGE_EVENT_ID, _id, true);
 	}
 
 	/**
@@ -380,6 +439,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 		ErrorsLib.revertIf(_author != packageAuthor, ErrorsLib.UNAUTHORIZED(), "DefaultArchetypeRegistry.activatePackage", "Given address is not authorized to deactivate archetype package");
 		ArchetypeRegistryDb(database).deactivatePackage(_id);
 		emit UpdateArchetypePackages(TABLE_ARCHETYPE_PACKAGES, _id);
+		emit LogArchetypePackageActive(ARCHETYPE_PACKAGE_EVENT_ID, _id, false);
 	}
 
 	/**

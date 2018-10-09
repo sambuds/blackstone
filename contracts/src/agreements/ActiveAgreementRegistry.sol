@@ -18,7 +18,87 @@ contract ActiveAgreementRegistry is EventListener, ProcessStateChangeListener, U
 	event UpdateActiveAgreementCollectionMap(string name, bytes32 key1, address key2);
 	event UpdateGoverningAgreements(string name, address key1, address key2);
 
+	// Vent specific events
+	event LogAgreementCreation(
+		bytes32 indexed eventId, 
+		address agreementAddress, 
+		address archetype, 
+		string name, 
+		address creator,
+		bool isPrivate, 
+		uint8 legalState,
+		bytes32 hoardAddress,
+		bytes32 hoardSecret
+	);
+
+	event LogAgreementFormationProcessUpdate(
+		bytes32 indexed eventId, 
+		address agreementAddress,
+		address formationProcessInstance
+	);
+
+	event LogAgreementExecutionProcessUpdate(
+		bytes32 indexed eventId, 
+		address agreementAddress,
+		address executionProcessInstance
+	);
+
+	event LogAgreementMaxEventCountUpdate(
+		bytes32 indexed eventId,
+		address agreementAddress, 
+		uint32 maxNumberOfEvents
+	);
+
+	event LogAgreementEventLogReference(
+		bytes32 indexed eventId,
+		address agreementAddress, 
+		bytes32 eventLogHoardAddress,
+		bytes32 eventLogHoardSecret
+	);
+
+	event LogAgreementCollectionCreation(
+		bytes32 indexed eventId,
+		bytes32 id,
+		string name,
+		address author,
+		uint8 collectionType,
+		bytes32 packageId
+	);
+
+	event LogAgreementToCollectionMapUpdate(
+		bytes32 indexed eventId,
+		bytes32 collectionId,
+		address agreementAddress,
+		string agreementName,
+		address archetypeAddress
+	);
+
+	event LogActiveAgreementToPartyMapUpdate(
+		bytes32 indexed eventId,
+		address agreementAddress,
+		address party
+	);
+
+	event LogGoverningAgreementUpdate(
+		bytes32 indexed eventId,
+		address agreementAddress,
+		address governingAgreementAddress,
+		string governingAgreementName
+	);
+
+	event LogAgreementLegalStateUpdate(
+		bytes32 indexed eventId,
+		address agreementAddress,
+		uint8 legalState
+	);
+
 	bytes32 public constant DATA_ID_AGREEMENT = "agreement";
+
+	bytes32 public constant AGREEMENT_EVENT_ID = "AN://agreement";
+	bytes32 public constant AGREEMENT_COLLECTION_EVENT_ID = "AN://agreement/collection";
+	bytes32 public constant AGREEMENT_COLLECTION_MAP_EVENT_ID = "AN://agreement-to-collection";
+	bytes32 public constant AGREEMENT_PARTY_MAP_EVENT_ID = "AN://agreement-to-party";
+	bytes32 public constant GOVERNING_AGREEMENT_EVENT_ID = "AN://governing-agreement";
 
 	/**
 	 * @dev Creates an Active Agreement with the given parameters

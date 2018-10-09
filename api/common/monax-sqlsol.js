@@ -581,7 +581,9 @@ sqlcache.prototype._addContract = function (CName, contract, callback) {
         var keys = eventData.raw.slice(1)
 
         self.update(TName, CName, keys, function (err) {
-          if (err) log.error('An error occurred whilst attempting to update the table ' + TName + '\n' + err)
+          if (err && !((err.message || '').startsWith('A table with name'))) {
+            log.error('An error occurred whilst attempting to update the table ' + TName + '\n' + err)
+          }
           self.emitter.emit('update', {'table': TName, 'keys': keys, 'error': err})
         })
       }

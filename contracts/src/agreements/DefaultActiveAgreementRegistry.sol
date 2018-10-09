@@ -170,6 +170,7 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 	function setMaxNumberOfEvents(address _agreement, uint32 _maxNumberOfEvents) external {
 		ActiveAgreement(_agreement).setMaxNumberOfEvents(_maxNumberOfEvents);
 		emit UpdateActiveAgreements(TABLE_AGREEMENTS, _agreement);
+		emit LogAgreementMaxEventCountUpdate(AGREEMENT_EVENT_ID, _agreement, _maxNumberOfEvents);
 	}
 
 	/**
@@ -187,6 +188,13 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 		uint error = ActiveAgreementRegistryDb(database).addAgreementToCollection(_collectionId, _agreement);
 		ErrorsLib.revertIf(error != BaseErrors.NO_ERROR(), ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultActiveAgreementRegistry.addAgreementToCollection", "Collection not found");
 		emit UpdateActiveAgreementCollectionMap(TABLE_AGREEMENT_TO_COLLECTION, _collectionId, _agreement);
+		emit LogAgreementToCollectionMapUpdate(
+			AGREEMENT_COLLECTION_MAP_EVENT_ID, 
+			_collectionId, 
+			_agreement,
+			ActiveAgreement(_agreement).getName(),
+			archetype
+		);
 	}
 
 	/**
@@ -208,6 +216,11 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 		// keep track of the process for the agreement, regardless of whether the start (below) actually succeeds, because the PI is created
 		ActiveAgreementRegistryDb(database).setAgreementFormationProcess(address(_agreement), address(pi));
 		emit UpdateActiveAgreements(TABLE_AGREEMENTS, address(_agreement));
+		emit LogAgreementFormationProcessUpdate(
+			AGREEMENT_EVENT_ID,
+			_agreement,
+			address(pi)
+		);
 		error = bpmService.startProcessInstance(pi);
 		return (error, pi);
 	}
@@ -342,17 +355,42 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 		agreement.addEventListener(agreement.EVENT_ID_SIGNATURE_ADDED());
 		agreement.addEventListener(agreement.EVENT_ID_STATE_CHANGED());
 		agreement.addEventListener(agreement.EVENT_ID_EVENT_LOG_UPDATED());
-
-		emit UpdateActiveAgreements(TABLE_AGREEMENTS, _activeAgreement);
+		emitAgreementCreationEvent(_activeAgreement);
 		address party;
 		uint numberOfParties = agreement.getNumberOfParties();
 		for (uint i = 0; i < numberOfParties; i++) {
 			party = getPartyByActiveAgreementAtIndex(_activeAgreement, i);
 			emit UpdateActiveAgreementToParty(TABLE_AGREEMENTS_TO_PARTIES, _activeAgreement, party);
+			emit LogActiveAgreementToPartyMapUpdate(
+				AGREEMENT_PARTY_MAP_EVENT_ID,
+				_activeAgreement,
+				party
+			);
 		}
 		for (i = 0; i < _governingAgreements.length; i++) {
 			emit UpdateGoverningAgreements(TABLE_GOVERNING_AGREEMENTS, _activeAgreement, _governingAgreements[i]);
+			emit LogGoverningAgreementUpdate(
+				GOVERNING_AGREEMENT_EVENT_ID,
+				_activeAgreement,
+				_governingAgreements[i],
+				ActiveAgreement(_governingAgreements[i]).getName()
+			);
 		}
+	}
+
+	function emitAgreementCreationEvent(address _activeAgreement) internal {
+		emit UpdateActiveAgreements(TABLE_AGREEMENTS, _activeAgreement);
+		emit LogAgreementCreation(
+			AGREEMENT_EVENT_ID,
+			_activeAgreement,
+			ActiveAgreement(_activeAgreement).getArchetype(),
+			ActiveAgreement(_activeAgreement).getName(),
+			ActiveAgreement(_activeAgreement).getCreator(),
+			ActiveAgreement(_activeAgreement).isPrivate(),
+			ActiveAgreement(_activeAgreement).getLegalState(),
+			ActiveAgreement(_activeAgreement).getHoardAddress(),
+			ActiveAgreement(_activeAgreement).getHoardSecret()
+		);
 	}
 
     /**
@@ -551,6 +589,14 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 		error = ActiveAgreementRegistryDb(database).createCollection(id, _name, _author, _collectionType, _packageId);
 		if (error == BaseErrors.NO_ERROR()) {
 			emit UpdateActiveAgreementCollections(TABLE_AGREEMENT_COLLECTIONS, id);
+			emit LogAgreementCollectionCreation(
+				AGREEMENT_COLLECTION_EVENT_ID,
+				id,
+				_name,
+				_author,
+				_collectionType,
+				_packageId
+			);
 		}
 	}
 
@@ -653,6 +699,11 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 	function eventFired(bytes32 _event, address /*_source*/, address _data) external pre_OnlyByRegisteredAgreements {
 		if (_event == ActiveAgreement(msg.sender).EVENT_ID_SIGNATURE_ADDED()) {
 			emit UpdateActiveAgreementToParty(TABLE_AGREEMENTS_TO_PARTIES, msg.sender, _data);
+			emit LogActiveAgreementToPartyMapUpdate(
+				AGREEMENT_PARTY_MAP_EVENT_ID, 
+				msg.sender, 
+				_data
+			);
 		}
 	}
 
@@ -673,9 +724,19 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 					}
 			}
 			emit UpdateActiveAgreements(TABLE_AGREEMENTS, msg.sender);
+			emit LogAgreementLegalStateUpdate(
+				AGREEMENT_EVENT_ID,
+				msg.sender,
+				ActiveAgreement(msg.sender).getLegalState()
+			);
 		}
 		if (_event == ActiveAgreement(msg.sender).EVENT_ID_EVENT_LOG_UPDATED()) {
 			emit UpdateActiveAgreements(TABLE_AGREEMENTS, _source);
+			emit LogAgreementLegalStateUpdate(
+				AGREEMENT_EVENT_ID,
+				_source,
+				ActiveAgreement(_source).getLegalState()
+			);
 		}
 	}
 
@@ -700,6 +761,11 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 				// keep track of the execution process for the agreement
 				// NOTE: we're currently not checking if there is already a tracked execution process, because no execution path can currently lead to that situation
 				ActiveAgreementRegistryDb(database).setAgreementExecutionProcess(address(agreement), address(newPi));
+				emit LogAgreementExecutionProcessUpdate(
+					AGREEMENT_EVENT_ID,
+					address(agreement),
+					address(newPi)
+				);
 				emit UpdateActiveAgreements(TABLE_AGREEMENTS, address(agreement));
 				bpmService.startProcessInstance(newPi); // Note: Disregarding the error code here. If there was an error in the execution process, it should either REVERT or leave the PI in INTERRUPTED state
 			}
@@ -721,6 +787,7 @@ contract DefaultActiveAgreementRegistry is Versioned(1,0,0), AbstractEventListen
 	 */
 	 function setEventLogReference(address _activeAgreement, bytes32 _eventLogHoardAddress, bytes32 _eventLogHoardSecret) external {
 		ActiveAgreement(_activeAgreement).setEventLogReference(_eventLogHoardAddress, _eventLogHoardSecret);
+		emit LogAgreementEventLogReference(AGREEMENT_EVENT_ID, _activeAgreement, _eventLogHoardAddress, _eventLogHoardSecret);
 	 }
 	
 }

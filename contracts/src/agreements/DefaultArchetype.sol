@@ -97,20 +97,20 @@ contract DefaultArchetype is Archetype {
 	 * @dev Adds parameter
 	 * @param _parameterType parameter type (enum)
 	 * @param _parameterName parameter name
-	 * @return BaseErrors.NO_ERROR() if successful,
+	 * @return 
+	 *	 		 BaseErrors.NO_ERROR() and position of parameter, if successful,
 	 *		   BaseErrors.NULL_PARAM_NOT_ALLOWED() if _parameter is empty,
 	 *		   BaseErrors.RESOURCE_ALREADY_EXISTS() if _parameter already exists
 	 */
-	function addParameter(Agreements.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error) {
+	function addParameter(Agreements.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error, uint position) {
 		if (_parameterName == "")
-			return BaseErrors.NULL_PARAM_NOT_ALLOWED();
+			return (BaseErrors.NULL_PARAM_NOT_ALLOWED(), 0);
 		if (parameters.contains(_parameterName))
-			return BaseErrors.RESOURCE_ALREADY_EXISTS();
+			return (BaseErrors.RESOURCE_ALREADY_EXISTS(), 0);
 
 		parameters.push(_parameterName);
 		parameterTypes.insert(_parameterName, uint8(_parameterType));
-
-		return BaseErrors.NO_ERROR();
+		return (BaseErrors.NO_ERROR(), parameterTypes.rows[_parameterName].keyIdx);
 	}
 
 	/**

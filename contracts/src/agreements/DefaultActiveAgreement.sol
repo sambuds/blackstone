@@ -174,7 +174,7 @@ contract DefaultActiveAgreement is ActiveAgreement, AbstractDataStorage, Abstrac
 	 * @dev Returns the max number of events for the event log
 	 * @return the max number of events for the event log
 	 */
-	function getMaxNumberOfEvents() external view returns (uint) {
+	function getMaxNumberOfEvents() external view returns (uint32) {
 		return maxNumberOfEvents;
 	}
 

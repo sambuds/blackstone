@@ -8,6 +8,7 @@ const {
   getNamesOfOrganizations,
 } = require(`${global.__common}/controller-dependencies`);
 const { DEFAULT_DEPARTMENT_ID } = global.__monax_constants;
+const pgq = require('./postgres-query-helper');
 
 const getOrganizations = queryParams => new Promise((resolve, reject) => {
   const queryString = 'SELECT o.organization AS address, oa.approverKey as approver ' +
@@ -105,11 +106,11 @@ const getCurrencyByAlpha3Code = alpha3 => new Promise((resolve, reject) => {
   });
 });
 
-const getParameterTypeById = id => new Promise((resolve, reject) => {
-  const queryString = 'SELECT * FROM PARAMETER_TYPES WHERE id = ?';
-  contracts.cache.db.get(queryString, id, (err, data) => {
-    if (err) return reject(boom.badImplementation(`Failed to get parameter type for id ${id}: ${err}`));
-    if (!data) return reject(boom.notFound(`Parameter type with id ${id} not found`));
+const getParameterType = paramType => new Promise((resolve, reject) => {
+  const queryString = 'SELECT * FROM PARAMETER_TYPES WHERE parameterType = ?';
+  contracts.cache.db.get(queryString, paramType, (err, data) => {
+    if (err) return reject(boom.badImplementation(`Failed to get parameter type for id ${paramType}: ${err}`));
+    if (!data) return reject(boom.notFound(`Parameter type with id ${paramType} not found`));
     return resolve(data);
   });
 });
@@ -551,42 +552,42 @@ const getProcessModelData = address => new Promise((resolve, reject) => {
 });
 
 module.exports = {
-  getOrganizations,
-  getOrganization,
-  getUsers,
-  getProfile,
-  getCountries,
-  getCountryByAlpha2Code,
-  getRegionsOfCountry,
-  getCurrencies,
-  getCurrencyByAlpha3Code,
-  getParameterTypeById,
-  getParameterTypes,
-  getArchetypeData,
-  getArchetypeJurisdictionsAll,
-  getArchetypeJurisdictions,
-  getArchetypeParameters,
-  getArchetypeDocuments,
-  getArchetypeDataWithProcessDefinitions,
-  getPackagesOfArchetype,
-  getGoverningArchetypes,
-  getArchetypePackages,
-  getArchetypesInPackage,
-  getAgreements,
-  getAgreementData,
-  getAgreementParties,
-  getGoverningAgreements,
-  getAgreementEventLogDetails,
-  getAgreementCollections,
-  getAgreementCollectionData,
-  getAgreementsInCollection,
-  getModels,
-  getApplications,
-  getActivityInstances,
-  getActivityInstanceData,
-  getAccessPointDetails,
-  getTasksByUserAddress,
-  getProcessDefinitions,
-  getProcessDefinitionData,
-  getProcessModelData,
+  getOrganizations: pgq.getOrganizations || getOrganizations,
+  getOrganization: pgq.getOrganization || getOrganization,
+  getUsers: pgq.getUsers || getUsers,
+  getProfile: pgq.getProfile || getProfile,
+  getCountries: pgq.getCountries,
+  getCountryByAlpha2Code: pgq.getCountryByAlpha2Code,
+  getRegionsOfCountry: pgq.getRegionsOfCountry || getRegionsOfCountry,
+  getCurrencies: pgq.getCurrencies || getCurrencies,
+  getCurrencyByAlpha3Code: pgq.getCurrencyByAlpha3Code || getCurrencyByAlpha3Code,
+  getParameterType: pgq.getParameterType || getParameterType,
+  getParameterTypes: pgq.getParameterTypes || getParameterTypes,
+  getArchetypeData: pgq.getArchetypeData || getArchetypeData,
+  getArchetypeJurisdictionsAll: pgq.getArchetypeJurisdictionsAll || getArchetypeJurisdictionsAll,
+  getArchetypeJurisdictions: pgq.getArchetypeJurisdictions || getArchetypeJurisdictions,
+  getArchetypeParameters: pgq.getArchetypeParameters || getArchetypeParameters,
+  getArchetypeDocuments: pgq.getArchetypeDocuments || getArchetypeDocuments,
+  getArchetypeDataWithProcessDefinitions: pgq.getArchetypeDataWithProcessDefinitions || getArchetypeDataWithProcessDefinitions,
+  getPackagesOfArchetype: pgq.getPackagesOfArchetype || getPackagesOfArchetype,
+  getGoverningArchetypes: pgq.getGoverningArchetypes || getGoverningArchetypes,
+  getArchetypePackages: pgq.getArchetypePackages || getArchetypePackages,
+  getArchetypesInPackage: pgq.getArchetypesInPackage || getArchetypesInPackage,
+  getAgreements: pgq.getAgreements || getAgreements,
+  getAgreementData: pgq.getAgreementData || getAgreementData,
+  getAgreementParties: pgq.getAgreementParties || getAgreementParties,
+  getGoverningAgreements: pgq.getGoverningAgreements || getGoverningAgreements,
+  getAgreementEventLogDetails: pgq.getAgreementEventLogDetails || getAgreementEventLogDetails,
+  getAgreementCollections: pgq.getAgreementCollections || getAgreementCollections,
+  getAgreementCollectionData: pgq.getAgreementCollectionData || getAgreementCollectionData,
+  getAgreementsInCollection: pgq.getAgreementsInCollection || getAgreementsInCollection,
+  getModels: pgq.getModels || getModels,
+  getApplications: pgq.getApplications || getApplications,
+  getActivityInstances: pgq.getActivityInstances || getActivityInstances,
+  getActivityInstanceData: pgq.getActivityInstanceData || getActivityInstanceData,
+  getAccessPointDetails: pgq.getAccessPointDetails || getAccessPointDetails,
+  getTasksByUserAddress: pgq.getTasksByUserAddress || getTasksByUserAddress,
+  getProcessDefinitions: pgq.getProcessDefinitions || getProcessDefinitions,
+  getProcessDefinitionData: pgq.getProcessDefinitionData || getProcessDefinitionData,
+  getProcessModelData: pgq.getProcessModelData || getProcessModelData,
 };

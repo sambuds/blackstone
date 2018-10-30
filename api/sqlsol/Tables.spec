@@ -123,8 +123,8 @@
         "type": "address",
         "primary": true
       },
-      "agreements_name": {
-        "name": "agreements_name",
+      "agreement_name": {
+        "name": "agreement_name",
         "type": "string"
       },
       "archetype_address": {
@@ -204,8 +204,8 @@
     "TableName": "ARCHETYPE_PACKAGES",
     "Filter": "Log1Text = 'AN://archetype-packages'",
     "Columns": {
-      "id": {
-        "name": "id",
+      "package_id": {
+        "name": "package_id",
         "type": "bytes32",
         "primary": true
       },
@@ -235,8 +235,8 @@
     "TableName": "ARCHETYPE_TO_PACKAGE",
     "Filter": "Log1Text = 'AN://archetype-to-package'",
     "Columns": {
-      "packageId": {
-        "name": "packageId",
+      "package_id": {
+        "name": "package_id",
         "type": "bytes32",
         "primary": true
       },
@@ -671,8 +671,7 @@
       },
       "fixed_scope": {
         "name": "fixed_scope",
-        "type": "bytes32",
-        "bytesToString": true
+        "type": "bytes32"
       },
       "data_path": {
         "name": "data_path",
@@ -868,6 +867,7 @@
       "department_id": {
         "name": "department_id",
         "type": "bytes32",
+        "bytesToString": true,
         "primary": true
       },
       "user_count": {
@@ -893,6 +893,7 @@
       "department_id": {
         "name": "department_id",
         "type": "bytes32",
+        "bytesToString": true,
         "primary": true
       },
       "user_address": {

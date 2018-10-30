@@ -53,7 +53,7 @@ contract ArchetypeRegistry is Upgradeable {
 
 	event LogArchetypePackageCreation(
 		bytes32 indexed eventId,
-		bytes32 id,
+		bytes32 package_id,
 		string name,
 		string description,
 		address author,
@@ -63,13 +63,13 @@ contract ArchetypeRegistry is Upgradeable {
 
 	event LogArchetypePackageActive(
 		bytes32 indexed eventId,
-		bytes32 id,
+		bytes32 package_id,
 		bool active
 	);
 
 	event LogArchetypeToPackageUpdate(
 		bytes32 indexed eventId,
-		bytes32 packageId,
+		bytes32 package_id,
 		address archetype_address,
 		string archetype_name
 	);
@@ -87,7 +87,7 @@ contract ArchetypeRegistry is Upgradeable {
 		address archetype_address,
 		bytes32 document_key,
 		bytes32 hoard_address,
-		bytes32 hoard_secret
+		bytes32 secret_key
 	);
 
 	event LogArchetypeJurisdictionUpdate(

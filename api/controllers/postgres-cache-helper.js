@@ -5,6 +5,8 @@ const parser = require(path.resolve(global.__lib, 'bpmn-parser.js'));
 const { getModelFromHoard } = require(`${global.__controllers}/hoard-controller`);
 const sqlCache = require('./sqlsol-query-helper');
 const pool = require(`${global.__common}/postgres-db`);
+const logger = require(`${global.__common}/monax-logger`);
+const log = logger.getLogger('monax.controllers');
 
 const parseBpmnModel = async (rawXml) => {
   const anParser = parser.getNewParser();
@@ -20,15 +22,23 @@ const parseBpmnModel = async (rawXml) => {
 };
 
 const getActivityDetailsFromBpmn = async (pmAddress, processId, activityId) => {
-  const model = await sqlCache.getProcessModelData(pmAddress);
-  const diagram = await getModelFromHoard(model.diagramAddress, model.diagramSecret);
-  const data = splitMeta(diagram);
-  const { processes } = await parseBpmnModel(data.data.toString());
-  const targetProcess = processes.filter(p => p.id === processId)[0];
-  return {
-    name: targetProcess.activityMap[activityId],
-    processName: targetProcess.name,
-  };
+  try {
+    const model = (await sqlCache.getProcessModelData(pmAddress))[0];
+    const diagram = await getModelFromHoard(model.diagramAddress, model.diagramSecret);
+    const data = splitMeta(diagram);
+    const { processes } = await parseBpmnModel(data.data.toString());
+    const targetProcess = processes.filter(p => p.id === processId)[0];
+    return {
+      name: targetProcess.activityMap[activityId],
+      processName: targetProcess.name,
+    };
+  } catch (err) {
+    log.error(`Failed to get activity name for activity with id ${activityId} in process with id ${processId} in model at ${pmAddress}. Using activity id instead. ${err.stack}`);
+    return {
+      name: activityId,
+      processName: processId,
+    };
+  }
 };
 
 const coalesceActivityName = activity => new Promise(async (resolve, reject) => {
@@ -73,12 +83,17 @@ const populateTaskNames = tasks => new Promise((resolve, reject) => {
 });
 
 const getProcessNameFromBpmn = async (pmAddress, processId) => {
-  const model = await sqlCache.getProcessModelData(pmAddress);
-  const diagram = await getModelFromHoard(model.diagramAddress, model.diagramSecret);
-  const data = splitMeta(diagram);
-  const { processes } = await parseBpmnModel(data.data.toString());
-  const targetProcess = processes.filter(p => p.id === processId)[0];
-  return targetProcess.name || '';
+  try {
+    const model = (await sqlCache.getProcessModelData(pmAddress))[0];
+    const diagram = await getModelFromHoard(model.diagramAddress, model.diagramSecret);
+    const data = splitMeta(diagram);
+    const { processes } = await parseBpmnModel(data.data.toString());
+    const targetProcess = processes.filter(p => p.id === processId)[0];
+    return targetProcess.name || processId; // Using processId if name is empty
+  } catch (err) {
+    log.error(`Failed to get process name from BPMN for process with id ${processId} in model at ${pmAddress}. Using process id instead. ${err.stack}`);
+    return processId;
+  }
 };
 
 const coalesceProcessName = _processDefn => new Promise(async (resolve, reject) => {

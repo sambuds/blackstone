@@ -298,7 +298,7 @@ describe('FORMATION - EXECUTION with 1 User Task each', () => {
         let tasks = await sqlCache.getTasksByUserAddress(buyer.address)
         expect(tasks.length).to.equal(1)
         expect(tasks[0].processAddress).to.equal(piAddress)
-        expect(global.hexToString(tasks[0].activityId)).to.equal(buyTask.activityId)
+        expect(tasks[0].activityId).to.equal(buyTask.activityId)
         expect(tasks[0].agreementAddress).to.equal(agreement.address)
         expect(tasks[0].state).to.equal(4)
         aiId = tasks[0].activityInstanceId
@@ -333,7 +333,7 @@ describe('FORMATION - EXECUTION with 1 User Task each', () => {
   it('Should confirm pending user task for seller', async () => {
     let tasks = await sqlCache.getTasksByUserAddress(seller.address)
     expect(tasks.length).to.equal(1)
-    expect(global.hexToString(tasks[0].activityId)).to.equal(sellTask.activityId)
+    expect(tasks[0].activityId).to.equal(sellTask.activityId)
     expect(tasks[0].agreementAddress).to.equal(agreement.address)
     expect(tasks[0].state).to.equal(4)
     aiId = tasks[0].activityInstanceId

@@ -54,7 +54,7 @@ const dependencies = {
       case 'Access Point':
         element.accessPointId = global.hexToString(element.accessPointId);
         break;
-      case 'Archetype':
+      case 'Archetype': // TODO - replace with contents of 'Archetype-PG' and delete the case below once ready to remove sqlsol
         if (Object.prototype.hasOwnProperty.call(element, 'active')) element.active = parseInt(element.active, 10) !== 0;
         if (Object.prototype.hasOwnProperty.call(element, 'isPrivate')) element.isPrivate = parseInt(element.isPrivate, 10) !== 0;
         if (!_.isEmpty(element.description)) element.description = _.unescape(element.description);
@@ -62,6 +62,11 @@ const dependencies = {
         if (element.executionModelId) element.executionModelId = global.hexToString(element.executionModelId);
         if (element.formationProcessId) element.formationProcessId = global.hexToString(element.formationProcessId);
         if (element.executionProcessId) element.executionProcessId = global.hexToString(element.executionProcessId);
+        if (element.successor) element.successor = Number(element.successor) === 0 ? null : element.successor;
+        if (element.price) element.price = parseInt(element.price, 10) / 100; // converting to dollars from cents (recorded uint on chain)
+        break;
+      case 'Archetype-PG':
+        if (!_.isEmpty(element.description)) element.description = _.unescape(element.description);
         if (element.successor) element.successor = Number(element.successor) === 0 ? null : element.successor;
         if (element.price) element.price = parseInt(element.price, 10) / 100; // converting to dollars from cents (recorded uint on chain)
         break;
@@ -81,6 +86,9 @@ const dependencies = {
         element.alpha2 = global.hexToString(element.alpha2);
         element.alpha3 = global.hexToString(element.alpha3);
         element.m49 = global.hexToString(element.m49);
+        break;
+      case 'Country-PG': // TODO Temporary until front-end is updated to rely on alpha2
+        element.country = element.alpha2;
         break;
       case 'Currency':
         element.currency = global.hexToString(element.currency);

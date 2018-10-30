@@ -19,7 +19,10 @@ const userProfileSchema = require(`${global.__schemas}/userProfile`);
 const sqlCache = require('./sqlsol-query-helper');
 
 const getOrganizations = asyncMiddleware(async (req, res) => {
-  if (req.query.approver === 'true') req.query.approver = req.user.address;
+  if (req.query.approver === 'true') {
+    req.query.approver_address = req.user.address;
+    delete req.query.approver;
+  }
   try {
     const data = await sqlCache.getOrganizations(req.query);
     // Sqlsol query has join that results in multiple rows for each org
@@ -111,7 +114,7 @@ const createOrganization = asyncMiddleware(async (req, res) => {
 });
 
 const createOrganizationUserAssociation = asyncMiddleware(async (req, res) => {
-  const orgData = await sqlCache.getOrganizations({ 'o.organization': req.params.address });
+  const orgData = await sqlCache.getOrganizations({ 'o.organization_address': req.params.address });
   if (!orgData.find(({ approver }) => approver === req.user.address)) {
     throw boom.forbidden('User is not an approver of the organization and not authorized to add users');
   }
@@ -120,7 +123,7 @@ const createOrganizationUserAssociation = asyncMiddleware(async (req, res) => {
 });
 
 const deleteOrganizationUserAssociation = asyncMiddleware(async (req, res) => {
-  const orgData = await sqlCache.getOrganizations({ 'o.organization': req.params.address });
+  const orgData = await sqlCache.getOrganizations({ 'o.organization_address': req.params.address });
   if (!orgData.find(({ approver }) => approver === req.user.address)) {
     throw boom.forbidden('User is not an approver of the organization and not authorized to remove users');
   }
@@ -136,13 +139,13 @@ const createDepartment = asyncMiddleware(async (req, res) => {
   } else if (!/^[a-zA-Z0-9_]+/.test(id)) {
     throw boom.badRequest('Id cannot include spaces');
   }
-  const orgData = await sqlCache.getOrganizations({ 'o.organization': address });
+  const orgData = await sqlCache.getOrganizations({ 'o.organization_address': address });
   if (!orgData.find(({ approver }) => approver === req.user.address)) {
     throw boom.forbidden('User is not an approver of the organization and not authorized to create departments');
   }
-  await contracts.createDepartment(address, { id, name },req.user.address);
+  await contracts.createDepartment(address, { id, name }, req.user.address);
   // Optionally also add users in the same request
-  const addUserPromises = users.map(user => contracts.addDepartmentUser(address, id, user));
+  const addUserPromises = users.map(user => contracts.addDepartmentUser(address, id, user, req.user.address));
   await Promise.all(addUserPromises)
     .then(() => res.status(200).send({ id, name, users }))
     .catch((err) => {
@@ -153,7 +156,7 @@ const createDepartment = asyncMiddleware(async (req, res) => {
 
 const removeDepartment = asyncMiddleware(async (req, res) => {
   const { address, id } = req.params;
-  const orgData = await sqlCache.getOrganizations({ 'o.organization': address });
+  const orgData = await sqlCache.getOrganizations({ 'o.organization_address': address });
   if (!orgData.find(({ approver }) => approver === req.user.address)) {
     throw boom.forbidden('User is not an approver of the organization and not authorized to remove departments');
   }
@@ -163,7 +166,7 @@ const removeDepartment = asyncMiddleware(async (req, res) => {
 
 const addDepartmentUsers = asyncMiddleware(async (req, res) => {
   const { address, id } = req.params;
-  const orgData = await sqlCache.getOrganizations({ 'o.organization': address });
+  const orgData = await sqlCache.getOrganizations({ 'o.organization_address': address });
   if (!orgData.find(({ approver }) => approver === req.user.address)) {
     throw boom.forbidden('User is not an approver of the organization and not authorized to add users to departments');
   }
@@ -179,7 +182,7 @@ const addDepartmentUsers = asyncMiddleware(async (req, res) => {
 
 const removeDepartmentUser = asyncMiddleware(async (req, res) => {
   const { address, id, userAddress } = req.params;
-  const orgData = await sqlCache.getOrganizations({ 'o.organization': address });
+  const orgData = await sqlCache.getOrganizations({ 'o.organization_address': address });
   if (!orgData.find(({ approver }) => approver === req.user.address)) {
     throw boom.forbidden('User is not an approver of the organization and not authorized to add users to departments');
   }

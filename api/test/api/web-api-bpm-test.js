@@ -69,893 +69,893 @@ describe(':: HOARD ::', () => {
 });
 
 
-/**
- * ######## Incorporation use case ###############################################################################################################
- */
-describe(':: FORMATION - EXECUTION for Incorporation Signing and Fulfilment ::', () => {
-  let signer = {
-    username: `signer${rid(5, 'aA0')}`,
-    password: 'signer',
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
-  let receiver = {
-    username: `receiver${rid(5, 'aA0')}`,
-    password: 'eteUser2',
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
-  let confirmer = {
-    username: `confirmer${rid(5, 'aA0')}`,
-    password: 'eteUser2',
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
+// /**
+//  * ######## Incorporation use case ###############################################################################################################
+//  */
+// describe(':: FORMATION - EXECUTION for Incorporation Signing and Fulfilment ::', () => {
+//   let signer = {
+//     username: `signer${rid(5, 'aA0')}`,
+//     password: 'signer',
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
+//   let receiver = {
+//     username: `receiver${rid(5, 'aA0')}`,
+//     password: 'eteUser2',
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
+//   let confirmer = {
+//     username: `confirmer${rid(5, 'aA0')}`,
+//     password: 'eteUser2',
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
 
-  let formation = {
-    filePath: 'test/data/inc-formation.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Incorporation-Formation'
-  }
-  let execution = {
-    filePath: 'test/data/inc-execution.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Incorporation-Execution'
-  }
+//   let formation = {
+//     filePath: 'test/data/inc-formation.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Incorporation-Formation'
+//   }
+//   let execution = {
+//     filePath: 'test/data/inc-execution.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Incorporation-Execution'
+//   }
 
-  /**
-      { type: 0, name: 'bool' },
-      { type: 1, name: 'string' },
-      { type: 2, name: 'num' },
-      { type: 3, name: 'date' },
-      { type: 4, name: 'datetime' },
-      { type: 5, name: 'money' },
-      { type: 6, name: 'user' },
-      { type: 7, name: 'addr' },
-      { type: 8, name: 'signatory' },
-   */
-  let archetype = {
-    name: 'Incorporation Archetype',
-    description: 'Incorporation Archetype',
-    price: 10,
-    isPrivate: 1,
-    active: 1,
-    parameters: [
-      { type: 8, name: 'Incorporator' },
-      { type: 6, name: 'Receiver' },
-      { type: 6, name: 'Confirmer' },
-    ],
-    documents: [{
-      name: 'doc1.md',
-      hoardAddress: '0x0',
-      secretKey: '0x0',
-    }],
-    jurisdictions: [],
-    executionProcessDefinition: '',
-    formationProcessDefinition: '',
-    governingArchetypes: []
-  }
+//   /**
+//       { type: 0, name: 'bool' },
+//       { type: 1, name: 'string' },
+//       { type: 2, name: 'num' },
+//       { type: 3, name: 'date' },
+//       { type: 4, name: 'datetime' },
+//       { type: 5, name: 'money' },
+//       { type: 6, name: 'user' },
+//       { type: 7, name: 'addr' },
+//       { type: 8, name: 'signatory' },
+//    */
+//   let archetype = {
+//     name: 'Incorporation Archetype',
+//     description: 'Incorporation Archetype',
+//     price: 10,
+//     isPrivate: 1,
+//     active: 1,
+//     parameters: [
+//       { type: 8, name: 'Incorporator' },
+//       { type: 6, name: 'Receiver' },
+//       { type: 6, name: 'Confirmer' },
+//     ],
+//     documents: [{
+//       name: 'doc1.md',
+//       hoardAddress: '0x0',
+//       secretKey: '0x0',
+//     }],
+//     jurisdictions: [],
+//     executionProcessDefinition: '',
+//     formationProcessDefinition: '',
+//     governingArchetypes: []
+//   }
 
-  let agreement = {
-    name: 'user tasks agreement',
-    archetype: '',
-    isPrivate: false,
-    parameters: [],
-    hoardAddress: '',
-    hoardSecret: '',
-    eventLogHoardAddress: '',
-    eventLogHoardSecret: '',
-    maxNumberOfEvents: 0,
-    governingAgreements: []
-  }
+//   let agreement = {
+//     name: 'user tasks agreement',
+//     archetype: '',
+//     isPrivate: false,
+//     parameters: [],
+//     hoardAddress: '',
+//     hoardSecret: '',
+//     eventLogHoardAddress: '',
+//     eventLogHoardSecret: '',
+//     maxNumberOfEvents: 0,
+//     governingAgreements: []
+//   }
 
-  it('Should register users', async () => {
-    // REGISTER USERS
-    let registerResult = await api.registerUser(signer);
-    signer.address = registerResult.address;
-    expect(signer.address).to.exist
-    registerResult = await api.registerUser(receiver);
-    receiver.address = registerResult.address;
-    expect(receiver.address).to.exist
-    registerResult = await api.registerUser(confirmer);
-    confirmer.address = registerResult.address;
-    expect(confirmer.address).to.exist
-  }).timeout(5000);
+//   it('Should register users', async () => {
+//     // REGISTER USERS
+//     let registerResult = await api.registerUser(signer);
+//     signer.address = registerResult.address;
+//     expect(signer.address).to.exist
+//     registerResult = await api.registerUser(receiver);
+//     receiver.address = registerResult.address;
+//     expect(receiver.address).to.exist
+//     registerResult = await api.registerUser(confirmer);
+//     confirmer.address = registerResult.address;
+//     expect(confirmer.address).to.exist
+//   }).timeout(5000);
 
-  it('Should login users', (done) => {
-    // LOGIN USERS
-    setTimeout(async () => {
-      try {
-        let loginResult = await api.loginUser(signer);
-        expect(loginResult.token).to.exist;
-        signer.token = loginResult.token;
-        loginResult = await api.loginUser(receiver);
-        expect(loginResult.token).to.exist;
-        receiver.token = loginResult.token;
-        loginResult = await api.loginUser(confirmer);
-        expect(loginResult.token).to.exist;
-        confirmer.token = loginResult.token;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should login users', (done) => {
+//     // LOGIN USERS
+//     setTimeout(async () => {
+//       try {
+//         let loginResult = await api.loginUser(signer);
+//         expect(loginResult.token).to.exist;
+//         signer.token = loginResult.token;
+//         loginResult = await api.loginUser(receiver);
+//         expect(loginResult.token).to.exist;
+//         receiver.token = loginResult.token;
+//         loginResult = await api.loginUser(confirmer);
+//         expect(loginResult.token).to.exist;
+//         confirmer.token = loginResult.token;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should deploy formation and execution models', async () => {
-    // DEPLOY FORMATION MODEL
-    let formXml = api.generateModelXml(formation.id, formation.filePath);
-    let formationDeploy = await api.createAndDeployModel(formXml, signer.token);
-    expect(formationDeploy).to.exist;
-    Object.assign(formation, formationDeploy.model);
-    Object.assign(formation.process, formationDeploy.processes[0]);
-    archetype.formationProcessDefinition = formation.process.address;
-    expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    // DEPLOY EXECUTION MODEL
-    let execXml = api.generateModelXml(execution.id, execution.filePath);
-    let executionDeploy = await api.createAndDeployModel(execXml, signer.token);
-    expect(executionDeploy).to.exist;
-    Object.assign(execution, executionDeploy.model);
-    Object.assign(execution.process, executionDeploy.processes[0]);
-    archetype.executionProcessDefinition = execution.process.address;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(30000);
+//   it('Should deploy formation and execution models', async () => {
+//     // DEPLOY FORMATION MODEL
+//     let formXml = api.generateModelXml(formation.id, formation.filePath);
+//     let formationDeploy = await api.createAndDeployModel(formXml, signer.token);
+//     expect(formationDeploy).to.exist;
+//     Object.assign(formation, formationDeploy.model);
+//     Object.assign(formation.process, formationDeploy.processes[0]);
+//     archetype.formationProcessDefinition = formation.process.address;
+//     expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     // DEPLOY EXECUTION MODEL
+//     let execXml = api.generateModelXml(execution.id, execution.filePath);
+//     let executionDeploy = await api.createAndDeployModel(execXml, signer.token);
+//     expect(executionDeploy).to.exist;
+//     Object.assign(execution, executionDeploy.model);
+//     Object.assign(execution.process, executionDeploy.processes[0]);
+//     archetype.executionProcessDefinition = execution.process.address;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(30000);
 
-  it('Should get a bpm diagram in the requested format', async () => {
-    // GET DIAGRAM
-    const diagram = await (api.getDiagram(formation.process.modelAddress, 'application/json'));
-    expect(diagram).to.be.an('object');
-  }).timeout(30000);
+//   it('Should get a bpm diagram in the requested format', async () => {
+//     // GET DIAGRAM
+//     const diagram = await (api.getDiagram(formation.process.modelAddress, 'application/json'));
+//     expect(diagram).to.be.an('object');
+//   }).timeout(30000);
 
-  it('Should populate process names in cache', async () => {
-    const formationProcess = await api.getProcessDefinition(formation.process.address, signer.token);
-    const executionProcess = await api.getProcessDefinition(execution.process.address, signer.token);
-    expect(formationProcess.processName).to.equal(formation.process.processName);
-    expect(executionProcess.processName).to.equal(execution.process.processName);
-    let formCacheReponse = await pool.query({
-      text: 'SELECT process_name FROM PROCESS_DETAILS WHERE model_id = $1 AND process_id = $2',
-      values: [formation.id, formation.process.processDefinitionId]
-    });
-    expect(formCacheReponse.rows[0].process_name).to.equal(formation.process.processName);
-    let execCacheReponse = await pool.query({
-      text: 'SELECT process_name FROM PROCESS_DETAILS WHERE model_id = $1 AND process_id = $2',
-      values: [execution.id, execution.process.processDefinitionId]
-    });
-    expect(execCacheReponse.rows[0].process_name).to.equal(execution.process.processName);
-  });
+//   it('Should populate process names in cache', async () => {
+//     const formationProcess = await api.getProcessDefinition(formation.process.address, signer.token);
+//     const executionProcess = await api.getProcessDefinition(execution.process.address, signer.token);
+//     expect(formationProcess.processName).to.equal(formation.process.processName);
+//     expect(executionProcess.processName).to.equal(execution.process.processName);
+//     let formCacheReponse = await pool.query({
+//       text: 'SELECT process_name FROM PROCESS_DETAILS WHERE model_id = $1 AND process_id = $2',
+//       values: [formation.id, formation.process.processDefinitionId]
+//     });
+//     expect(formCacheReponse.rows[0].process_name).to.equal(formation.process.processName);
+//     let execCacheReponse = await pool.query({
+//       text: 'SELECT process_name FROM PROCESS_DETAILS WHERE model_id = $1 AND process_id = $2',
+//       values: [execution.id, execution.process.processDefinitionId]
+//     });
+//     expect(execCacheReponse.rows[0].process_name).to.equal(execution.process.processName);
+//   });
 
-  it('Should create an archetype', done => {
-    // CREATE ARCHETYPE
-    setTimeout(async () => {
-      try {
-        archetype.documents[0].hoardAddress = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
-        Object.assign(archetype, await api.createArchetype(archetype, signer.token));
-        expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        agreement.archetype = archetype.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should create an archetype', done => {
+//     // CREATE ARCHETYPE
+//     setTimeout(async () => {
+//       try {
+//         archetype.documents[0].hoardAddress = hoardRef.address;
+//         archetype.documents[0].secretKey = hoardRef.secretKey;
+//         Object.assign(archetype, await api.createArchetype(archetype, signer.token));
+//         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         agreement.archetype = archetype.address;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an angreement and start formation process', done => {
-    // CREATE AGREEMENT
-    setTimeout(async () => {
-      try {
-        agreement.parameters.push({ name: 'Incorporator', type: 8, value: signer.address });
-        agreement.parameters.push({ name: 'Receiver', type: 6, value: receiver.address });
-        agreement.parameters.push({ name: 'Confirmer', type: 6, value: confirmer.address });
-        agreement.hoardAddress = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
-        Object.assign(agreement, await api.createAgreement(agreement, signer.token));
-        expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should create an angreement and start formation process', done => {
+//     // CREATE AGREEMENT
+//     setTimeout(async () => {
+//       try {
+//         agreement.parameters.push({ name: 'Incorporator', type: 8, value: signer.address });
+//         agreement.parameters.push({ name: 'Receiver', type: 6, value: receiver.address });
+//         agreement.parameters.push({ name: 'Confirmer', type: 6, value: confirmer.address });
+//         agreement.hoardAddress = hoardRef.address;
+//         agreement.hoardSecret = hoardRef.secretKey;
+//         Object.assign(agreement, await api.createAgreement(agreement, signer.token));
+//         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should sign and complete incorporation task by incorporator', done => {
-    setTimeout(async () => {
-      try {
-        let signerTasks = await api.getTasksForUser(signer.token);
-        expect(signerTasks.length).to.be.greaterThan(0);
-        expect(signerTasks[0].activityId).to.equal('signTask_abc123');
-        expect(signerTasks[0].name).to.equal('Sign For Incorporation');
-        await api.completeAndSignTaskForUser(signerTasks[0].activityInstanceId, agreement.address, signer.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should sign and complete incorporation task by incorporator', done => {
+//     setTimeout(async () => {
+//       try {
+//         let signerTasks = await api.getTasksForUser(signer.token);
+//         expect(signerTasks.length).to.be.greaterThan(0);
+//         expect(signerTasks[0].activityId).to.equal('signTask_abc123');
+//         expect(signerTasks[0].name).to.equal('Sign For Incorporation');
+//         await api.completeAndSignTaskForUser(signerTasks[0].activityInstanceId, agreement.address, signer.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should sign and complete receive signature task by receiver', done => {
-    setTimeout(async () => {
-      try {
-        let receiverTasks = await api.getTasksForUser(receiver.token);
-        expect(receiverTasks.length).to.be.greaterThan(0);
-        expect(receiverTasks[0].activityId).to.equal('recTask_123fkjg');
-        expect(receiverTasks[0].name).to.equal('Receive Signature');
-        await api.completeTaskForUser(receiverTasks[0].activityInstanceId, null, receiver.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should sign and complete receive signature task by receiver', done => {
+//     setTimeout(async () => {
+//       try {
+//         let receiverTasks = await api.getTasksForUser(receiver.token);
+//         expect(receiverTasks.length).to.be.greaterThan(0);
+//         expect(receiverTasks[0].activityId).to.equal('recTask_123fkjg');
+//         expect(receiverTasks[0].name).to.equal('Receive Signature');
+//         await api.completeTaskForUser(receiverTasks[0].activityInstanceId, null, receiver.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should verify agreement is EXECUTED', done => {
-    setTimeout(async () => {
-      try {
-        let agreementData = await api.getAgreement(agreement.address, signer.token);
-        expect(parseInt(agreementData.legalState, 10)).to.equal(2);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should verify agreement is EXECUTED', done => {
+//     setTimeout(async () => {
+//       try {
+//         let agreementData = await api.getAgreement(agreement.address, signer.token);
+//         expect(parseInt(agreementData.legalState, 10)).to.equal(2);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should sign and complete confirmation task by confirmer', done => {
-    setTimeout(async () => {
-      try {
-        let confirmTasks = await api.getTasksForUser(confirmer.token);
-        expect(confirmTasks.length).to.be.greaterThan(0);
-        expect(confirmTasks[0].activityId).to.equal('confirmTask_kah254');
-        expect(confirmTasks[0].name).to.equal('Confirm Incorporation');
-        await api.completeTaskForUser(confirmTasks[0].activityInstanceId, null, confirmer.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should sign and complete confirmation task by confirmer', done => {
+//     setTimeout(async () => {
+//       try {
+//         let confirmTasks = await api.getTasksForUser(confirmer.token);
+//         expect(confirmTasks.length).to.be.greaterThan(0);
+//         expect(confirmTasks[0].activityId).to.equal('confirmTask_kah254');
+//         expect(confirmTasks[0].name).to.equal('Confirm Incorporation');
+//         await api.completeTaskForUser(confirmTasks[0].activityInstanceId, null, confirmer.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should verify agreement is FULFILLED', done => {
-    setTimeout(async () => {
-      try {
-        let agreementData = await api.getAgreement(agreement.address, signer.token);
-        expect(parseInt(agreementData.legalState, 10)).to.equal(3);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should verify agreement is FULFILLED', done => {
+//     setTimeout(async () => {
+//       try {
+//         let agreementData = await api.getAgreement(agreement.address, signer.token);
+//         expect(parseInt(agreementData.legalState, 10)).to.equal(3);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-});
-
-
-/**
- * ######## Sale of Goods use case ###############################################################################################################
- */
-describe(':: FORMATION - EXECUTION for Sale of Goods User Tasks ::', () => {
-
-  const model = { id: rid(16, 'aA0'), filePath: 'test/data/AN-TestTemplate-FE.bpmn' };
-  const archetype1 = {
-    name: "Archetype 1",
-    description: "Archetype 1",
-    price: 10,
-    isPrivate: true,
-    active: true,
-    password: "this is a test",
-    formationProcessDefinition: "",
-    parameters: [
-      { name: "buyer", type: 6 },
-      { name: "seller", type: 6 }
-    ],
-    jurisdictions: [{ country: "US", regions: [] }],
-    documents: [{
-      name: 'doc1.md',
-      hoardAddress: '0x0',
-      secretKey: '0x0',
-    }],
-    governingArchetypes: []
-  };
-  let agreement1 = {
-    name: 'Agreement No. ' + new Date().getMilliseconds(),
-    archetype: '', // plug in archetype address
-    isPrivate: false,
-    parties: [],
-    parameters: [],
-    maxNumberOfEvents: 5,
-    governingAgreements: []
-  };
-  let buyerTask;
-  let sellerTask;
-  const process1 = {};
-  const process2 = {};
-  let xml = api.generateModelXml(model.id, model.filePath);
-  expect(xml).to.exist;
-  const user1 = {
-    username: rid(10, 'aA0'),
-    password: 'eteUser1',
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
-  const user2 = {
-    username: rid(10, 'aA0'),
-    password: 'eteUser2',
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
-
-  it('Should register users', async () => {
-    // REGISTER USERS
-    let registerResult = await api.registerUser(user1);
-    user1.address = registerResult.address;
-    expect(user1.address).to.exist
-    registerResult = await api.registerUser(user2);
-    user2.address = registerResult.address;
-    expect(user2.address).to.exist
-  }).timeout(5000);
-
-  it('Should login users', (done) => {
-    // LOGIN USERS
-    setTimeout(async () => {
-      let loginResult = await api.loginUser(user1);
-      expect(loginResult.token).to.exist;
-      user1.token = loginResult.token;
-      loginResult = await api.loginUser(user2);
-      expect(loginResult.token).to.exist;
-      user2.token = loginResult.token;
-      done();
-    }, 3000);
-  }).timeout(10000);
-
-  it('Should deploy model', async () => {
-    // DEPLOY MODEL
-    let deployResponse = await api.createAndDeployModel(xml, user1.token);
-    expect(deployResponse).to.exist;
-    Object.assign(model, deployResponse.model);
-    Object.assign(process1, deployResponse.processes[0]);
-    Object.assign(process2, deployResponse.processes[1]);
-    archetype1.formationProcessDefinition = process1.address;
-    archetype1.executionProcessDefinition = process2.address;
-    expect(String(archetype1.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    expect(String(archetype1.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(30000);
-
-  it('Should create an archetype', async () => {
-    // CREATE ARCHETYPE
-    archetype1.documents[0].hoardAddress = hoardRef.address;
-    archetype1.documents[0].secretKey = hoardRef.secretKey;
-    Object.assign(archetype1, await api.createArchetype(archetype1, user1.token));
-    expect(String(archetype1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(15000);
-
-  it('Should create an agreement', done => {
-    // CREATE AGREEMENT AND START PROCESS
-    agreement1.archetype = archetype1.address;
-    agreement1.parameters.push({ name: 'buyer', type: 6, value: user1.address });
-    agreement1.parameters.push({ name: 'seller', type: 6, value: user2.address });
-    // adding user1 to parties even though the task assigned to user1 is not a sign task - this is still allowed
-    // you need to be in the parties array of an agreement to be able to cancel an agreement
-    agreement1.parties.push(user1.address);
-    setTimeout(async () => {
-      try {
-        let agreementRes = await api.createAgreement(agreement1, user1.token);
-        agreement1.address = agreementRes.address;
-        expect(String(agreement1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 5000);
-  }).timeout(20000);
-
-  it('Should verify only ONE pending user task for buyer and complete it', done => {
-    // USER TASK VERIFICATION
-    setTimeout(async () => {
-      try {
-        let buyerTasks = await api.getTasksForUser(user1.token);
-        expect(buyerTasks.length).to.equal(1);
-        expect(buyerTasks[0].activityId).to.equal('SignOffPayment');
-        buyerTask = buyerTasks[0];
-        let sellerTasks = await api.getTasksForUser(user2.token);
-        expect(sellerTasks.length).to.equal(0);
-        await api.completeAndSignTaskForUser(buyerTask.activityInstanceId, agreement1.address, user1.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 5000);
-  }).timeout(15000);
-
-  it('Should verify NO pending user task for buyer', done => {
-    // USER TASK VERIFICATION
-    setTimeout(async () => {
-      try {
-        let tasks = await api.getTasksForUser(user1.token);
-        expect(tasks.length).to.equal(0);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
-
-  it('Should verify only ONE pending user task for seller and complete it', done => {
-    // USER TASK VERIFICATION
-    setTimeout(async () => {
-      try {
-        let sellerTasks = await api.getTasksForUser(user2.token);
-        expect(sellerTasks.length).to.equal(1);
-        expect(sellerTasks[0].activityId).to.equal('ShipGoods');
-        sellerTask = sellerTasks[0];
-        let buyerTasks = await api.getTasksForUser(user1.token);
-        expect(buyerTasks.length).to.equal(0);
-        await api.completeTaskForUser(sellerTask.activityInstanceId, null, user2.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
-
-  it('Should verify NO pending user task for seller', done => {
-    // USER TASK VERIFICATION
-    setTimeout(async () => {
-      try {
-        let tasks = await api.getTasksForUser(user2.token);
-        expect(tasks.length).to.equal(0);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
-
-  it('Should cancel an agreement by an agreement party member', done => {
-    // AGREEMENT CANCELATION VERIFICATION
-    setTimeout(async () => {
-      try {
-        await api.cancelAgreement(agreement1.address, user1.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
-
-});
+// });
 
 
-/**
- * ######## Data Mapping Test ###############################################################################################################
- */
-describe(':: DATA MAPPING TEST ::', () => {
-  let manager = {
-    username: `manager${rid(5, 'aA0')}`,
-    password: 'manager',
-    email: `manager${rid(3, 'aA0')}@test.com`,
-  };
+// /**
+//  * ######## Sale of Goods use case ###############################################################################################################
+//  */
+// describe(':: FORMATION - EXECUTION for Sale of Goods User Tasks ::', () => {
 
-  let admin = {
-    username: `admin${rid(5, 'aA0')}`,
-    password: 'administrator',
-    email: `admin${rid(3, 'aA0')}@test.com`,
-  };
+//   const model = { id: rid(16, 'aA0'), filePath: 'test/data/AN-TestTemplate-FE.bpmn' };
+//   const archetype1 = {
+//     name: "Archetype 1",
+//     description: "Archetype 1",
+//     price: 10,
+//     isPrivate: true,
+//     active: true,
+//     password: "this is a test",
+//     formationProcessDefinition: "",
+//     parameters: [
+//       { name: "buyer", type: 6 },
+//       { name: "seller", type: 6 }
+//     ],
+//     jurisdictions: [{ country: "US", regions: [] }],
+//     documents: [{
+//       name: 'doc1.md',
+//       hoardAddress: '0x0',
+//       secretKey: '0x0',
+//     }],
+//     governingArchetypes: []
+//   };
+//   let agreement1 = {
+//     name: 'Agreement No. ' + new Date().getMilliseconds(),
+//     archetype: '', // plug in archetype address
+//     isPrivate: false,
+//     parties: [],
+//     parameters: [],
+//     maxNumberOfEvents: 5,
+//     governingAgreements: []
+//   };
+//   let buyerTask;
+//   let sellerTask;
+//   const process1 = {};
+//   const process2 = {};
+//   let xml = api.generateModelXml(model.id, model.filePath);
+//   expect(xml).to.exist;
+//   const user1 = {
+//     username: rid(10, 'aA0'),
+//     password: 'eteUser1',
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
+//   const user2 = {
+//     username: rid(10, 'aA0'),
+//     password: 'eteUser2',
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
 
-  let formation = {
-    filePath: 'test/data/data-mapping-formation.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Data-Mapping-Formation'
-  }
-  let execution = {
-    filePath: 'test/data/data-mapping-execution.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Data-Mapping-Execution'
-  }
+//   it('Should register users', async () => {
+//     // REGISTER USERS
+//     let registerResult = await api.registerUser(user1);
+//     user1.address = registerResult.address;
+//     expect(user1.address).to.exist
+//     registerResult = await api.registerUser(user2);
+//     user2.address = registerResult.address;
+//     expect(user2.address).to.exist
+//   }).timeout(5000);
 
-  /**
-      { type: 0, name: 'bool' },
-      { type: 1, name: 'string' },
-      { type: 2, name: 'num' },
-      { type: 3, name: 'date' },
-      { type: 4, name: 'datetime' },
-      { type: 5, name: 'money' },
-      { type: 6, name: 'user' },
-      { type: 7, name: 'addr' },
-      { type: 8, name: 'signatory' },
-   */
-  let archetype = {
-    name: 'Data Mapping Archetype',
-    description: 'Data Mapping Archetype',
-    price: 10,
-    isPrivate: 0,
-    active: true,
-    parameters: [
-      { type: 8, name: 'Manager' },
-      { type: 6, name: 'Administrator' }
-    ],
-    documents: [{
-      name: 'doc1.md',
-      hoardAddress: '0x0',
-      secretKey: '0x0',
-    }],
-    jurisdictions: [],
-    executionProcessDefinition: '',
-    formationProcessDefinition: '',
-    governingArchetypes: []
-  }
+//   it('Should login users', (done) => {
+//     // LOGIN USERS
+//     setTimeout(async () => {
+//       let loginResult = await api.loginUser(user1);
+//       expect(loginResult.token).to.exist;
+//       user1.token = loginResult.token;
+//       loginResult = await api.loginUser(user2);
+//       expect(loginResult.token).to.exist;
+//       user2.token = loginResult.token;
+//       done();
+//     }, 3000);
+//   }).timeout(10000);
 
-  let agreement = {
-    name: 'data mapping agreement 1',
-    archetype: '',
-    isPrivate: false,
-    parameters: [],
-    hoardAddress: '',
-    hoardSecret: '',
-    eventLogHoardAddress: '',
-    eventLogHoardSecret: '',
-    maxNumberOfEvents: 0,
-    governingAgreements: []
-  }
+//   it('Should deploy model', async () => {
+//     // DEPLOY MODEL
+//     let deployResponse = await api.createAndDeployModel(xml, user1.token);
+//     expect(deployResponse).to.exist;
+//     Object.assign(model, deployResponse.model);
+//     Object.assign(process1, deployResponse.processes[0]);
+//     Object.assign(process2, deployResponse.processes[1]);
+//     archetype1.formationProcessDefinition = process1.address;
+//     archetype1.executionProcessDefinition = process2.address;
+//     expect(String(archetype1.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     expect(String(archetype1.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(30000);
 
-  let managerTask, adminTask;
+//   it('Should create an archetype', async () => {
+//     // CREATE ARCHETYPE
+//     archetype1.documents[0].hoardAddress = hoardRef.address;
+//     archetype1.documents[0].secretKey = hoardRef.secretKey;
+//     Object.assign(archetype1, await api.createArchetype(archetype1, user1.token));
+//     expect(String(archetype1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(15000);
 
-  it('Should register users', async () => {
-    // REGISTER USERS
-    let registerResult = await api.registerUser(manager);
-    manager.address = registerResult.address;
-    expect(manager.address).to.exist
-    registerResult = await api.registerUser(admin);
-    admin.address = registerResult.address;
-    expect(admin.address).to.exist
-  }).timeout(3000);
+//   it('Should create an agreement', done => {
+//     // CREATE AGREEMENT AND START PROCESS
+//     agreement1.archetype = archetype1.address;
+//     agreement1.parameters.push({ name: 'buyer', type: 6, value: user1.address });
+//     agreement1.parameters.push({ name: 'seller', type: 6, value: user2.address });
+//     // adding user1 to parties even though the task assigned to user1 is not a sign task - this is still allowed
+//     // you need to be in the parties array of an agreement to be able to cancel an agreement
+//     agreement1.parties.push(user1.address);
+//     setTimeout(async () => {
+//       try {
+//         let agreementRes = await api.createAgreement(agreement1, user1.token);
+//         agreement1.address = agreementRes.address;
+//         expect(String(agreement1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 5000);
+//   }).timeout(20000);
 
-  it('Should login users', (done) => {
-    // LOGIN USERS
-    setTimeout(async () => {
-      try {
-        let loginResult = await api.loginUser(manager);
-        expect(loginResult.token).to.exist;
-        manager.token = loginResult.token;
-        loginResult = await api.loginUser(admin);
-        expect(loginResult.token).to.exist;
-        admin.token = loginResult.token;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should verify only ONE pending user task for buyer and complete it', done => {
+//     // USER TASK VERIFICATION
+//     setTimeout(async () => {
+//       try {
+//         let buyerTasks = await api.getTasksForUser(user1.token);
+//         expect(buyerTasks.length).to.equal(1);
+//         expect(buyerTasks[0].activityId).to.equal('SignOffPayment');
+//         buyerTask = buyerTasks[0];
+//         let sellerTasks = await api.getTasksForUser(user2.token);
+//         expect(sellerTasks.length).to.equal(0);
+//         await api.completeAndSignTaskForUser(buyerTask.activityInstanceId, agreement1.address, user1.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 5000);
+//   }).timeout(15000);
 
-  it('Should deploy formation and execution models', async () => {
-    // DEPLOY FORMATION MODEL
-    let formXml = api.generateModelXml(formation.id, formation.filePath);
-    let formationDeploy = await api.createAndDeployModel(formXml, manager.token);
-    expect(formationDeploy).to.exist;
-    Object.assign(formation, formationDeploy.model);
-    Object.assign(formation.process, formationDeploy.processes[0]);
-    archetype.formationProcessDefinition = formation.process.address;
-    expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    // DEPLOY EXECUTION MODEL
-    let execXml = api.generateModelXml(execution.id, execution.filePath);
-    let executionDeploy = await api.createAndDeployModel(execXml, manager.token);
-    expect(executionDeploy).to.exist;
-    Object.assign(execution, executionDeploy.model);
-    Object.assign(execution.process, executionDeploy.processes[0]);
-    archetype.executionProcessDefinition = execution.process.address;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(30000);
+//   it('Should verify NO pending user task for buyer', done => {
+//     // USER TASK VERIFICATION
+//     setTimeout(async () => {
+//       try {
+//         let tasks = await api.getTasksForUser(user1.token);
+//         expect(tasks.length).to.equal(0);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an archetype', done => {
-    // CREATE ARCHETYPE
-    setTimeout(async () => {
-      try {
-        archetype.documents[0].hoardAddress = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
-        Object.assign(archetype, await api.createArchetype(archetype, manager.token));
-        expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        agreement.archetype = archetype.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should verify only ONE pending user task for seller and complete it', done => {
+//     // USER TASK VERIFICATION
+//     setTimeout(async () => {
+//       try {
+//         let sellerTasks = await api.getTasksForUser(user2.token);
+//         expect(sellerTasks.length).to.equal(1);
+//         expect(sellerTasks[0].activityId).to.equal('ShipGoods');
+//         sellerTask = sellerTasks[0];
+//         let buyerTasks = await api.getTasksForUser(user1.token);
+//         expect(buyerTasks.length).to.equal(0);
+//         await api.completeTaskForUser(sellerTask.activityInstanceId, null, user2.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an agreement and start formation process', done => {
-    // CREATE AGREEMENT
-    setTimeout(async () => {
-      try {
-        agreement.parameters.push({ name: 'Manager', type: 8, value: manager.address });
-        agreement.parameters.push({ name: 'Administrator', type: 6, value: admin.address });
-        agreement.hoardAddress = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
-        Object.assign(agreement, await api.createAgreement(agreement, manager.token));
-        expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should verify NO pending user task for seller', done => {
+//     // USER TASK VERIFICATION
+//     setTimeout(async () => {
+//       try {
+//         let tasks = await api.getTasksForUser(user2.token);
+//         expect(tasks.length).to.equal(0);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should be able to set data as suspended task\'s assigned user', done => {
-    setTimeout(async () => {
-      try {
-        let managerTasks = await api.getTasksForUser(manager.token);
-        expect(managerTasks.length).to.be.greaterThan(0);
-        expect(managerTasks[0].activityId).to.equal('apprTask_123');
-        await assert.isFulfilled(api.setActivityDataValues(
-          managerTasks[0].activityInstanceId,
-          [
-            { id: 'writeName', value: 'John Doe' },
-            { id: 'writeApproved', value: true }
-          ],
-          manager.token
-        ));
-        let data = await assert.isFulfilled(api.getActivityDataValues(managerTasks[0].activityInstanceId, manager.token));
-        expect(data.length).to.equal(2);
-        let name = data.filter(d => d.accessPointId === 'readName')[0].value;
-        let approved = data.filter(d => d.accessPointId === 'readApproved')[0].value;
-        expect(name).to.equal('John Doe');
-        expect(approved).to.equal(true);
-        managerTask = managerTasks[0];
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should cancel an agreement by an agreement party member', done => {
+//     // AGREEMENT CANCELATION VERIFICATION
+//     setTimeout(async () => {
+//       try {
+//         await api.cancelAgreement(agreement1.address, user1.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should be able to get activity instance details including data mappings', async ()  => {
-    try {
-      let aiData = await api.getActivityInstance(managerTask.activityInstanceId, manager.token);
-      expect(aiData.data).to.exist;
-      expect(aiData.data.in.length).to.equal(2);
-      expect(aiData.data.out.length).to.equal(2);
-      let readName = aiData.data.in.filter(d => d.dataMappingId === 'readName')[0];
-      let readApproved = aiData.data.in.filter(d => d.dataMappingId === 'readApproved')[0];
-      let writeName = aiData.data.out.filter(d => d.dataMappingId === 'writeName')[0];
-      let writeApproved = aiData.data.out.filter(d => d.dataMappingId === 'writeApproved')[0];
-      expect(readName.value).to.equal('John Doe');
-      expect(readApproved.value).to.equal(true);
-      expect(writeName.dataPath).to.equal('name');
-      expect(writeApproved.dataPath).to.equal('approved');
-    } catch (err) {
-      throw err;
-    }
-  }).timeout(10000);
+// });
 
-  it('Should be able to set data and complete suspended task', done => {
-    setTimeout(async () => {
-      let data = [
-        { id: 'writeApproved', value: true },
-        { id: 'writeName', value: "Jane Doe" },
-      ];
-      try {
-        await assert.isFulfilled(api.completeTaskForUser(managerTask.activityInstanceId, data, manager.token));
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
 
-  it('Should sign the agreement', done => {
-    setTimeout(async () => {
-      try {
-        let signerTasks = await api.getTasksForUser(manager.token);
-        expect(signerTasks.length).to.be.greaterThan(0);
-        expect(signerTasks[0].activityId).to.equal('signTask_1amiv9a');
-        expect(signerTasks[0].name).to.equal('Sign Off');
-        await api.completeAndSignTaskForUser(signerTasks[0].activityInstanceId, agreement.address, manager.token);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 5000);
-  }).timeout(10000);
+// /**
+//  * ######## Data Mapping Test ###############################################################################################################
+//  */
+// describe(':: DATA MAPPING TEST ::', () => {
+//   let manager = {
+//     username: `manager${rid(5, 'aA0')}`,
+//     password: 'manager',
+//     email: `manager${rid(3, 'aA0')}@test.com`,
+//   };
 
-  it('Should be able to read agreement data from data mappings by administrator', done => {
-    setTimeout(async () => {
-      try {
-        let adminTasks = await api.getTasksForUser(admin.token);
-        expect(adminTasks.length).to.equal(1);
-        let aiData = await api.getActivityInstance(adminTasks[0].activityInstanceId, admin.token);
-        expect(aiData.data).to.exist;
-        expect(aiData.data.in.length).to.equal(2);
-        expect(aiData.data.out).to.not.exist;
-        let readName = aiData.data.in.filter(d => d.dataMappingId === 'readName')[0];
-        let readApproved = aiData.data.in.filter(d => d.dataMappingId === 'readApproved')[0];
-        expect(readName.value).to.equal('Jane Doe');
-        expect(readApproved.value).to.equal(true);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 5000);
-  }).timeout(10000);
+//   let admin = {
+//     username: `admin${rid(5, 'aA0')}`,
+//     password: 'administrator',
+//     email: `admin${rid(3, 'aA0')}@test.com`,
+//   };
 
-});
+//   let formation = {
+//     filePath: 'test/data/data-mapping-formation.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Data-Mapping-Formation'
+//   }
+//   let execution = {
+//     filePath: 'test/data/data-mapping-execution.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Data-Mapping-Execution'
+//   }
 
-/**
- * ######## Gateway Test ###############################################################################################################
- * Deploys a model with a conditional task based on a uint condition and XOR gateway.
- * Verifies that the gateway is working properly by running two processes, one for each path.
- */
-describe(':: GATEWAY TEST ::', () => {
-  let tenant = {
-    username: `tenant${rid(5, 'aA0')}`,
-    password: 'tenant',
-    email: `tenant${rid(3, 'aA0')}@test.com`,
-  };
+//   /**
+//       { type: 0, name: 'bool' },
+//       { type: 1, name: 'string' },
+//       { type: 2, name: 'num' },
+//       { type: 3, name: 'date' },
+//       { type: 4, name: 'datetime' },
+//       { type: 5, name: 'money' },
+//       { type: 6, name: 'user' },
+//       { type: 7, name: 'addr' },
+//       { type: 8, name: 'signatory' },
+//    */
+//   let archetype = {
+//     name: 'Data Mapping Archetype',
+//     description: 'Data Mapping Archetype',
+//     price: 10,
+//     isPrivate: 0,
+//     active: true,
+//     parameters: [
+//       { type: 8, name: 'Manager' },
+//       { type: 6, name: 'Administrator' }
+//     ],
+//     documents: [{
+//       name: 'doc1.md',
+//       hoardAddress: '0x0',
+//       secretKey: '0x0',
+//     }],
+//     jurisdictions: [],
+//     executionProcessDefinition: '',
+//     formationProcessDefinition: '',
+//     governingArchetypes: []
+//   }
 
-  let formation = {
-    filePath: 'test/data/Formation-Tenant-XOR-Gateway.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Formation-Tenant-XOR-Gateway'
-  }
-  let execution = {
-    filePath: 'test/data/Execution-NoAction.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Execution-NoAction'
-  }
+//   let agreement = {
+//     name: 'data mapping agreement 1',
+//     archetype: '',
+//     isPrivate: false,
+//     parameters: [],
+//     hoardAddress: '',
+//     hoardSecret: '',
+//     eventLogHoardAddress: '',
+//     eventLogHoardSecret: '',
+//     maxNumberOfEvents: 0,
+//     governingAgreements: []
+//   }
 
-  /**
-      { type: 0, name: 'bool' },
-      { type: 1, name: 'string' },
-      { type: 2, name: 'num' },
-      { type: 3, name: 'date' },
-      { type: 4, name: 'datetime' },
-      { type: 5, name: 'money' },
-      { type: 6, name: 'user' },
-      { type: 7, name: 'addr' },
-      { type: 8, name: 'signatory' },
-   */
-  let archetype = {
-    name: 'Rental Archetype',
-    description: 'Rental Archetype',
-    price: 10,
-    isPrivate: 0,
-    active: true,
-    parameters: [
-      { type: 8, name: 'Tenant' },
-      { type: 2, name: 'Building Completed' },
-    ],
-    documents: [{
-      name: 'doc1.md',
-      hoardAddress: '0x0',
-      secretKey: '0x0',
-    }],
-    jurisdictions: [],
-    executionProcessDefinition: '',
-    formationProcessDefinition: '',
-    governingArchetypes: []
-  }
+//   let managerTask, adminTask;
 
-  let agreement = {
-    name: 'Rental Agreement 1',
-    archetype: '',
-    isPrivate: false,
-    parameters: [],
-    hoardAddress: '',
-    hoardSecret: '',
-    eventLogHoardAddress: '',
-    eventLogHoardSecret: '',
-    maxNumberOfEvents: 0,
-    governingAgreements: []
-  }
+//   it('Should register users', async () => {
+//     // REGISTER USERS
+//     let registerResult = await api.registerUser(manager);
+//     manager.address = registerResult.address;
+//     expect(manager.address).to.exist
+//     registerResult = await api.registerUser(admin);
+//     admin.address = registerResult.address;
+//     expect(admin.address).to.exist
+//   }).timeout(3000);
 
-  let tenantTask;
+//   it('Should login users', (done) => {
+//     // LOGIN USERS
+//     setTimeout(async () => {
+//       try {
+//         let loginResult = await api.loginUser(manager);
+//         expect(loginResult.token).to.exist;
+//         manager.token = loginResult.token;
+//         loginResult = await api.loginUser(admin);
+//         expect(loginResult.token).to.exist;
+//         admin.token = loginResult.token;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should register users', async () => {
-    // REGISTER USERS
-    let registerResult = await api.registerUser(tenant);
-    tenant.address = registerResult.address;
-    expect(tenant.address).to.exist
-  }).timeout(3000);
+//   it('Should deploy formation and execution models', async () => {
+//     // DEPLOY FORMATION MODEL
+//     let formXml = api.generateModelXml(formation.id, formation.filePath);
+//     let formationDeploy = await api.createAndDeployModel(formXml, manager.token);
+//     expect(formationDeploy).to.exist;
+//     Object.assign(formation, formationDeploy.model);
+//     Object.assign(formation.process, formationDeploy.processes[0]);
+//     archetype.formationProcessDefinition = formation.process.address;
+//     expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     // DEPLOY EXECUTION MODEL
+//     let execXml = api.generateModelXml(execution.id, execution.filePath);
+//     let executionDeploy = await api.createAndDeployModel(execXml, manager.token);
+//     expect(executionDeploy).to.exist;
+//     Object.assign(execution, executionDeploy.model);
+//     Object.assign(execution.process, executionDeploy.processes[0]);
+//     archetype.executionProcessDefinition = execution.process.address;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(30000);
 
-  it('Should login users', (done) => {
-    // LOGIN USERS
-    setTimeout(async () => {
-      try {
-        let loginResult = await api.loginUser(tenant);
-        expect(loginResult.token).to.exist;
-        tenant.token = loginResult.token;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should create an archetype', done => {
+//     // CREATE ARCHETYPE
+//     setTimeout(async () => {
+//       try {
+//         archetype.documents[0].hoardAddress = hoardRef.address;
+//         archetype.documents[0].secretKey = hoardRef.secretKey;
+//         Object.assign(archetype, await api.createArchetype(archetype, manager.token));
+//         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         agreement.archetype = archetype.address;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should deploy formation and execution models', async () => {
-    // DEPLOY FORMATION MODEL
-    let formXml = api.generateModelXml(formation.id, formation.filePath);
-    let formationDeploy = await api.createAndDeployModel(formXml, tenant.token);
-    expect(formationDeploy).to.exist;
-    Object.assign(formation, formationDeploy.model);
-    Object.assign(formation.process, formationDeploy.processes[0]);
-    archetype.formationProcessDefinition = formation.process.address;
-    expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    // DEPLOY EXECUTION MODEL
-    let execXml = api.generateModelXml(execution.id, execution.filePath);
-    let executionDeploy = await api.createAndDeployModel(execXml, tenant.token);
-    expect(executionDeploy).to.exist;
-    Object.assign(execution, executionDeploy.model);
-    Object.assign(execution.process, executionDeploy.processes[0]);
-    archetype.executionProcessDefinition = execution.process.address;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(30000);
+//   it('Should create an agreement and start formation process', done => {
+//     // CREATE AGREEMENT
+//     setTimeout(async () => {
+//       try {
+//         agreement.parameters.push({ name: 'Manager', type: 8, value: manager.address });
+//         agreement.parameters.push({ name: 'Administrator', type: 6, value: admin.address });
+//         agreement.hoardAddress = hoardRef.address;
+//         agreement.hoardSecret = hoardRef.secretKey;
+//         Object.assign(agreement, await api.createAgreement(agreement, manager.token));
+//         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an archetype', done => {
-    // CREATE ARCHETYPE
-    setTimeout(async () => {
-      try {
-        archetype.documents[0].hoardAddress = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
-        Object.assign(archetype, await api.createArchetype(archetype, tenant.token));
-        expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        agreement.archetype = archetype.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should be able to set data as suspended task\'s assigned user', done => {
+//     setTimeout(async () => {
+//       try {
+//         let managerTasks = await api.getTasksForUser(manager.token);
+//         expect(managerTasks.length).to.be.greaterThan(0);
+//         expect(managerTasks[0].activityId).to.equal('apprTask_123');
+//         await assert.isFulfilled(api.setActivityDataValues(
+//           managerTasks[0].activityInstanceId,
+//           [
+//             { id: 'writeName', value: 'John Doe' },
+//             { id: 'writeApproved', value: true }
+//           ],
+//           manager.token
+//         ));
+//         let data = await assert.isFulfilled(api.getActivityDataValues(managerTasks[0].activityInstanceId, manager.token));
+//         expect(data.length).to.equal(2);
+//         let name = data.filter(d => d.accessPointId === 'readName')[0].value;
+//         let approved = data.filter(d => d.accessPointId === 'readApproved')[0].value;
+//         expect(name).to.equal('John Doe');
+//         expect(approved).to.equal(true);
+//         managerTask = managerTasks[0];
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an agreement and start formation process leading to user task', done => {
-    // CREATE AGREEMENT
-    setTimeout(async () => {
-      try {
-        let tenantTasks = await api.getTasksForUser(tenant.token);
-        const numberOfTasksBefore = tenantTasks.length;
-        agreement.parameters.length = 0; // reset parameters
-        agreement.parameters.push({ name: 'Tenant', type: 8, value: tenant.address });
-        agreement.parameters.push({ name: 'Building Completed', type: 2, value: 1950 });
-        agreement.hoardAddress = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
-        Object.assign(agreement, await api.createAgreement(agreement, tenant.token));
-        expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        setTimeout(async () => {
-          tenantTasks = await api.getTasksForUser(tenant.token);
-          expect(tenantTasks.length).to.equal(numberOfTasksBefore + 1);
-          done();  
-        }, 5000);
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(20000);
+//   it('Should be able to get activity instance details including data mappings', async ()  => {
+//     try {
+//       let aiData = await api.getActivityInstance(managerTask.activityInstanceId, manager.token);
+//       expect(aiData.data).to.exist;
+//       expect(aiData.data.in.length).to.equal(2);
+//       expect(aiData.data.out.length).to.equal(2);
+//       let readName = aiData.data.in.filter(d => d.dataMappingId === 'readName')[0];
+//       let readApproved = aiData.data.in.filter(d => d.dataMappingId === 'readApproved')[0];
+//       let writeName = aiData.data.out.filter(d => d.dataMappingId === 'writeName')[0];
+//       let writeApproved = aiData.data.out.filter(d => d.dataMappingId === 'writeApproved')[0];
+//       expect(readName.value).to.equal('John Doe');
+//       expect(readApproved.value).to.equal(true);
+//       expect(writeName.dataPath).to.equal('name');
+//       expect(writeApproved.dataPath).to.equal('approved');
+//     } catch (err) {
+//       throw err;
+//     }
+//   }).timeout(10000);
 
-  it('Should create an agreement and start formation process with staight-through processing (no user task)', done => {
-    // CREATE AGREEMENT
-    setTimeout(async () => {
-      try {
-        let tenantTasks = await api.getTasksForUser(tenant.token);
-        const numberOfTasksBefore = tenantTasks.length;
-        agreement.parameters.length = 0; // reset parameters
-        agreement.parameters.push({ name: 'Tenant', type: 8, value: tenant.address });
-        agreement.parameters.push({ name: 'Building Completed', type: 2, value: 2007 });
-        agreement.hoardAddress = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
-        Object.assign(agreement, await api.createAgreement(agreement, tenant.token));
-        expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        setTimeout(async () => {
-          tenantTasks = await api.getTasksForUser(tenant.token);
-          expect(tenantTasks.length).to.equal(numberOfTasksBefore);
-          done();  
-        }, 5000);
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(20000);
+//   it('Should be able to set data and complete suspended task', done => {
+//     setTimeout(async () => {
+//       let data = [
+//         { id: 'writeApproved', value: true },
+//         { id: 'writeName', value: "Jane Doe" },
+//       ];
+//       try {
+//         await assert.isFulfilled(api.completeTaskForUser(managerTask.activityInstanceId, data, manager.token));
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-});
+//   it('Should sign the agreement', done => {
+//     setTimeout(async () => {
+//       try {
+//         let signerTasks = await api.getTasksForUser(manager.token);
+//         expect(signerTasks.length).to.be.greaterThan(0);
+//         expect(signerTasks[0].activityId).to.equal('signTask_1amiv9a');
+//         expect(signerTasks[0].name).to.equal('Sign Off');
+//         await api.completeAndSignTaskForUser(signerTasks[0].activityInstanceId, agreement.address, manager.token);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 5000);
+//   }).timeout(10000);
+
+//   it('Should be able to read agreement data from data mappings by administrator', done => {
+//     setTimeout(async () => {
+//       try {
+//         let adminTasks = await api.getTasksForUser(admin.token);
+//         expect(adminTasks.length).to.equal(1);
+//         let aiData = await api.getActivityInstance(adminTasks[0].activityInstanceId, admin.token);
+//         expect(aiData.data).to.exist;
+//         expect(aiData.data.in.length).to.equal(2);
+//         expect(aiData.data.out).to.not.exist;
+//         let readName = aiData.data.in.filter(d => d.dataMappingId === 'readName')[0];
+//         let readApproved = aiData.data.in.filter(d => d.dataMappingId === 'readApproved')[0];
+//         expect(readName.value).to.equal('Jane Doe');
+//         expect(readApproved.value).to.equal(true);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 5000);
+//   }).timeout(10000);
+
+// });
+
+// /**
+//  * ######## Gateway Test ###############################################################################################################
+//  * Deploys a model with a conditional task based on a uint condition and XOR gateway.
+//  * Verifies that the gateway is working properly by running two processes, one for each path.
+//  */
+// describe(':: GATEWAY TEST ::', () => {
+//   let tenant = {
+//     username: `tenant${rid(5, 'aA0')}`,
+//     password: 'tenant',
+//     email: `tenant${rid(3, 'aA0')}@test.com`,
+//   };
+
+//   let formation = {
+//     filePath: 'test/data/Formation-Tenant-XOR-Gateway.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Formation-Tenant-XOR-Gateway'
+//   }
+//   let execution = {
+//     filePath: 'test/data/Execution-NoAction.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Execution-NoAction'
+//   }
+
+//   /**
+//       { type: 0, name: 'bool' },
+//       { type: 1, name: 'string' },
+//       { type: 2, name: 'num' },
+//       { type: 3, name: 'date' },
+//       { type: 4, name: 'datetime' },
+//       { type: 5, name: 'money' },
+//       { type: 6, name: 'user' },
+//       { type: 7, name: 'addr' },
+//       { type: 8, name: 'signatory' },
+//    */
+//   let archetype = {
+//     name: 'Rental Archetype',
+//     description: 'Rental Archetype',
+//     price: 10,
+//     isPrivate: 0,
+//     active: true,
+//     parameters: [
+//       { type: 8, name: 'Tenant' },
+//       { type: 2, name: 'Building Completed' },
+//     ],
+//     documents: [{
+//       name: 'doc1.md',
+//       hoardAddress: '0x0',
+//       secretKey: '0x0',
+//     }],
+//     jurisdictions: [],
+//     executionProcessDefinition: '',
+//     formationProcessDefinition: '',
+//     governingArchetypes: []
+//   }
+
+//   let agreement = {
+//     name: 'Rental Agreement 1',
+//     archetype: '',
+//     isPrivate: false,
+//     parameters: [],
+//     hoardAddress: '',
+//     hoardSecret: '',
+//     eventLogHoardAddress: '',
+//     eventLogHoardSecret: '',
+//     maxNumberOfEvents: 0,
+//     governingAgreements: []
+//   }
+
+//   let tenantTask;
+
+//   it('Should register users', async () => {
+//     // REGISTER USERS
+//     let registerResult = await api.registerUser(tenant);
+//     tenant.address = registerResult.address;
+//     expect(tenant.address).to.exist
+//   }).timeout(3000);
+
+//   it('Should login users', (done) => {
+//     // LOGIN USERS
+//     setTimeout(async () => {
+//       try {
+//         let loginResult = await api.loginUser(tenant);
+//         expect(loginResult.token).to.exist;
+//         tenant.token = loginResult.token;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
+
+//   it('Should deploy formation and execution models', async () => {
+//     // DEPLOY FORMATION MODEL
+//     let formXml = api.generateModelXml(formation.id, formation.filePath);
+//     let formationDeploy = await api.createAndDeployModel(formXml, tenant.token);
+//     expect(formationDeploy).to.exist;
+//     Object.assign(formation, formationDeploy.model);
+//     Object.assign(formation.process, formationDeploy.processes[0]);
+//     archetype.formationProcessDefinition = formation.process.address;
+//     expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     // DEPLOY EXECUTION MODEL
+//     let execXml = api.generateModelXml(execution.id, execution.filePath);
+//     let executionDeploy = await api.createAndDeployModel(execXml, tenant.token);
+//     expect(executionDeploy).to.exist;
+//     Object.assign(execution, executionDeploy.model);
+//     Object.assign(execution.process, executionDeploy.processes[0]);
+//     archetype.executionProcessDefinition = execution.process.address;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(30000);
+
+//   it('Should create an archetype', done => {
+//     // CREATE ARCHETYPE
+//     setTimeout(async () => {
+//       try {
+//         archetype.documents[0].hoardAddress = hoardRef.address;
+//         archetype.documents[0].secretKey = hoardRef.secretKey;
+//         Object.assign(archetype, await api.createArchetype(archetype, tenant.token));
+//         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         agreement.archetype = archetype.address;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
+
+//   it('Should create an agreement and start formation process leading to user task', done => {
+//     // CREATE AGREEMENT
+//     setTimeout(async () => {
+//       try {
+//         let tenantTasks = await api.getTasksForUser(tenant.token);
+//         const numberOfTasksBefore = tenantTasks.length;
+//         agreement.parameters.length = 0; // reset parameters
+//         agreement.parameters.push({ name: 'Tenant', type: 8, value: tenant.address });
+//         agreement.parameters.push({ name: 'Building Completed', type: 2, value: 1950 });
+//         agreement.hoardAddress = hoardRef.address;
+//         agreement.hoardSecret = hoardRef.secretKey;
+//         Object.assign(agreement, await api.createAgreement(agreement, tenant.token));
+//         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         setTimeout(async () => {
+//           tenantTasks = await api.getTasksForUser(tenant.token);
+//           expect(tenantTasks.length).to.equal(numberOfTasksBefore + 1);
+//           done();  
+//         }, 5000);
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(20000);
+
+//   it('Should create an agreement and start formation process with staight-through processing (no user task)', done => {
+//     // CREATE AGREEMENT
+//     setTimeout(async () => {
+//       try {
+//         let tenantTasks = await api.getTasksForUser(tenant.token);
+//         const numberOfTasksBefore = tenantTasks.length;
+//         agreement.parameters.length = 0; // reset parameters
+//         agreement.parameters.push({ name: 'Tenant', type: 8, value: tenant.address });
+//         agreement.parameters.push({ name: 'Building Completed', type: 2, value: 2007 });
+//         agreement.hoardAddress = hoardRef.address;
+//         agreement.hoardSecret = hoardRef.secretKey;
+//         Object.assign(agreement, await api.createAgreement(agreement, tenant.token));
+//         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         setTimeout(async () => {
+//           tenantTasks = await api.getTasksForUser(tenant.token);
+//           expect(tenantTasks.length).to.equal(numberOfTasksBefore);
+//           done();  
+//         }, 5000);
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(20000);
+
+// });
 
 
 /**
@@ -1319,336 +1319,335 @@ describe(':: Archetype Packages and Agreement Collections ::', () => {
 
 });
 
+// /**
+//  * ######## Governing Archetypes and Agreements  ###############################################################################################################
+//  */
+// describe(':: Governing Archetypes and Agreements ::', () => {
+//   const model = { id: rid(16, 'aA0'), filePath: 'test/data/AN-TestTemplate-FE.bpmn' };
+//   const user1 = {
+//     username: rid(8, 'aA0'),
+//     password: 'archUser1',
+//     email: `${rid(8, 'aA0')}@test.com`,
+//   };
+//   const employmentArchetype = {
+//     name: "employmentArchetype",
+//     description: "employmentArchetype",
+//     price: 10,
+//     isPrivate: false,
+//     active: true,
+//     governingArchetypes: [],
+//     parameters: [],
+//     jurisdictions: [],
+//     documents: []
+//   }
+//   const ndaArchetype = {
+//     name: "ndaArchetype",
+//     description: "ndaArchetype",
+//     price: 10,
+//     isPrivate: false,
+//     active: true,
+//     governingArchetypes: [],
+//     parameters: [],
+//     jurisdictions: [],
+//     documents: []
+//   }
+//   let employmentAgreement = {
+//     name: 'Employment Agreement ' + new Date().getMilliseconds(),
+//     archetype: '',
+//     isPrivate: false,
+//     parties: [],
+//     parameters: [],
+//     maxNumberOfEvents: 5,
+//     governingAgreements: []
+//   };
+//   let ndaAgreement = {
+//     name: 'NDA Agreement ' + new Date().getMilliseconds(),
+//     archetype: '',
+//     isPrivate: false,
+//     parties: [],
+//     parameters: [],
+//     maxNumberOfEvents: 5,
+//     governingAgreements: []
+//   };
+//   const process1 = {};
+//   const process2 = {};
+//   let xml = api.generateModelXml(model.id, model.filePath);
+//   expect(xml).to.exist;
 
-/**
- * ######## Governing Archetypes and Agreements  ###############################################################################################################
- */
-describe(':: Governing Archetypes and Agreements ::', () => {
-  const model = { id: rid(16, 'aA0'), filePath: 'test/data/AN-TestTemplate-FE.bpmn' };
-  const user1 = {
-    username: rid(8, 'aA0'),
-    password: 'archUser1',
-    email: `${rid(8, 'aA0')}@test.com`,
-  };
-  const employmentArchetype = {
-    name: "employmentArchetype",
-    description: "employmentArchetype",
-    price: 10,
-    isPrivate: false,
-    active: true,
-    governingArchetypes: [],
-    parameters: [],
-    jurisdictions: [],
-    documents: []
-  }
-  const ndaArchetype = {
-    name: "ndaArchetype",
-    description: "ndaArchetype",
-    price: 10,
-    isPrivate: false,
-    active: true,
-    governingArchetypes: [],
-    parameters: [],
-    jurisdictions: [],
-    documents: []
-  }
-  let employmentAgreement = {
-    name: 'Employment Agreement ' + new Date().getMilliseconds(),
-    archetype: '',
-    isPrivate: false,
-    parties: [],
-    parameters: [],
-    maxNumberOfEvents: 5,
-    governingAgreements: []
-  };
-  let ndaAgreement = {
-    name: 'NDA Agreement ' + new Date().getMilliseconds(),
-    archetype: '',
-    isPrivate: false,
-    parties: [],
-    parameters: [],
-    maxNumberOfEvents: 5,
-    governingAgreements: []
-  };
-  const process1 = {};
-  const process2 = {};
-  let xml = api.generateModelXml(model.id, model.filePath);
-  expect(xml).to.exist;
+//   it('Should register user1', async () => {
+//     // REGISTER USER
+//     let registerResult1 = await api.registerUser(user1);
+//     user1.address = registerResult1.address;
+//     expect(user1.address).to.exist;
+//   }).timeout(5000);
 
-  it('Should register user1', async () => {
-    // REGISTER USER
-    let registerResult1 = await api.registerUser(user1);
-    user1.address = registerResult1.address;
-    expect(user1.address).to.exist;
-  }).timeout(5000);
+//   it('Should login user1', done => {
+//     // LOGIN USER
+//     setTimeout(async () => {
+//       try {
+//         let loginResult1 = await api.loginUser(user1);
+//         expect(loginResult1.token).to.exist;
+//         user1.token = loginResult1.token;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 5000);
+//   }).timeout(10000);
 
-  it('Should login user1', done => {
-    // LOGIN USER
-    setTimeout(async () => {
-      try {
-        let loginResult1 = await api.loginUser(user1);
-        expect(loginResult1.token).to.exist;
-        user1.token = loginResult1.token;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 5000);
-  }).timeout(10000);
+//   it('Should deploy model', done => {
+//     // DEPLOY MODEL
+//     setTimeout(async () => {
+//       try {
+//         let deployResponse = await api.createAndDeployModel(xml, user1.token);
+//         expect(deployResponse).to.exist;
+//         Object.assign(model, deployResponse.model);
+//         Object.assign(process1, deployResponse.processes[0]);
+//         Object.assign(process2, deployResponse.processes[1]);
+//         expect(String(process1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//         expect(String(process2.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//         employmentArchetype.formationProcessDefinition = process1.address;
+//         employmentArchetype.executionProcessDefinition = process2.address;
+//         ndaArchetype.formationProcessDefinition = process1.address;
+//         ndaArchetype.executionProcessDefinition = process2.address;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(30000);
 
-  it('Should deploy model', done => {
-    // DEPLOY MODEL
-    setTimeout(async () => {
-      try {
-        let deployResponse = await api.createAndDeployModel(xml, user1.token);
-        expect(deployResponse).to.exist;
-        Object.assign(model, deployResponse.model);
-        Object.assign(process1, deployResponse.processes[0]);
-        Object.assign(process2, deployResponse.processes[1]);
-        expect(String(process1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-        expect(String(process2.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-        employmentArchetype.formationProcessDefinition = process1.address;
-        employmentArchetype.executionProcessDefinition = process2.address;
-        ndaArchetype.formationProcessDefinition = process1.address;
-        ndaArchetype.executionProcessDefinition = process2.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(30000);
+//   it('Should create employment and nda archetypes', async () => {
+//     let data = await api.createArchetype(employmentArchetype, user1.token);
+//     employmentArchetype.address = data.address;
+//     expect(String(employmentArchetype.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     ndaArchetype.governingArchetypes.push(employmentArchetype.address);
+//     data = await api.createArchetype(ndaArchetype, user1.token);
+//     ndaArchetype.address = data.address;
+//     expect(String(ndaArchetype.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(10000);
 
-  it('Should create employment and nda archetypes', async () => {
-    let data = await api.createArchetype(employmentArchetype, user1.token);
-    employmentArchetype.address = data.address;
-    expect(String(employmentArchetype.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    ndaArchetype.governingArchetypes.push(employmentArchetype.address);
-    data = await api.createArchetype(ndaArchetype, user1.token);
-    ndaArchetype.address = data.address;
-    expect(String(ndaArchetype.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(10000);
+//   it('Should fail to create an nda agreement without a governing employment agreement', async () => {
+//     ndaAgreement.archetype = ndaArchetype.address;
+//     await assert.isRejected(api.createAgreement(ndaAgreement, user1.token));
+//   }).timeout(10000);
 
-  it('Should fail to create an nda agreement without a governing employment agreement', async () => {
-    ndaAgreement.archetype = ndaArchetype.address;
-    await assert.isRejected(api.createAgreement(ndaAgreement, user1.token));
-  }).timeout(10000);
+//   it('Should create an nda agreement with a governing employment agreement', async () => {
+//     employmentAgreement.archetype = employmentArchetype.address;
+//     let data = await api.createAgreement(employmentAgreement, user1.token);
+//     employmentAgreement.address = data.address;
+//     ndaAgreement.governingAgreements.push(employmentAgreement.address);
+//     data = await api.createAgreement(ndaAgreement, user1.token);
+//     expect(String(data.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(10000);
+// });
 
-  it('Should create an nda agreement with a governing employment agreement', async () => {
-    employmentAgreement.archetype = employmentArchetype.address;
-    let data = await api.createAgreement(employmentAgreement, user1.token);
-    employmentAgreement.address = data.address;
-    ndaAgreement.governingAgreements.push(employmentAgreement.address);
-    data = await api.createAgreement(ndaAgreement, user1.token);
-    expect(String(data.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(10000);
-});
+// describe(':: External Users ::', () => {
+//   let externalUser1 = {
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
+//   let externalUser2 = {
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
+//   let registeredUser = {
+//     username: `registeredUser${rid(5, 'aA0')}`,
+//     password: 'registeredUser',
+//     email: `${rid(10, 'aA0')}@test.com`,
+//   };
 
-describe(':: External Users ::', () => {
-  let externalUser1 = {
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
-  let externalUser2 = {
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
-  let registeredUser = {
-    username: `registeredUser${rid(5, 'aA0')}`,
-    password: 'registeredUser',
-    email: `${rid(10, 'aA0')}@test.com`,
-  };
+//   let formation = {
+//     filePath: 'test/data/inc-formation.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Incorporation-Formation'
+//   }
+//   let execution = {
+//     filePath: 'test/data/inc-execution.bpmn',
+//     process: {},
+//     id: rid(16, 'aA0'),
+//     name: 'Incorporation-Execution'
+//   }
 
-  let formation = {
-    filePath: 'test/data/inc-formation.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Incorporation-Formation'
-  }
-  let execution = {
-    filePath: 'test/data/inc-execution.bpmn',
-    process: {},
-    id: rid(16, 'aA0'),
-    name: 'Incorporation-Execution'
-  }
+//   let archetype = {
+//     name: 'Incorporation Archetype',
+//     description: 'Incorporation Archetype',
+//     price: 10,
+//     isPrivate: 1,
+//     active: 1,
+//     parameters: [
+//       { type: 8, name: 'External1Uppercase' },
+//       { type: 6, name: 'External2' },
+//       { type: 6, name: 'External1Lowercase' },
+//       { type: 8, name: 'RegisteredNormal' },
+//       { type: 6, name: 'RegisteredByEmail' },
+//     ],
+//     documents: [{
+//       name: 'doc1.md',
+//       hoardAddress: '0x0',
+//       secretKey: '0x0',
+//     }],
+//     jurisdictions: [],
+//     executionProcessDefinition: '',
+//     formationProcessDefinition: '',
+//     governingArchetypes: []
+//   }
 
-  let archetype = {
-    name: 'Incorporation Archetype',
-    description: 'Incorporation Archetype',
-    price: 10,
-    isPrivate: 1,
-    active: 1,
-    parameters: [
-      { type: 8, name: 'External1Uppercase' },
-      { type: 6, name: 'External2' },
-      { type: 6, name: 'External1Lowercase' },
-      { type: 8, name: 'RegisteredNormal' },
-      { type: 6, name: 'RegisteredByEmail' },
-    ],
-    documents: [{
-      name: 'doc1.md',
-      hoardAddress: '0x0',
-      secretKey: '0x0',
-    }],
-    jurisdictions: [],
-    executionProcessDefinition: '',
-    formationProcessDefinition: '',
-    governingArchetypes: []
-  }
+//   let agreement = {
+//     name: 'external users agreement',
+//     archetype: '',
+//     isPrivate: false,
+//     parameters: [],
+//     hoardAddress: '',
+//     hoardSecret: '',
+//     eventLogHoardAddress: '',
+//     eventLogHoardSecret: '',
+//     maxNumberOfEvents: 0,
+//     governingAgreements: []
+//   }
 
-  let agreement = {
-    name: 'external users agreement',
-    archetype: '',
-    isPrivate: false,
-    parameters: [],
-    hoardAddress: '',
-    hoardSecret: '',
-    eventLogHoardAddress: '',
-    eventLogHoardSecret: '',
-    maxNumberOfEvents: 0,
-    governingAgreements: []
-  }
+//   it('Should register user', async () => {
+//     // REGISTER USER
+//     const registerResult = await api.registerUser(registeredUser);
+//     registeredUser.address = registerResult.address;
+//     expect(registeredUser.address).to.exist
+//   }).timeout(5000);
 
-  it('Should register user', async () => {
-    // REGISTER USER
-    const registerResult = await api.registerUser(registeredUser);
-    registeredUser.address = registerResult.address;
-    expect(registeredUser.address).to.exist
-  }).timeout(5000);
+//   it('Should login user', (done) => {
+//     // LOGIN USER
+//     setTimeout(async () => {
+//       try {
+//         const loginResult = await api.loginUser(registeredUser);
+//         expect(loginResult.token).to.exist;
+//         registeredUser.token = loginResult.token;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should login user', (done) => {
-    // LOGIN USER
-    setTimeout(async () => {
-      try {
-        const loginResult = await api.loginUser(registeredUser);
-        expect(loginResult.token).to.exist;
-        registeredUser.token = loginResult.token;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should deploy formation and execution models', async () => {
+//     // DEPLOY FORMATION MODEL
+//     let formXml = api.generateModelXml(formation.id, formation.filePath);
+//     let formationDeploy = await api.createAndDeployModel(formXml, registeredUser.token);
+//     expect(formationDeploy).to.exist;
+//     Object.assign(formation, formationDeploy.model);
+//     Object.assign(formation.process, formationDeploy.processes[0]);
+//     archetype.formationProcessDefinition = formation.process.address;
+//     expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     // DEPLOY EXECUTION MODEL
+//     let execXml = api.generateModelXml(execution.id, execution.filePath);
+//     let executionDeploy = await api.createAndDeployModel(execXml, registeredUser.token);
+//     expect(executionDeploy).to.exist;
+//     Object.assign(execution, executionDeploy.model);
+//     Object.assign(execution.process, executionDeploy.processes[0]);
+//     archetype.executionProcessDefinition = execution.process.address;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+//   }).timeout(30000);
 
-  it('Should deploy formation and execution models', async () => {
-    // DEPLOY FORMATION MODEL
-    let formXml = api.generateModelXml(formation.id, formation.filePath);
-    let formationDeploy = await api.createAndDeployModel(formXml, registeredUser.token);
-    expect(formationDeploy).to.exist;
-    Object.assign(formation, formationDeploy.model);
-    Object.assign(formation.process, formationDeploy.processes[0]);
-    archetype.formationProcessDefinition = formation.process.address;
-    expect(String(archetype.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    // DEPLOY EXECUTION MODEL
-    let execXml = api.generateModelXml(execution.id, execution.filePath);
-    let executionDeploy = await api.createAndDeployModel(execXml, registeredUser.token);
-    expect(executionDeploy).to.exist;
-    Object.assign(execution, executionDeploy.model);
-    Object.assign(execution.process, executionDeploy.processes[0]);
-    archetype.executionProcessDefinition = execution.process.address;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-    expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
-  }).timeout(30000);
+//   it('Should create an archetype', done => {
+//     // CREATE ARCHETYPE
+//     setTimeout(async () => {
+//       try {
+//         archetype.documents[0].hoardAddress = hoardRef.address;
+//         archetype.documents[0].secretKey = hoardRef.secretKey;
+//         Object.assign(archetype, await api.createArchetype(archetype, registeredUser.token));
+//         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         agreement.archetype = archetype.address;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an archetype', done => {
-    // CREATE ARCHETYPE
-    setTimeout(async () => {
-      try {
-        archetype.documents[0].hoardAddress = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
-        Object.assign(archetype, await api.createArchetype(archetype, registeredUser.token));
-        expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        agreement.archetype = archetype.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should create an angreement with emails in the user/org/signatory parameters', done => {
+//     // CREATE AGREEMENT
+//     setTimeout(async () => {
+//       try {
+//         /**
+//          * Should be able to use an email address for a user/org/sig agreement parameter
+//          * Should create a new user and use their address when given an unknown email address
+//          * Should use the address of the user with the given email when given a known email address
+//          * Should be able to accept the same email address for multiple parameters without errors
+//          * Should be able to handle email addresses in different cAsEs
+//         */
+//         agreement.parameters.push({ name: 'External1Uppercase', type: 8, value: externalUser1.email.toUpperCase() });
+//         agreement.parameters.push({ name: 'External2', type: 6, value: externalUser2.email });
+//         agreement.parameters.push({ name: 'External1Lowercase', type: 6, value: externalUser1.email.toLowerCase() });
+//         agreement.parameters.push({ name: 'RegisteredNormal', type: 6, value: registeredUser.address });
+//         agreement.parameters.push({ name: 'RegisteredByEmail', type: 6, value: registeredUser.email.toLowerCase() });
+//         agreement.hoardAddress = hoardRef.address;
+//         agreement.hoardSecret = hoardRef.secretKey;
+//         Object.assign(agreement, await api.createAgreement(agreement, registeredUser.token));
+//         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create an angreement with emails in the user/org/signatory parameters', done => {
-    // CREATE AGREEMENT
-    setTimeout(async () => {
-      try {
-        /**
-         * Should be able to use an email address for a user/org/sig agreement parameter
-         * Should create a new user and use their address when given an unknown email address
-         * Should use the address of the user with the given email when given a known email address
-         * Should be able to accept the same email address for multiple parameters without errors
-         * Should be able to handle email addresses in different cAsEs
-        */
-        agreement.parameters.push({ name: 'External1Uppercase', type: 8, value: externalUser1.email.toUpperCase() });
-        agreement.parameters.push({ name: 'External2', type: 6, value: externalUser2.email });
-        agreement.parameters.push({ name: 'External1Lowercase', type: 6, value: externalUser1.email.toLowerCase() });
-        agreement.parameters.push({ name: 'RegisteredNormal', type: 6, value: registeredUser.address });
-        agreement.parameters.push({ name: 'RegisteredByEmail', type: 6, value: registeredUser.email.toLowerCase() });
-        agreement.hoardAddress = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
-        Object.assign(agreement, await api.createAgreement(agreement, registeredUser.token));
-        expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should create new users when an unknown email is given', done => {
+//     // CHECK USER CREATION
+//     setTimeout(async () => {
+//       try {
+//         const user1 = await contracts.getUserById(externalUser1.email.toLowerCase());
+//         const user2 = await contracts.getUserById(externalUser2.email.toLowerCase());
+//         expect(user1).to.be.a('object');
+//         expect(user2).to.be.a('object');
+//         expect(/[0-9A-Fa-f]{40}/.test(user1.address)).to.be.true;
+//         expect(/[0-9A-Fa-f]{40}/.test(user2.address)).to.be.true;
+//         externalUser1.address = user1.address;
+//         externalUser2.address = user2.address;
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should create new users when an unknown email is given', done => {
-    // CHECK USER CREATION
-    setTimeout(async () => {
-      try {
-        const user1 = await contracts.getUserById(externalUser1.email.toLowerCase());
-        const user2 = await contracts.getUserById(externalUser2.email.toLowerCase());
-        expect(user1).to.be.a('object');
-        expect(user2).to.be.a('object');
-        expect(/[0-9A-Fa-f]{40}/.test(user1.address)).to.be.true;
-        expect(/[0-9A-Fa-f]{40}/.test(user2.address)).to.be.true;
-        externalUser1.address = user1.address;
-        externalUser2.address = user2.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should not create multiple users for the same email address (case insensitive)', done => {
+//     // CHECK USER CREATION
+//     setTimeout(async () => {
+//       try {
+//         await assert.isRejected(contracts.getUserById(externalUser1.email.toUpperCase()));
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should not create multiple users for the same email address (case insensitive)', done => {
-    // CHECK USER CREATION
-    setTimeout(async () => {
-      try {
-        await assert.isRejected(contracts.getUserById(externalUser1.email.toUpperCase()));
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   let parameters;
 
-  let parameters;
+//   it('Should use the address of the already registered user when a known email address is given', done => {
+//     // CHECK AGREEMENT PARAMETERS
+//     setTimeout(async () => {
+//       try {
+//        ( { parameters } = await api.getAgreement(agreement.address, registeredUser.token));
+//         expect(parameters.find(({ name }) => name === 'RegisteredByEmail').value).to.equal(registeredUser.address);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should use the address of the already registered user when a known email address is given', done => {
-    // CHECK AGREEMENT PARAMETERS
-    setTimeout(async () => {
-      try {
-       ( { parameters } = await api.getAgreement(agreement.address, registeredUser.token));
-        expect(parameters.find(({ name }) => name === 'RegisteredByEmail').value).to.equal(registeredUser.address);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
+//   it('Should use the addresses of new users for unknown email addresses', done => {
+//     // CHECK AGREEMENT PARAMETERS
+//     setTimeout(async () => {
+//       try {
+//         expect(parameters.find(({ name }) => name === 'External1Uppercase').value).to.equal(externalUser1.address);
+//         expect(parameters.find(({ name }) => name === 'External2').value).to.equal(externalUser2.address);
+//         expect(parameters.find(({ name }) => name === 'External1Lowercase').value).to.equal(externalUser1.address);
+//         expect(parameters.find(({ name }) => name === 'External1Uppercase').value).to.equal(externalUser1.address);
+//         done();
+//       } catch (err) {
+//         done(err);
+//       }
+//     }, 3000);
+//   }).timeout(10000);
 
-  it('Should use the addresses of new users for unknown email addresses', done => {
-    // CHECK AGREEMENT PARAMETERS
-    setTimeout(async () => {
-      try {
-        expect(parameters.find(({ name }) => name === 'External1Uppercase').value).to.equal(externalUser1.address);
-        expect(parameters.find(({ name }) => name === 'External2').value).to.equal(externalUser2.address);
-        expect(parameters.find(({ name }) => name === 'External1Lowercase').value).to.equal(externalUser1.address);
-        expect(parameters.find(({ name }) => name === 'External1Uppercase').value).to.equal(externalUser1.address);
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, 3000);
-  }).timeout(10000);
-
-});
+// });

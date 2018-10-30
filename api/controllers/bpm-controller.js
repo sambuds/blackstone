@@ -20,33 +20,28 @@ const pgCache = require('./postgres-cache-helper');
 const dataStorage = require(path.join(`${global.__controllers}/data-storage-controller`));
 
 const getActivityInstances = asyncMiddleware(async (req, res) => {
-  let retData = [];
-  const activities = await sqlCache.getActivityInstances(req.query);
-  activities.forEach((instance) => {
-    retData.push(format('Task', instance));
-  });
-  retData = await pgCache.populateTaskNames(retData);
-  return res.status(200).json(retData);
+  const data = await sqlCache.getActivityInstances(req.query);
+  const activities = await pgCache.populateTaskNames(data);
+  return res.status(200).json(activities);
 });
 
 const _getDataMappingDetails = async (userAddress, activityInstanceId, dataMappingIds = [], direction) => {
   if (!activityInstanceId) throw boom.badRequest('Activity instance id required');
   try {
     let dataMappingDetails;
-    let accessPointDetails;
     // validations
-    const aiData = await sqlCache.getActivityInstanceData(activityInstanceId, userAddress);
+    const aiData = (await sqlCache.getActivityInstanceData(activityInstanceId, userAddress))[0];
     const {
       performer,
       processDefinitionAddress,
       activityId,
       application,
       state,
-    } = format('Task', aiData);
+    } = aiData;
     if (!application) {
       throw boom.badData(`Cannot resolve data type since no application has been configured for activity ${activityInstanceId}`);
     }
-    const profileData = await sqlCache.getProfile(userAddress);
+    const profileData = await (sqlCache.getProfile(userAddress))[0];
     if (performer !== userAddress && !profileData.find(({ organization }) => organization === performer)) {
       throw boom.forbidden('User is not authorized to access this activity');
     }
@@ -61,11 +56,10 @@ const _getDataMappingDetails = async (userAddress, activityInstanceId, dataMappi
       return format('Data Mapping', mapping);
     });
     // get access point details from sqlsol
-    accessPointDetails = await sqlCache.getAccessPointDetails(dataMappingDetails, application);
+    const accessPointDetails = await sqlCache.getAccessPointDetails(dataMappingDetails, application);
     if (dataMappingDetails.length === 0 || accessPointDetails.length === 0) {
       throw boom.notFound(`No ${direction ? 'out-' : 'in-'}data mapping details found for activity ${activityInstanceId}`);
     }
-    accessPointDetails = accessPointDetails.map(_ap => format('Access Point', _ap));
     // merge the data mapping and access point objects
     dataMappingDetails = dataMappingDetails.map((_mapping) => {
       const matchingAp = accessPointDetails.filter(ap => ap.accessPointId === _mapping.dataMappingId)[0];
@@ -178,9 +172,8 @@ const _getOutDataForActivity = async (userAddress, activityInstanceId, dataMappi
 };
 
 const getActivityInstance = asyncMiddleware(async (req, res) => {
-  let activityInstanceResult = await sqlCache.getActivityInstanceData(req.params.id, req.user.address);
+  let activityInstanceResult = (await sqlCache.getActivityInstanceData(req.params.id, req.user.address))[0];
   if (!activityInstanceResult) throw boom.notFound(`Activity instance ${req.params.id} not found or user not authorized`);
-  activityInstanceResult = format('Task', activityInstanceResult);
   activityInstanceResult = (await pgCache.populateTaskNames([activityInstanceResult]))[0];
   activityInstanceResult.data = {};
   try {
@@ -217,14 +210,10 @@ const setDataMappings = asyncMiddleware(async ({ user, params: { activityInstanc
 });
 
 const getTasksForUser = asyncMiddleware(async ({ user: { address } }, res) => {
-  let retData = [];
   if (!address) throw boom.badRequest('No logged in user found');
-  const tasks = await sqlCache.getTasksByUserAddress(address);
-  tasks.forEach((task) => {
-    retData.push(format('Task', task));
-  });
-  retData = await pgCache.populateTaskNames(retData);
-  return res.status(200).json(retData);
+  const data = await sqlCache.getTasksByUserAddress(address);
+  const tasks = await pgCache.populateTaskNames(data);
+  return res.status(200).json(tasks);
 });
 
 const getModels = asyncMiddleware(async (req, res) => {
@@ -323,28 +312,23 @@ const getProcessInstanceCount = asyncMiddleware(async (req, res) => {
 
 const getDefinitions = asyncMiddleware(async (req, res) => {
   if (!req.user.address) throw boom.badRequest('No logged in user found');
-  let retData = [];
-  const processes = await sqlCache.getProcessDefinitions(req.user.address, req.query.interfaceId);
-  processes.forEach((p) => {
-    retData.push(format('Definition', p));
-  });
-  retData = await pgCache.populateProcessNames(retData);
-  return res.status(200).json(retData);
+  const data = await sqlCache.getProcessDefinitions(req.user.address, req.query.interfaceId);
+  const processes = await pgCache.populateProcessNames(data);
+  return res.status(200).json(processes);
 });
 
 const getDefinition = asyncMiddleware(async (req, res) => {
-  let retData;
-  const processDefn = await sqlCache.getProcessDefinitionData(req.params.address);
-  const profileData = await sqlCache.getProfile(req.user.address);
+  const processDefn = (await sqlCache.getProcessDefinitionData(req.params.address))[0];
+  const profileData = (await sqlCache.getProfile(req.user.address))[0];
   if (!processDefn) throw boom.notFound(`Data for process definition ${req.params.address} not found`);
   if (processDefn.isPrivate &&
     processDefn.author !== req.user.address &&
     !profileData.find(({ organization }) => organization === processDefn.author)) {
     throw boom.forbidden('You are not authorized to view process details from this private model');
   }
-  retData = format('Definition', processDefn);
-  retData = await pgCache.populateProcessNames([retData]);
-  return res.status(200).json(retData[0]);
+  // retData = format('Definition', processDefn);
+  const data = await pgCache.populateProcessNames([processDefn]);
+  return res.status(200).json(data[0]);
 });
 
 const parseBpmnModel = async (rawXml) => {
@@ -361,9 +345,9 @@ const parseBpmnModel = async (rawXml) => {
 };
 
 const getModelDiagram = asyncMiddleware(async (req, res) => {
-  const model = await sqlCache.getProcessModelData(req.params.address);
+  const model = (await sqlCache.getProcessModelData(req.params.address))[0];
   if (!model) throw boom.notFound(`Data for process model ${req.params.address} not found`);
-  const profileData = await sqlCache.getProfile(req.user.address);
+  const profileData = (await sqlCache.getProfile(req.user.address))[0];
   if (model.isPrivate &&
     model.author !== req.user.address &&
     !profileData.find(({ organization }) => organization === model.author)) {

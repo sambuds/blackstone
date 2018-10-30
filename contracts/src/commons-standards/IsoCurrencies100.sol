@@ -373,13 +373,13 @@ contract IsoCurrencies100 is VersionLinkedAppendOnly([1,0,0]), IsoCurrencies {
 		registerCurrency(ZWL, "932", "Zimbabwean dollar");
 	}
 
-	function registerCurrency(bytes3 _alpha3, bytes3 _m49, string _name) internal {
-		currencies[_alpha3] = Currency(_alpha3, _m49, _name, true);
+	function registerCurrency(bytes3 _alpha3, bytes3 _num3, string _name) internal {
+		currencies[_alpha3] = Currency(_alpha3, _num3, _name, true);
 		currencyKeys.push(_alpha3);
 		emit LogCurrencyRegistration(
 			EVENT_ID_ISO_CURRENCIES,
 			_alpha3,
-			_m49,
+			_num3,
 			_name
 		);
 	}

@@ -9,7 +9,9 @@ const _ = require('lodash')
 const hexToString = require('@monax/burrow').utils.hexToAscii;
 const stringToHex = require('@monax/burrow').utils.asciiToHex;
 
-const app = require('../../app')();
+const app = require('../app')();
+global.__settings.monax.server.port_http = 3090;
+global.__settings.monax.ecosystem = 'AGREEMENTS_TEST_ECOSYSTEM';
 const server = require(__common + '/aa-web-api')();
 const logger = require(__common + '/monax-logger')
 const log = logger.getLogger('agreements.tests')
@@ -218,7 +220,7 @@ describe('Hoard', () => {
     request(server)
       .post('/hoard')
       .set('Cookie', [`access_token=${token}`])
-      .attach('myfile.js', __dirname + '/web-api-test.js')
+      .attach('myfile.js', __dirname + '/parser.spec.js')
       .expect(200)
       .end((err, res) => {
         if (err) return done(err)
@@ -232,7 +234,7 @@ describe('Hoard', () => {
     request(server)
       .post('/hoard')
       .set('Cookie', [`access_token=${token}`])
-      .attach('myfile.js', __dirname + '/../../app.js')
+      .attach('myfile.js', __dirname + '/contracts.spec.js')
       .expect(200)
       .end((err, res) => {
         if (err) return done(err)

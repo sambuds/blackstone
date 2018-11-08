@@ -53,6 +53,8 @@ const bpm = require(path.join(__controllers, 'bpm-controller'))
 const createModel = require('./model-creation-helper').createModel
 const sqlCache = require(path.join(__controllers, 'postgres-query-helper'))
 
+global.__settings.monax.ecosystem = 'CONTRACTS_PROCESS_TEST_ECOSYSTEM';
+
 before(function (done) {
   this.timeout(99999999)
   contracts.load().then(() => {

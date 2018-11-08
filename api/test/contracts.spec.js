@@ -51,6 +51,7 @@ global.__monax_bundles = require(path.join(__common, 'monax-constants')).MONAX_B
 global.__monax_constants = require(path.join(__common, 'monax-constants'));
 const sqlCache = require(path.join(__controllers, 'postgres-query-helper'))
 const contracts = require(path.join(__controllers, 'contracts-controller'))
+global.__settings.monax.ecosystem = 'CONTRACTS_TEST_ECOSYSTEM';
 
 before(function (done) {
   this.timeout(99999999)

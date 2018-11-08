@@ -8,7 +8,9 @@ const fs = require('fs');
 const _ = require('lodash');
 const crypto = require('crypto');
 
-const app = require('../../app')();
+const app = require('../app')();
+global.__settings.monax.server.port_http = 3091;
+global.__settings.monax.ecosystem = 'BPM_TEST_ECOSYSTEM';
 const server = require(__common + '/aa-web-api')();
 const logger = require(__common + '/monax-logger');
 const log = logger.getLogger('agreements.tests');
@@ -54,7 +56,7 @@ describe(':: HOARD ::', () => {
           request(server)
             .post('/hoard')
             .set('Cookie', [`access_token=${token}`])
-            .attach('myfile.js', __dirname + '/web-api-test.js')
+            .attach('myfile.js', __dirname + '/parser.spec.js')
             .expect(200)
             .end((err, res) => {
               expect(err).to.not.exist;

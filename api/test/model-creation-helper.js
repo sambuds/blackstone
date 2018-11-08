@@ -7,7 +7,7 @@ const _ = require('lodash');
 const {
   parseBpmnModel,
   addProcessesToModel
-} = require('../../controllers/bpm-controller');
+} = require('../controllers/bpm-controller');
 const contracts = require(__controllers + '/contracts-controller');
 
 module.exports.createModel = (author, xml) => {

@@ -19,7 +19,9 @@ main() {
   else
     echo "#### Starting API Tests"
     echo
-    npm test
+    npm install -g mocha
+    npm install -g mocha-parallel-tests
+    npm run test:parallel
   fi
   cd $CI_PROJECT_DIR
 

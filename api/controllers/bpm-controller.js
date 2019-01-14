@@ -319,7 +319,7 @@ const getProcessInstanceCount = asyncMiddleware(async (req, res) => {
 
 const getDefinitions = asyncMiddleware(async (req, res) => {
   if (!req.user.address) throw boom.badRequest('No logged in user found');
-  const data = await sqlCache.getProcessDefinitions(req.user.address, req.query.interfaceId);
+  const data = await sqlCache.getProcessDefinitions(req.user.address, req.query);
   const processes = await pgCache.populateProcessNames(data);
   return res.status(200).json(processes);
 });

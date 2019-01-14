@@ -320,29 +320,26 @@ module.exports = (app, customMiddleware) => {
    * @apiGroup BPMModel
    *
    * @apiParam {String} [interfaceId] Optional query parameter `interfaceId` can be used to filter by interface
+   * @apiParam {String} [processDefinitionId] Optional query parameter `processDefinitionId` can be used to filter by processDefinitionId
+   * @apiParam {String} [modelId] Optional query parameter `modelId` can be used to filter by modelId
    *
    * @apiExample {curl} Simple:
    *     curl -i /bpm/process-definitions
-   *     curl -i /bpm/process-definitions?interfaceId=Default%20Formation%20Process
+   *     curl -i /bpm/process-definitions?interfaceId=Agreement%20Execution
    *
    * @apiSuccess {Object[]} object Process Definition object
    * @apiSuccessExample {json} Success Objects Array
     [{
-      "address": "81A817870C6C6A209150FA26BC52D835CA6E17D2",
-      "modelAddress": "912A82D4C72847EF1EC76426544EAA992993EE20",
-      "id": "defaultFormationProcess",
-      "name": "Default Formation Process",
-      "interfaceId": "Agreement Formation",
-      "diagramAddress": "7D85BB76DB402B752F84792FF50B40483922673CF277CD2045D3D9637D4CE8F9",
-      "diagramSecret": "4AF3A863BF6F2AD79E4919F562252866CBDA58E3E5AA27E2C5C94BAE9931BE74"
-    }, {
-      "address": "A043C06EB2FB91F4811F51F6500744906FD0903E",
-      "modelAddress": "912A82D4C72847EF1EC76426544EAA992993EE20",
-      "id": "defaultExecutionProcess",
-      "name": "Default Execution Process",
+      "processDefinitionId": "Process_00pj23z",
+      "address": "65BF0FB03BA5C140B1584A290B157F8907B8FEBE",
+      "modelAddress": "6025AF7E4FBB2FCCCFBB855E68025CF20038E142",
       "interfaceId": "Agreement Execution",
-      "diagramAddress": "7D85BB76DB402B752F84792FF50B40483922673CF277CD2045D3D9637D4CE8F9",
-      "diagramSecret": "4AF3A863BF6F2AD79E4919F562252866CBDA58E3E5AA27E2C5C94BAE9931BE74"
+      "diagramAddress": "904cad90af9f665716b7f191969d877cf252dabae1e409f2adeac51da778c285",
+      "diagramSecret": "6828c97c05e8ad45fcdec60538944a88a0a5b419081383cf4993268381cfc4b8",
+      "isPrivate": false,
+      "author": "DAE988ADED111E6AE82DBFD9AE4FFFE97ADBC23D",
+      "modelId": "INC_EXEC_2018",
+      "processName": "Inc Exec Process"
     }]
   *
   * @apiUse NotLoggedIn
@@ -361,22 +358,28 @@ module.exports = (app, customMiddleware) => {
    * @apiExample {curl} Simple:
    *     curl -i /bpm/process-definitions/81A817870C6C6A209150FA26BC52D835CA6E17D2
    *
+   * @apiSuccess {String} processDefinitionId Id of the process definition
    * @apiSuccess {String} address Address of the process definition
    * @apiSuccess {String} modelAddress Address of the model the process definition was created under
-   * @apiSuccess {String} id Id of the process definition
-   * @apiSuccess {String} name Human-readable name of the process definition
    * @apiSuccess {String} interfaceId 'Agreement Formation' or 'Agreement Execution'
    * @apiSuccess {String} diagramAddress Hoard address for the xml file representing the process
    * @apiSuccess {String} diagramSecret Hoard secret for the xml file representing the process
+   * @apiSuccess {String} isPrivate Whether model is private
+   * @apiSuccess {String} author Address of the model author
+   * @apiSuccess {String} modelId Id of the process model
+   * @apiSuccess {String} processName Human-readable name of the process definition
    * @apiSuccessExample {json} Success Object
     {
-      "address": "81A817870C6C6A209150FA26BC52D835CA6E17D2",
-      "modelAddress": "912A82D4C72847EF1EC76426544EAA992993EE20",
-      "id": "defaultFormationProcess",
-      "name": "Default Formation Process",
-      "interfaceId": "Agreement Formation",
-      "diagramAddress": "7D85BB76DB402B752F84792FF50B40483922673CF277CD2045D3D9637D4CE8F9",
-      "diagramSecret": "4AF3A863BF6F2AD79E4919F562252866CBDA58E3E5AA27E2C5C94BAE9931BE74"
+      "processDefinitionId": "Process_00pj23z",
+      "address": "65BF0FB03BA5C140B1584A290B157F8907B8FEBE",
+      "modelAddress": "6025AF7E4FBB2FCCCFBB855E68025CF20038E142",
+      "interfaceId": "Agreement Execution",
+      "diagramAddress": "904cad90af9f665716b7f191969d877cf252dabae1e409f2adeac51da778c285",
+      "diagramSecret": "6828c97c05e8ad45fcdec60538944a88a0a5b419081383cf4993268381cfc4b8",
+      "isPrivate": false,
+      "author": "DAE988ADED111E6AE82DBFD9AE4FFFE97ADBC23D",
+      "modelId": "INC_EXEC_2018",
+      "processName": "Inc Exec Process"
     }
   *
   * @apiUse NotLoggedIn

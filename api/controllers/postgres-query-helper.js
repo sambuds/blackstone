@@ -555,13 +555,15 @@ const getApplications = () => {
     .catch((err) => { throw boom.badImplementation(`Failed to get applications: ${err}`); });
 };
 
-const getProcessDefinitions = (author, interfaceId) => {
+const getProcessDefinitions = (author, { interfaceId, processDefinitionId, modelId }) => {
   const queryString = 'SELECT pd.id as "processDefinitionId", pd.process_definition_address AS address, pd.model_address as "modelAddress", pd.interface_id as "interfaceId", pm.id as "modelId", encode(pm.diagram_address::bytea, \'hex\') as "diagramAddress", encode(pm.diagram_secret::bytea, \'hex\') as "diagramSecret", pm.is_private as "isPrivate", pm.author ' +
     'FROM process_definitions pd JOIN process_models pm ' +
     'ON pd.model_address = pm.model_address ' +
-    `WHERE pm.is_private = $1 OR pm.author = $2 ${(interfaceId ? 'AND interfaceId = $3;' : ';')}`;
+    'WHERE (pm.is_private = $1 OR pm.author = $2) ' +
+    `${(interfaceId ? `AND pd.interface_id = '${interfaceId}'` : '')} ` +
+    `${(processDefinitionId ? `AND pd.id = '${processDefinitionId}'` : '')} ` +
+    `${(modelId ? `AND pm.id = '${modelId}'` : '')};`;
   const params = [false, author];
-  if (interfaceId) params.push(interfaceId);
   return runChainDbQuery(queryString, params)
     .catch((err) => { throw boom.badImplementation(`Failed to get process definitions: ${err}`); });
 };

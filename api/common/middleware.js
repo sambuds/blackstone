@@ -5,7 +5,6 @@ const passport = require('passport');
  * Import and add this middleware to any route that needs jwt authentication
  */
 const ensureAuth = (req, res, next) => {
-  console.log('Entered ENSURE-AUTH');
   passport.authenticate('jwt', { session: false }, (err, user, info) => {
     if (err) return res.status(500).send(`Failed to authenticate: ${err}`);
     if (!user) {

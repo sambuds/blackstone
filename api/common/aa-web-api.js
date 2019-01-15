@@ -19,14 +19,18 @@ const { chainPool } = require(`${global.__common}/postgres-db`);
 let app;
 
 (function startApp() {
-  module.exports = (existingApp, addCustomEndpoints, customMiddleware) => {
+  module.exports = (existingApp, addCustomEndpoints, customMiddleware, configureCustomPassport) => {
     if (!app) {
       const log = logger.getLogger('agreements.web');
 
-      require(path.join(global.__common, 'passport'))(passport);
-
+      if (configureCustomPassport) {
+        configureCustomPassport(passport);
+      } else {
+        require(path.join(global.__common, 'passport'))(passport);
+      }
       const portHTTP = global.__settings.monax.server.port_http || 3080;
       app = existingApp || express();
+      app.use(passport.initialize());
       app.use(helmet());
 
       // CORS for frontend requests
@@ -50,7 +54,6 @@ let app;
       // Configure JSON parsing as default
       app.use(bodyParser.json());
       app.use(cookieParser());
-      app.use(passport.initialize());
 
       app.use((req, res, next) => {
         if (req.path !== '/healthcheck') {

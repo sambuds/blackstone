@@ -7,7 +7,7 @@ const _ = require('lodash');
 const monax = require('@monax/burrow');
 
 (function bootstrapAPI() {
-  module.exports = (app, customConfigs = {}, customMiddleware = []) => {
+  module.exports = (app, customConfigs = {}) => {
     // Set up global directory constants used throughout the app
     global.__appDir = __dirname;
     global.__common = path.resolve(global.__appDir, 'common');
@@ -77,7 +77,7 @@ const monax = require('@monax/burrow');
 
     contracts.load().then(() => {
       log.info('Contracts loaded.');
-      require(`${global.__common}/aa-web-api`)(app, customConfigs.endpoints, customMiddleware);
+      require(`${global.__common}/aa-web-api`)(app, customConfigs.endpoints, customConfigs.middleware, customConfigs.passport);
       log.info('Web API started and ready for requests.');
       log.info('Active Agreements Application started successfully ...');
       eventEmitter.emit(eventConsts.STARTED);

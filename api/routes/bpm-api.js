@@ -30,7 +30,11 @@ const {
  * @apiParam {String{20}} Cookie `access_token` containing the JsonWebToken is required, cookie is set upon successful login
  */
 
-module.exports = (app) => {
+module.exports = (app, customMiddleware) => {
+  // Use custom middleware if passed, otherwise use plain old ensureAuth
+  let middleware = [];
+  middleware = middleware.concat(customMiddleware.length ? customMiddleware : [ensureAuth]);
+
   /* **************
    * BPM Model
    ************** */
@@ -64,7 +68,7 @@ module.exports = (app) => {
   * @apiUse NotLoggedIn
   * @apiUse AuthTokenRequired
   */
-  app.get('/bpm/process-models', ensureAuth, getModels);
+  app.get('/bpm/process-models', middleware, getModels);
 
   /**
    * @api {get} /bpm/process-models/:address/diagram Read Diagram of Process Model
@@ -142,7 +146,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/process-models/:address/diagram', ensureAuth, getModelDiagram);
+  app.get('/bpm/process-models/:address/diagram', middleware, getModelDiagram);
 
   /**
    * @api {post} /bpm/process-models Parse BPMN XML and from it create a process model and definition
@@ -272,7 +276,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.post('/bpm/process-models', ensureAuth, createModelFromBpmn);
+  app.post('/bpm/process-models', middleware, createModelFromBpmn);
 
 
   /**
@@ -308,7 +312,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/applications', ensureAuth, getApplications);
+  app.get('/bpm/applications', middleware, getApplications);
 
   /**
    * @api {get} /bpm/process-definitions Read All Process Definitions
@@ -345,7 +349,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/process-definitions', ensureAuth, getDefinitions);
+  app.get('/bpm/process-definitions', middleware, getDefinitions);
 
   /**
    * @api {get} /bpm/process-definitions/:address Read Single Process Definition
@@ -379,7 +383,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/process-definitions/:address', ensureAuth, getDefinition);
+  app.get('/bpm/process-definitions/:address', middleware, getDefinition);
 
   /**
    * @api {get} /activity-instances Read Activities of a process instance
@@ -414,7 +418,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/activity-instances', ensureAuth, getActivityInstances);
+  app.get('/bpm/activity-instances', middleware, getActivityInstances);
 
   /**
    * @api {get} /activity-instances/:id Read activity instance
@@ -484,7 +488,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/activity-instances/:id', ensureAuth, getActivityInstance);
+  app.get('/bpm/activity-instances/:id', middleware, getActivityInstance);
 
   /**
    * @api {get} /activity-instances/:activityInstanceId/data-mappings Read data mappings of activity instance
@@ -512,7 +516,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/activity-instances/:activityInstanceId/data-mappings', ensureAuth, getDataMappings);
+  app.get('/bpm/activity-instances/:activityInstanceId/data-mappings', middleware, getDataMappings);
 
   /**
    * @api {get} /activity-instances/:activityInstanceId/data-mappings/:dataMappingId Read single data mapping of an activity instance
@@ -540,7 +544,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/bpm/activity-instances/:activityInstanceId/data-mappings/:dataMappingId', ensureAuth, getDataMappings);
+  app.get('/bpm/activity-instances/:activityInstanceId/data-mappings/:dataMappingId', middleware, getDataMappings);
 
   /**
    * @api {get} /activity-instances/:activityInstanceId/data-mappings Write data mappings of activity instance
@@ -567,7 +571,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.put('/bpm/activity-instances/:activityInstanceId/data-mappings', ensureAuth, setDataMappings);
+  app.put('/bpm/activity-instances/:activityInstanceId/data-mappings', middleware, setDataMappings);
 
   /**
    * @api {get} /activity-instances/:activityInstanceId/data-mappings/:dataMappingId Write single data mapping of an activity instance
@@ -588,7 +592,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.put('/bpm/activity-instances/:activityInstanceId/data-mappings/:dataMappingId', ensureAuth, setDataMappings);
+  app.put('/bpm/activity-instances/:activityInstanceId/data-mappings/:dataMappingId', middleware, setDataMappings);
 
   /**
    * @api {get} /tasks Read Tasks
@@ -619,7 +623,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/tasks', ensureAuth, getTasksForUser);
+  app.get('/tasks', middleware, getTasksForUser);
 
   /**
    * @api {put} /tasks/:activityInstanceId/complete Complete task identified by the activityInstanceId
@@ -642,7 +646,7 @@ module.exports = (app) => {
     }
   *
   */
-  app.put('/tasks/:activityInstanceId/complete', ensureAuth, completeActivity);
+  app.put('/tasks/:activityInstanceId/complete', middleware, completeActivity);
 
   /**
    * @api {put} /tasks/:activityInstanceId/complete/:agreementAddress/sign Sign the agreement and complete the activity
@@ -659,5 +663,5 @@ module.exports = (app) => {
    *     curl -i /tasks/:activityInstanceId/complete/:agreementAddress/sign
    *
    */
-  app.put('/tasks/:activityInstanceId/complete/:agreementAddress/sign', ensureAuth, signAndCompleteActivity);
+  app.put('/tasks/:activityInstanceId/complete/:agreementAddress/sign', middleware, signAndCompleteActivity);
 };

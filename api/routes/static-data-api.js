@@ -23,7 +23,11 @@ const { ensureAuth } = require(`${global.__common}/middleware`);
  * @apiParam {String{20}} Cookie `access_token` containing the JsonWebToken is required, cookie is set upon successful login
  */
 
-module.exports = (app) => {
+module.exports = (app, customMiddleware) => {
+  // Use custom middleware if passed, otherwise use plain old ensureAuth
+  let middleware = [];
+  middleware = middleware.concat(customMiddleware.length ? customMiddleware : [ensureAuth]);
+
   /** *************
    * Jurisdictions
    ************** */
@@ -49,7 +53,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/static-data/iso/countries', ensureAuth, getCountries);
+  app.get('/static-data/iso/countries', middleware, getCountries);
 
   /**
   * @api {get} /static-data/iso/countries/:alpha2 Read Country
@@ -74,7 +78,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/static-data/iso/countries/:alpha2', ensureAuth, getAlpha2Countries);
+  app.get('/static-data/iso/countries/:alpha2', middleware, getAlpha2Countries);
 
   /**
   * @api {get} /static-data/iso/countries/:alpha2/regions Read a Country's Regions
@@ -113,7 +117,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/static-data/iso/countries/:alpha2/regions', ensureAuth, getAlpha2CountryRegions);
+  app.get('/static-data/iso/countries/:alpha2/regions', middleware, getAlpha2CountryRegions);
 
   /** **********
    * Currencies
@@ -146,7 +150,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/static-data/iso/currencies', ensureAuth, getCurrencies);
+  app.get('/static-data/iso/currencies', middleware, getCurrencies);
 
   /**
   * @api {get} /static-data/iso/currencies/:alpha3 Read Currency
@@ -171,7 +175,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/static-data/iso/currencies/:alpha3', ensureAuth, getAlpha3Currencies);
+  app.get('/static-data/iso/currencies/:alpha3', middleware, getAlpha3Currencies);
 
   /**
    * @api {get} /static-data/parameter-types Read Parameter Types
@@ -198,7 +202,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.get('/static-data/parameter-types', ensureAuth, getParameterTypes);
+  app.get('/static-data/parameter-types', middleware, getParameterTypes);
 
   /**
    * @api {get} /static-data/parameter-types/:id Read Single Parmeter Type
@@ -212,7 +216,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.get('/static-data/parameter-types/:id', ensureAuth, getParameterType);
+  app.get('/static-data/parameter-types/:id', middleware, getParameterType);
 
 
   /**
@@ -238,5 +242,5 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.get('/static-data/collection-types', ensureAuth, getCollectionTypes);
+  app.get('/static-data/collection-types', middleware, getCollectionTypes);
 };

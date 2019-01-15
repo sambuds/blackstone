@@ -19,7 +19,7 @@ const { chainPool } = require(`${global.__common}/postgres-db`);
 let app;
 
 (function startApp() {
-  module.exports = (existingApp, addCustomEndpoints) => {
+  module.exports = (existingApp, addCustomEndpoints, customMiddleware) => {
     if (!app) {
       const log = logger.getLogger('agreements.web');
 
@@ -72,29 +72,29 @@ let app;
       /**
        * HOARD Routes
        */
-      require(`${global.__routes}/hoard-api`)(app);
+      require(`${global.__routes}/hoard-api`)(app, customMiddleware);
 
       /**
        * Archetypes Routes
        * Agreements Routes
        */
-      require(`${global.__routes}/agreements-api`)(app);
+      require(`${global.__routes}/agreements-api`)(app, customMiddleware);
 
       /**
        * Organization Routes
        * User Routes
        */
-      require(`${global.__routes}/participants-api`)(app);
+      require(`${global.__routes}/participants-api`)(app, customMiddleware);
 
       /**
        * Static Data Routes
        */
-      require(`${global.__routes}/static-data-api`)(app);
+      require(`${global.__routes}/static-data-api`)(app, customMiddleware);
 
       /**
        * BPM Routes
        */
-      require(`${global.__routes}/bpm-api`)(app);
+      require(`${global.__routes}/bpm-api`)(app, customMiddleware);
 
       // // PG-SQL TEST ROUTE
       // app.post('/pg-query', (req, res, next) => {

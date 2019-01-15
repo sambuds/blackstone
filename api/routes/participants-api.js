@@ -29,7 +29,11 @@ const {
 } = require(`${global.__common}/middleware`);
 
 // APIs defined according to specification found here -> http://apidocjs.com
-module.exports = (app) => {
+module.exports = (app, customMiddleware) => {
+  // Use custom middleware if passed, otherwise use plain old ensureAuth
+  let middleware = [];
+  middleware = middleware.concat(customMiddleware.length ? customMiddleware : [ensureAuth]);
+
   /** *************
    * Organizations
    ************** */
@@ -74,7 +78,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.get('/organizations', ensureAuth, getOrganizations);
+  app.get('/organizations', middleware, getOrganizations);
 
   /**
    * @api {get} /organizations/:address Read a Single Organization
@@ -142,7 +146,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.get('/organizations/:address', ensureAuth, getOrganization);
+  app.get('/organizations/:address', middleware, getOrganization);
 
   /**
   * @api {post} /organizations Create a New Organization
@@ -180,7 +184,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.post('/organizations', ensureAuth, createOrganization);
+  app.post('/organizations', middleware, createOrganization);
 
   /**
    * @api {put} /organizations/:orgId/users/:userAddress Adds user to Organization
@@ -197,7 +201,7 @@ module.exports = (app) => {
    *
    */
   app.put(
-    '/organizations/:address/users/:userAddress', ensureAuth,
+    '/organizations/:address/users/:userAddress', middleware,
     createOrganizationUserAssociation,
   );
 
@@ -216,7 +220,7 @@ module.exports = (app) => {
    *
    */
   app.delete(
-    '/organizations/:address/users/:userAddress', ensureAuth,
+    '/organizations/:address/users/:userAddress', middleware,
     deleteOrganizationUserAssociation,
   );
 
@@ -252,7 +256,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.put('/organizations/:address/departments', ensureAuth, createDepartment);
+  app.put('/organizations/:address/departments', middleware, createDepartment);
 
   /**
    * @api {delete} /organizations/:address/departments/:id Remove a Department
@@ -271,7 +275,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.delete('/organizations/:address/departments/:id', ensureAuth, removeDepartment);
+  app.delete('/organizations/:address/departments/:id', middleware, removeDepartment);
 
   /**
    * @api {put} /organizations/:address/departments/:departmentId/users Add Users to a Department
@@ -295,7 +299,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.put('/organizations/:address/departments/:id/users', ensureAuth, addDepartmentUsers);
+  app.put('/organizations/:address/departments/:id/users', middleware, addDepartmentUsers);
 
   /**
    * @api {delete} /organizations/:address/departments/:departmentId/users/:userAddress Remove User from a Department
@@ -314,7 +318,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.delete('/organizations/:address/departments/:id/users/:userAddress', ensureAuth, removeDepartmentUser);
+  app.delete('/organizations/:address/departments/:id/users/:userAddress', middleware, removeDepartmentUser);
 
   /** *************
    * Users
@@ -358,7 +362,7 @@ module.exports = (app) => {
   * @apiUse NotLoggedIn
   * @apiUse AuthTokenRequired
   */
-  app.get('/users', ensureAuth, getUsers);
+  app.get('/users', middleware, getUsers);
 
   /**
    * @api {get} /users/profile Read User Profile of currently logged in user
@@ -403,7 +407,7 @@ module.exports = (app) => {
    * @apiUse NotLoggedIn
    * @apiUse AuthTokenRequired
    */
-  app.get('/users/profile', ensureAuth, getProfile);
+  app.get('/users/profile', middleware, getProfile);
 
   /**
    * @api {put} /users/profile Update User Profile of currently logged in user
@@ -442,7 +446,7 @@ module.exports = (app) => {
    * @apiUse NotLoggedIn
    * @apiUse AuthTokenRequired
    */
-  app.put('/users/profile', ensureAuth, editProfile);
+  app.put('/users/profile', middleware, editProfile);
 
   /**
    * @api {post} /users Create a New User
@@ -540,7 +544,7 @@ module.exports = (app) => {
    * @apiUse AuthTokenRequired
    *
    */
-  app.get('/users/token/validate', ensureAuth, validateToken);
+  app.get('/users/token/validate', middleware, validateToken);
 
   /**
    * @api {post} /users/password-recovery Request password reset for a user account

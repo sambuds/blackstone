@@ -27,10 +27,14 @@ const {
 const { ensureAuth } = require(`${global.__common}/middleware`);
 
 // APIs defined according to specification found here -> http://apidocjs.com
-module.exports = (app) => {
-/* ***********
-* Archetypes
-*********** */
+module.exports = (app, customMiddleware) => {
+  // Use custom middleware if passed, otherwise use plain old ensureAuth
+  let middleware = [];
+  middleware = middleware.concat(customMiddleware.length ? customMiddleware : [ensureAuth]);
+
+  /* ***********
+   * Archetypes
+   *********** */
 
   /**
  * @api {get} /archetypes Read Archetypes
@@ -74,7 +78,7 @@ module.exports = (app) => {
     "countries": ["US", "CA"]
   }]
 */
-  app.get('/archetypes', ensureAuth, getArchetypes);
+  app.get('/archetypes', middleware, getArchetypes);
 
   /**
  * @api {get} /archetypes/:address Read an Archetype
@@ -160,7 +164,7 @@ module.exports = (app) => {
     }]
   }
 */
-  app.get('/archetypes/:address', ensureAuth, getArchetype);
+  app.get('/archetypes/:address', middleware, getArchetype);
 
   /**
  * @api {post} /archetypes Create an Archetype
@@ -250,81 +254,81 @@ module.exports = (app) => {
 * @apiUse NotLoggedIn
 * @apiUse AuthTokenRequired
 */
-  app.post('/archetypes', ensureAuth, createArchetype);
+  app.post('/archetypes', middleware, createArchetype);
 
   /**
- * @api {put} /archetypes/:address/activate Activate an archetype
- * @apiName ActivateArchetype
- * @apiGroup Archetypes
- * @apiDescription Activates the archetype so that agreements can be created from it.
- * An archetype can only be activated by its author. This action will fail if the archetype
- * has a successor set.
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/activate
- *
- * @apiURLParameter address Archetype address
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetypes/:address/activate', ensureAuth, activateArchetype);
+   * @api {put} /archetypes/:address/activate Activate an archetype
+   * @apiName ActivateArchetype
+   * @apiGroup Archetypes
+   * @apiDescription Activates the archetype so that agreements can be created from it.
+   * An archetype can only be activated by its author. This action will fail if the archetype
+   * has a successor set.
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/activate
+   *
+   * @apiURLParameter address Archetype address
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetypes/:address/activate', middleware, activateArchetype);
 
   /**
- * @api {put} /archetypes/:address/successor/:successor Set successor for an archetype
- * @apiName SetArchetypeSuccessor
- * @apiGroup Archetypes
- * @apiDescription Sets the successor of given archetype. This action automatically
- * makes the archetype inactive. Note that an archetype cannot point to itself as its
- * successor. It also validates if this action will result in a circular dependency
- * between two archetypes. A succcessor may only be set by the author of the archetype.
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/successor/ED867101F0B64156ED867BAE925F6CD2406350B6
- *
- * @apiURLParameter address Archetype address
- * @apiURLParameter address Successor address
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetypes/:address/successor/:successor', ensureAuth, setArchetypeSuccessor);
+   * @api {put} /archetypes/:address/successor/:successor Set successor for an archetype
+   * @apiName SetArchetypeSuccessor
+   * @apiGroup Archetypes
+   * @apiDescription Sets the successor of given archetype. This action automatically
+   * makes the archetype inactive. Note that an archetype cannot point to itself as its
+   * successor. It also validates if this action will result in a circular dependency
+   * between two archetypes. A succcessor may only be set by the author of the archetype.
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/successor/ED867101F0B64156ED867BAE925F6CD2406350B6
+   *
+   * @apiURLParameter address Archetype address
+   * @apiURLParameter address Successor address
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetypes/:address/successor/:successor', middleware, setArchetypeSuccessor);
 
   /**
- * @api {put} /archetypes/:address/price Set price of an archetype
- * @apiName SetArchetypePrice
- * @apiGroup Archetypes
- * @apiDescription Sets the price of given archetype
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/price
- *
- * @apiURLParameter address Archetype address
- * @apiBodyParameter {Number} price Price of the archetype
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetypes/:address/price', ensureAuth, setArchetypePrice);
+   * @api {put} /archetypes/:address/price Set price of an archetype
+   * @apiName SetArchetypePrice
+   * @apiGroup Archetypes
+   * @apiDescription Sets the price of given archetype
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/price
+   *
+   * @apiURLParameter address Archetype address
+   * @apiBodyParameter {Number} price Price of the archetype
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetypes/:address/price', middleware, setArchetypePrice);
 
   /**
- * @api {put} /archetypes/:address/deactivate Deactivate an archetype
- * @apiName DeactivateArchetype
- * @apiGroup Archetypes
- * @apiDescription Deactivates the archetype so that agreements cannot be created from it.
- * An archetype can only be deactivated by its author. Once an archetype is deactivated by
- * its author, it will not be included in `GET /archetypes`
- * responses made by users other than the author.
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/activate
- *
- * @apiURLParameter address Archetype address
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetypes/:address/deactivate', ensureAuth, deactivateArchetype);
+   * @api {put} /archetypes/:address/deactivate Deactivate an archetype
+   * @apiName DeactivateArchetype
+   * @apiGroup Archetypes
+   * @apiDescription Deactivates the archetype so that agreements cannot be created from it.
+   * An archetype can only be deactivated by its author. Once an archetype is deactivated by
+   * its author, it will not be included in `GET /archetypes`
+   * responses made by users other than the author.
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetypes/6EDC6101F0B64156ED867BAE925F6CD240635656/activate
+   *
+   * @apiURLParameter address Archetype address
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetypes/:address/deactivate', middleware, deactivateArchetype);
 
   /**
  * @api {get} /archetypes Read Archetype Packages
@@ -356,7 +360,7 @@ module.exports = (app) => {
     "active": true
   }]
 */
-  app.get('/archetype-packages', ensureAuth, getArchetypePackages);
+  app.get('/archetype-packages', middleware, getArchetypePackages);
 
   /**
  * @api {get} /archetype-packages/:id Read an Archetype Package
@@ -397,7 +401,7 @@ module.exports = (app) => {
     ]
   }
 */
-  app.get('/archetype-packages/:id', ensureAuth, getArchetypePackage);
+  app.get('/archetype-packages/:id', middleware, getArchetypePackage);
 
   /**
  * @api {post} /archetypes/packages Create an Archetype Package
@@ -433,63 +437,63 @@ module.exports = (app) => {
 * @apiUse NotLoggedIn
 * @apiUse AuthTokenRequired
 */
-  app.post('/archetype-packages', ensureAuth, createArchetypePackage);
+  app.post('/archetype-packages', middleware, createArchetypePackage);
 
   /**
- * @api {put} /archetype-packages/:id/archetype/:address Add an archetype to a package
- * @apiName AddArchetypeToPackage
- * @apiGroup Archetypes
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetype-packages/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD/archetype/707791D3BBD4FDDE615D0EC4BB0EB3D909F66890
- *
- * @apiURLParameter address Archetype address
- * @apiURLParameter id Package Id
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetype-packages/:packageId/archetype/:archetypeAddress', ensureAuth, addArchetypeToPackage);
+   * @api {put} /archetype-packages/:id/archetype/:address Add an archetype to a package
+   * @apiName AddArchetypeToPackage
+   * @apiGroup Archetypes
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetype-packages/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD/archetype/707791D3BBD4FDDE615D0EC4BB0EB3D909F66890
+   *
+   * @apiURLParameter address Archetype address
+   * @apiURLParameter id Package Id
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetype-packages/:packageId/archetype/:archetypeAddress', middleware, addArchetypeToPackage);
 
   /**
- * @api {put} /archetype-packages/:id/activate Activate an archetype package
- * @apiName ActivateArchetypePackage
- * @apiGroup Archetypes
- * @apiDescription Activates the archetype package
- * An archetype package can only be activated by its author.
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetype-packages/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD/activate
- *
- * @apiURLParameter address Archetype package id
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetype-packages/:id/activate', ensureAuth, activateArchetypePackage);
+   * @api {put} /archetype-packages/:id/activate Activate an archetype package
+   * @apiName ActivateArchetypePackage
+   * @apiGroup Archetypes
+   * @apiDescription Activates the archetype package
+   * An archetype package can only be activated by its author.
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetype-packages/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD/activate
+   *
+   * @apiURLParameter address Archetype package id
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetype-packages/:id/activate', middleware, activateArchetypePackage);
 
   /**
- * @api {put} /archetype-packages/:id/deactivate deactivate an archetype package
- * @apiName DeactivateArchetypePackage
- * @apiGroup Archetypes
- * @apiDescription Deactivates the archetype package
- * An archetype package can only be deactivated by its author. Once an archetype package is deactivated by
- * its author, it will not be included in `GET /archetype-packges` or `GET /archetype-packages/:id`
- * responses made by users other than the author.
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /archetype-packages/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD/deactivate
- *
- * @apiURLParameter address Archetype package id
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/archetype-packages/:id/deactivate', ensureAuth, deactivateArchetypePackage);
+   * @api {put} /archetype-packages/:id/deactivate deactivate an archetype package
+   * @apiName DeactivateArchetypePackage
+   * @apiGroup Archetypes
+   * @apiDescription Deactivates the archetype package
+   * An archetype package can only be deactivated by its author. Once an archetype package is deactivated by
+   * its author, it will not be included in `GET /archetype-packges` or `GET /archetype-packages/:id`
+   * responses made by users other than the author.
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /archetype-packages/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD/deactivate
+   *
+   * @apiURLParameter address Archetype package id
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/archetype-packages/:id/deactivate', middleware, deactivateArchetypePackage);
 
   /* ***********
-  * Agreements
-  *********** */
+   * Agreements
+   *********** */
 
   /**
  * @api {get} /agreements Read Agreements
@@ -537,7 +541,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/agreements', ensureAuth, getAgreements);
+  app.get('/agreements', middleware, getAgreements);
 
   /**
  * @api {get} /agreements/:address Read an Agreement
@@ -634,7 +638,7 @@ module.exports = (app) => {
   * @apiUse AuthTokenRequired
   *
   */
-  app.get('/agreements/:address', ensureAuth, getAgreement);
+  app.get('/agreements/:address', middleware, getAgreement);
 
   /**
  * @api {post} /agreements Create an Agreement
@@ -690,7 +694,7 @@ module.exports = (app) => {
 * @apiUse NotLoggedIn
 * @apiUse AuthTokenRequired
 */
-  app.post('/agreements', ensureAuth, createAgreement);
+  app.post('/agreements', middleware, createAgreement);
 
   /**
  * @api {put} /agreements/:address/events Add a Fulfillment Event to an Agreement
@@ -722,38 +726,38 @@ module.exports = (app) => {
 * @apiUse NotLoggedIn
 * @apiUse AuthTokenRequired
 */
-  app.put('/agreements/:address/events', ensureAuth, updateAgreementEventLog);
+  app.put('/agreements/:address/events', middleware, updateAgreementEventLog);
 
   /**
- * @api {put} /agreements Sign an Agreement
- * @apiName signAgreement
- * @apiGroup Agreements
- * @apiDescription Signs an agreement by the authenticated user
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /agreements/707791D3BBD4FDDE615D0EC4BB0EB3D909F66890/sign
- *
- * @apiURLParameter address Agreement address
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/agreements/:address/sign', ensureAuth, signAgreement);
+   * @api {put} /agreements Sign an Agreement
+   * @apiName signAgreement
+   * @apiGroup Agreements
+   * @apiDescription Signs an agreement by the authenticated user
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /agreements/707791D3BBD4FDDE615D0EC4BB0EB3D909F66890/sign
+   *
+   * @apiURLParameter address Agreement address
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/agreements/:address/sign', middleware, signAgreement);
 
   /**
- * @api {put} /agreements Cancel an Agreement
- * @apiName cancelAgreement
- * @apiGroup Agreements
- * @apiDescription Cancels an agreement if the authenticated user is a member of the agreement parties,
- * or a member of an organization that is an agreement party
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /agreements/707791D3BBD4FDDE615D0EC4BB0EB3D909F66890/cancel
- *
- * @apiURLParameter address Agreement address
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/agreements/:address/cancel', ensureAuth, cancelAgreement);
+   * @api {put} /agreements Cancel an Agreement
+   * @apiName cancelAgreement
+   * @apiGroup Agreements
+   * @apiDescription Cancels an agreement if the authenticated user is a member of the agreement parties,
+   * or a member of an organization that is an agreement party
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /agreements/707791D3BBD4FDDE615D0EC4BB0EB3D909F66890/cancel
+   *
+   * @apiURLParameter address Agreement address
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/agreements/:address/cancel', middleware, cancelAgreement);
 
   /**
  * @api {get} /agreement-collections Read Agreement Collections
@@ -784,7 +788,7 @@ module.exports = (app) => {
 * @apiUse AuthTokenRequired
 *
 */
-  app.get('/agreement-collections', ensureAuth, getAgreementCollections);
+  app.get('/agreement-collections', middleware, getAgreementCollections);
 
   /**
  * @api {get} /agreement-collections/:id Read an Agreement Collection
@@ -817,7 +821,7 @@ module.exports = (app) => {
     }]
   }
 */
-  app.get('/agreement-collections/:id', ensureAuth, getAgreementCollection);
+  app.get('/agreement-collections/:id', middleware, getAgreementCollection);
 
   /**
  * @api {get} /agreement-collections Create a Agreement Collection
@@ -849,21 +853,21 @@ module.exports = (app) => {
 * @apiUse AuthTokenRequired
 *
 */
-  app.post('/agreement-collections', ensureAuth, createAgreementCollection);
+  app.post('/agreement-collections', middleware, createAgreementCollection);
 
   /**
- * @api {put} /agreement-collections Add an agreement to a collection
- * @apiName AddAgreementToCollection
- * @apiGroup Agreements
- *
- * @apiExample {curl} Simple:
- *     curl -iX PUT /agreement-collections/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD
- *
- * @apiBodyParameter {String} agreement Address of the agreement to add
- * @apiBodyParameter {String} collectionId Id of the collection to add to
- *
- * @apiUse NotLoggedIn
- * @apiUse AuthTokenRequired
- */
-  app.put('/agreement-collections', ensureAuth, addAgreementToCollection);
+   * @api {put} /agreement-collections Add an agreement to a collection
+   * @apiName AddAgreementToCollection
+   * @apiGroup Agreements
+   *
+   * @apiExample {curl} Simple:
+   *     curl -iX PUT /agreement-collections/7F2CA849A318E7FA2473B3442B7AC86A84DD3AA054F567BCF5D27D9622FCD0BD
+   *
+   * @apiBodyParameter {String} agreement Address of the agreement to add
+   * @apiBodyParameter {String} collectionId Id of the collection to add to
+   *
+   * @apiUse NotLoggedIn
+   * @apiUse AuthTokenRequired
+   */
+  app.put('/agreement-collections', middleware, addAgreementToCollection);
 };

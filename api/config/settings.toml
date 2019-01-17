@@ -18,7 +18,7 @@ port = 10997
 server = "0201EF325305ABD75E1FB8A8F539730F71547484"     # for testing/demo only! The account address to use for signing. ENV var MONAX_ACCOUNTS_SERVER_KEY overwrites this, if set!
 
 [monax.contracts]
-load = "EcosystemRegistry, ParticipantsManager, ArchetypeRegistry, ActiveAgreementRegistry, ProcessModelRepository, ApplicationRegistry, BpmService, IsoCountries, IsoCurrencies, ParameterTypesAccess"
+load = "EcosystemRegistry, ParticipantsManager, ArchetypeRegistry, ActiveAgreementRegistry, ProcessModelRepository, ApplicationRegistry, BpmService"
 
 [monax.bundles]
 bundles_path = "../contracts/bundles/active-agreements/contract_bundles"

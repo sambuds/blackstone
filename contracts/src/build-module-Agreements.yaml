@@ -23,6 +23,3 @@ jobs:
   - name: ActiveAgreementRegistryDb
     build:
       contract: agreements/ActiveAgreementRegistryDb.sol
-  - name: ParameterTypesAccess
-    build:
-      contract: agreements/ParameterTypesAccess.sol

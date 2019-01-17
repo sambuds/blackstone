@@ -769,7 +769,7 @@
   },
   {
     "TableName": "PARAMETER_TYPES",
-    "Filter": "Log1Text = 'AN://agreements/parameter-types'",
+    "Filter": "Log1Text = 'AN://parameter-types'",
     "Columns": {
       "parameter_type": {
         "name": "parameter_type",
@@ -778,8 +778,7 @@
       },
       "label": {
         "name": "label",
-        "type": "bytes32",
-        "bytesToString": true
+        "type": "string"
       }
     }
   },

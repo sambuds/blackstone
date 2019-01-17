@@ -1,16 +1,10 @@
 jobs:
 
-#####
-# Retrieve DOUG
-#####
 - name: DOUG
   query-name:
       name: DOUG
       field: data
 
-#####
-# Retrieve Library Addresses
-#####
 - name: ErrorsLib
   query-contract:
     destination: $DOUG
@@ -25,29 +19,12 @@ jobs:
     function: lookupContract
     data: [ArrayUtils]
 
-#####
-# Deploy & Register Contracts
-#####
 - name: IsoCountries
   deploy:
     contract: IsoCountries100.bin
     libraries: ErrorsLib:$ErrorsLib
 
-- name: DeployIsoCountries
-  call:
-    destination: $DOUG
-    bin: DOUG
-    function: deployContract
-    data: [IsoCountries, $IsoCountries]
-
 - name: IsoCurrencies
   deploy:
     contract: IsoCurrencies100.bin
     libraries: ErrorsLib:$ErrorsLib
-
-- name: DeployIsoCurrencies
-  call:
-    destination: $DOUG
-    bin: DOUG
-    function: deployContract
-    data: [IsoCurrencies, $IsoCurrencies]

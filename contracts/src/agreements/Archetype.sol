@@ -1,8 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "commons-base/Named.sol";
-
-import "agreements/Agreements.sol";
+import "commons-utils/DataTypes.sol";
 
 /**
  * @title Archetype Interface
@@ -28,7 +27,7 @@ contract Archetype is Named {
 	 *		   BaseErrors.NULL_PARAM_NOT_ALLOWED() if _parameter is empty,
 	 *		   BaseErrors.RESOURCE_ALREADY_EXISTS() if _parameter already exists
 	 */
-	function addParameter(Agreements.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error, uint position);
+	function addParameter(DataTypes.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error, uint position);
 
 	/**
 	 * @dev Adds the given jurisdiction in the form of a country code and region identifier to this archetype.
@@ -92,7 +91,7 @@ contract Archetype is Named {
 	 * @return position index of parameter
 	 * @return parameterType parameter type
 	 */
-	function getParameterDetails(bytes32 _parameter) external view returns (uint position, Agreements.ParameterType parameterType);
+	function getParameterDetails(bytes32 _parameter) external view returns (uint position, DataTypes.ParameterType parameterType);
 
 	/**
 	 * @dev Gets number of documents

@@ -2,9 +2,11 @@ pragma solidity ^0.4.23;
 
 /**
  * @title DataTypes Library
- * @dev A library distinguishing all available Data Types used in Monax SDKs
+ * @dev A library distinguishing all available Solidity data types and providing an enumeration of human-readable parameter types.
  */
 library DataTypes {
+
+  enum ParameterType {BOOLEAN, STRING, NUMBER, DATE, DATETIME, MONETARY_AMOUNT, USER_ORGANIZATION, CONTRACT_ADDRESS, SIGNING_PARTY, BYTES32, DOCUMENT, LARGE_TEXT}
   
   // ************************* BOOL ********************************
   // Values: 1

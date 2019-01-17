@@ -154,7 +154,7 @@ contract ArchetypeRegistry is Upgradeable {
 	 * @param _parameterName parameter name
 	 * @return a return code indicating success or failure
 	 */
-	function addParameter(address _archetype, Agreements.ParameterType _parameterType, bytes32 _parameterName) public returns (uint error);
+	function addParameter(address _archetype, DataTypes.ParameterType _parameterType, bytes32 _parameterName) public returns (uint error);
 
 	/**
 	 * @dev Adds the specified parameters to the archetype
@@ -162,7 +162,7 @@ contract ArchetypeRegistry is Upgradeable {
 	 * @param _parameterNames parameter names array
 	 * @return a return code indicating success or failure
 	 */
-	function addParameters(address _archetype, Agreements.ParameterType[] _parameterTypes, bytes32[] _parameterNames) external returns (uint error);
+	function addParameters(address _archetype, DataTypes.ParameterType[] _parameterTypes, bytes32[] _parameterNames) external returns (uint error);
 
 	/**
 	 * @dev Adds the given jurisdiction in the form of a country code and region identifier to this archetype.
@@ -395,7 +395,7 @@ contract ArchetypeRegistry is Upgradeable {
 		* @return position index of parameter
 		* @return parameterType parameter type
 		*/
-	function getParameterByArchetypeData(address _archetype, bytes32 _name) external view returns (uint position, Agreements.ParameterType parameterType);
+	function getParameterByArchetypeData(address _archetype, bytes32 _name) external view returns (uint position, DataTypes.ParameterType parameterType);
 
 	/**
 		* @dev Returns the number of jurisdictions for the given Archetype

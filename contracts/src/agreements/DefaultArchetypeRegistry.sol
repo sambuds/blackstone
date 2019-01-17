@@ -154,7 +154,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 	 * @return BaseErrors.RESOURCE_NOT_FOUND() if archetype is not found
 	 * @return any error returned from the Archetype.addParameter() function
 	 */
-	function addParameter(address _archetype, Agreements.ParameterType _parameterType, bytes32 _parameterName) public returns (uint error) {
+	function addParameter(address _archetype, DataTypes.ParameterType _parameterType, bytes32 _parameterName) public returns (uint error) {
 		uint position;
 		if (!ArchetypeRegistryDb(database).archetypeExists(_archetype))
 			return BaseErrors.RESOURCE_NOT_FOUND();
@@ -180,7 +180,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 	 * @return BaseErrors.RESOURCE_NOT_FOUND() if archetype is not found
 	 * @return BaseErrors.INVALID_PARAM_STATE() if the lengths of the two arrays don't match
 	 */
-	function addParameters(address _archetype, Agreements.ParameterType[] _parameterTypes, bytes32[] _parameterNames) external returns (uint error) {
+	function addParameters(address _archetype, DataTypes.ParameterType[] _parameterTypes, bytes32[] _parameterNames) external returns (uint error) {
 		if (_parameterTypes.length != _parameterNames.length)
 			return BaseErrors.INVALID_PARAM_STATE();
 		for (uint i=0; i<_parameterTypes.length; i++) {
@@ -568,7 +568,7 @@ contract DefaultArchetypeRegistry is Versioned(1,0,0), ArchetypeRegistry, Abstra
 	 * @return position index of parameter
 	 * @return parameterType parameter type
 	 */
-    function getParameterByArchetypeData(address _archetype, bytes32 _name) external view returns (uint position, Agreements.ParameterType parameterType) {
+    function getParameterByArchetypeData(address _archetype, bytes32 _name) external view returns (uint position, DataTypes.ParameterType parameterType) {
         return Archetype(_archetype).getParameterDetails(_name);
     }
 

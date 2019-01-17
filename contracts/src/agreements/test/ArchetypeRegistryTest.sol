@@ -27,7 +27,7 @@ contract ArchetypeRegistryTest {
 	bytes32 hoardAddress = "hoardAddress";
 	bytes32 secretKey = "secretKey";
 	bytes32 parameter = "parameter";
-	Agreements.ParameterType parameterType = Agreements.ParameterType.BOOLEAN;
+	DataTypes.ParameterType parameterType = DataTypes.ParameterType.BOOLEAN;
 
 	address droneArchetype = 0x0;
 	address droneArchetype2 = 0x0;
@@ -97,7 +97,7 @@ contract ArchetypeRegistryTest {
 		if (registry.addParameter(archetype, parameterType, parameter) != BaseErrors.NO_ERROR()) return "Adding parameter to archetype failed unexpectedly";
 		if (registry.getParametersByArchetypeSize(archetype) != 1) return "Parameters on archetype expected to be 1";
 		if (registry.getParameterByArchetypeAtIndex(archetype, 0) != parameter) return "parameter at index 0 does not match";
-		(, Agreements.ParameterType retParameterType) = registry.getParameterByArchetypeData(archetype, parameter);
+		(, DataTypes.ParameterType retParameterType) = registry.getParameterByArchetypeData(archetype, parameter);
 		if (retParameterType != parameterType) return "parameterType of parameter does not match";
 
 		// Document Attachments

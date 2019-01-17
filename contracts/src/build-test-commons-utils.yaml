@@ -11,9 +11,3 @@ jobs:
   - name: ArrayUtilsLibTest
     build:
       contract: commons-utils/test/ArrayUtilsTest.sol
-  - name: DataTypesAccessTest
-    build:
-      contract: commons-utils/test/DataTypesAccessTest.sol
-  - name: DataTypesAccess
-    build:
-      contract: commons-utils/DataTypesAccess.sol

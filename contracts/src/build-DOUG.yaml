@@ -8,6 +8,9 @@ jobs:
   - name: ArrayUtilsImpl
     build:
       contract: commons-utils/ArrayUtilsImpl.sol
+  - name: DataTypesAccess
+    build:
+      contract: commons-utils/DataTypesAccess.sol
   - name: MappingsLib
     build:
       contract: commons-collections/MappingsLib.sol

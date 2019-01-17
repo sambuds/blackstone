@@ -102,7 +102,7 @@ contract DefaultArchetype is Archetype {
 	 *		   BaseErrors.NULL_PARAM_NOT_ALLOWED() if _parameter is empty,
 	 *		   BaseErrors.RESOURCE_ALREADY_EXISTS() if _parameter already exists
 	 */
-	function addParameter(Agreements.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error, uint position) {
+	function addParameter(DataTypes.ParameterType _parameterType, bytes32 _parameterName) external returns (uint error, uint position) {
 		if (_parameterName == "")
 			return (BaseErrors.NULL_PARAM_NOT_ALLOWED(), 0);
 		if (parameters.contains(_parameterName))
@@ -257,10 +257,10 @@ contract DefaultArchetype is Archetype {
 	 * @return position index of parameter
 	 * @return parameterType parameter type
 	 */
-    function getParameterDetails(bytes32 _parameter) external view returns (uint position, Agreements.ParameterType parameterType) {
+    function getParameterDetails(bytes32 _parameter) external view returns (uint position, DataTypes.ParameterType parameterType) {
         // the index of the parameterTypes Map correspond to the order of entry during creation and therefore can be used as an index for sorting
         position = parameterTypes.rows[_parameter].keyIdx;
-        parameterType = Agreements.ParameterType(parameterTypes.rows[_parameter].value);
+        parameterType = DataTypes.ParameterType(parameterTypes.rows[_parameter].value);
     }
 
 	/**

@@ -208,15 +208,8 @@ jobs:
     val: $ArchetypeRegistry
 
 #####
-# ParameterTypesAccess
+# DataTypesAccess
 #####
-- name: ParameterTypesAccess
+- name: DataTypesAccess
   deploy:
-    contract: ParameterTypesAccess.bin
-
-- name: DeployParameterTypesAccess
-  call:
-    destination: $DOUG
-    bin: DOUG
-    function: deployContract
-    data: [ParameterTypesAccess, $ParameterTypesAccess]
+    contract: DataTypesAccess.bin

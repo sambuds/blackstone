@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "commons-base/BaseErrors.sol";
+import "commons-utils/DataTypes.sol";
 
 import "bpm-model/DefaultProcessModel.sol";
 import "bpm-model/DefaultProcessDefinition.sol";
@@ -33,6 +34,18 @@ contract ProcessModelTest {
 		(location, secret) = pm.getDiagram();
 		if (location != "hoardAddress") return "wrong hoard location retrieved";
 		if (secret != "hoardSecret") return "wrong hoard secret retrieved";
+
+		// data definitions
+		if (pm.getNumberOfDataDefinitions() != 0) return "There should not be any data definitions in the model after creation";
+		pm.addDataDefinition("Age", DataTypes.ParameterType.POSITIVE_NUMBER);
+		pm.addDataDefinition("Hash", DataTypes.ParameterType.BYTES32);
+		if (pm.getNumberOfDataDefinitions() != 2) return "There should 2 data definitions in the model";
+		bytes32 id;
+		uint paramType;
+		(id, paramType) = pm.getDataDefinitionDetailsAtIndex(0);
+		if (id != "Age" || paramType != uint(DataTypes.ParameterType.POSITIVE_NUMBER)) return "Data definition for Age not correctly retrieved";
+		(id, paramType) = pm.getDataDefinitionDetailsAtIndex(1);
+		if (id != "Hash" || paramType != uint(DataTypes.ParameterType.BYTES32)) return "Data definition for Hash not correctly retrieved";
 
 		(error, newAddress) = pm.createProcessDefinition("p1");
 		if (error != BaseErrors.NO_ERROR()) return "Unexpected error creating ProcessDefinition p1";

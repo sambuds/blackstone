@@ -1,6 +1,7 @@
 pragma solidity ^0.4.23;
 
 import "commons-base/BaseErrors.sol";
+import "commons-base/ErrorsLib.sol";
 import "commons-collections/Mappings.sol";
 import "commons-collections/MappingsLib.sol";
 import "commons-events/DefaultEventEmitter.sol";
@@ -15,7 +16,9 @@ import "bpm-model/DefaultProcessDefinition.sol";
 contract DefaultProcessModel is ProcessModel, DefaultEventEmitter {
 
 	using MappingsLib for Mappings.Bytes32AddressMap;
+	using MappingsLib for Mappings.Bytes32UintMap;
 
+	Mappings.Bytes32UintMap dataDefinitions;
 	Mappings.Bytes32AddressMap processDefinitions;
 	BpmModel.ParticipantMap participants;
 	mapping(bytes32 => bool) processInterfaces;
@@ -37,7 +40,9 @@ contract DefaultProcessModel is ProcessModel, DefaultEventEmitter {
 	 */
 	constructor(bytes32 _id, string _name, uint8[3] _version, address _author, bool _isPrivate, bytes32 _hoardAddress, bytes32 _hoardSecret)
 		Versioned(_version[0], _version[1], _version[2])
-		AbstractNamedElement(_id, _name) public {
+		AbstractNamedElement(_id, _name)
+		public
+	{
 		hoardAddress = _hoardAddress;
 		hoardSecret = _hoardSecret;
 		author = _author;
@@ -256,6 +261,39 @@ contract DefaultProcessModel is ProcessModel, DefaultEventEmitter {
 	 */
 	function hasParticipant(bytes32 _id) external view returns (bool) {
 		return participants.rows[_id].exists;
+	}
+
+	/**
+	 * @dev Adds a data definition to this ProcessModel
+	 * @param _id the ID of the data object
+	 * @param _parameterType the DataTypes.ParameterType of the data object
+	 */
+	function addDataDefinition(bytes32 _id, DataTypes.ParameterType _parameterType) external {
+		dataDefinitions.insertOrUpdate(_id, uint(_parameterType));
+		emit LogProcessModelDataCreation(EVENT_ID_PROCESS_MODEL_DATA, _id, address(this), uint(_parameterType));
+	}
+
+	/**
+	 * @dev Returns the number of data definitions in the ProcessModel
+	 * @return the number of data definitions
+	 */
+	function getNumberOfDataDefinitions() external view returns (uint) {
+		return dataDefinitions.keys.length;
+	}
+
+	/**
+	 * @dev Returns details about the data definition at the given index position
+	 * REVERTS if:
+	 * - the index is out of bounds
+	 * @param _index the index position
+	 * @return id - the ID of the data definition
+	 * @return parameterType - the uint representation of the DataTypes.ParameterType
+	 */
+	function getDataDefinitionDetailsAtIndex(uint _index) external view returns (bytes32 id, uint parameterType) {
+		ErrorsLib.revertIf(_index >= dataDefinitions.keys.length,
+			ErrorsLib.INVALID_INPUT(), "DefaultProcessModel.getDataDefinitionDetailsAtIndex", "The given index value is out-of-bounds of the data definitions collection");
+		id = dataDefinitions.keys[_index];
+		parameterType = dataDefinitions.get(id);
 	}
 
 	/**

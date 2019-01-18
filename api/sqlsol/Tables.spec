@@ -546,6 +546,27 @@
     }
   },
   {
+    "TableName": "PROCESS_MODEL_DATA",
+    "Filter": "Log1Text = 'AN://process-model-data'",
+    "Columns": {
+      "id": {
+        "name": "id",
+        "type": "bytes32",
+        "bytesToString": true,
+        "primary": true
+      },
+      "model_address": {
+        "name": "model_address",
+        "type": "address",
+        "primary": true
+      },
+      "parameterType": {
+        "name": "parameterType",
+        "type": "uint"
+      }
+    }
+  },
+  {
     "TableName": "APPLICATIONS",
     "Filter": "Log1Text = 'AN://applications'",
     "Columns": {

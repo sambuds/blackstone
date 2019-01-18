@@ -93,9 +93,10 @@ contract DataTypesAccess {
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.USER_ORGANIZATION), "User/Organization");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.CONTRACT_ADDRESS), "Contract Address");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.SIGNING_PARTY), "Signing Party");
-        emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.BYTES32), "32-Byte Hash");
+        emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.BYTES32), "32-Byte Value");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.DOCUMENT), "Document");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.LARGE_TEXT), "Large Text");
+        emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.POSITIVE_NUMBER), "Positive Number");
     }
 
 }

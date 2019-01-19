@@ -29,19 +29,7 @@ const MONAX_BUNDLES = {
   },
 };
 
-const PARAM_TYPE_TO_DATA_TYPE_MAP = {
-  0: { label: 'Boolean', dataType: 1, parameterType: 0 },
-  1: { label: 'Text', dataType: 2, parameterType: 1 },
-  2: { label: 'Number', dataType: 8, parameterType: 2 },
-  3: { label: 'Date', dataType: 8, parameterType: 3 },
-  4: { label: 'Datetime', dataType: 8, parameterType: 4 },
-  5: { label: 'Monetary Amount', dtaType: 8, parameterType: 5 },
-  6: { label: 'User/Organization', dtaType: 40, parameterType: 6 },
-  7: { label: 'Contract Address', dtaType: 40, parameterType: 7 },
-  8: { label: 'Signatory', dataType: 40, parameterType: 8 },
-};
-
-const PARAMETER_TYPE = {
+const PARAMETER_TYPES = {
   BOOLEAN: 0,
   STRING: 1,
   NUMBER: 2,
@@ -51,6 +39,10 @@ const PARAMETER_TYPE = {
   USER_ORGANIZATION: 6,
   CONTRACT_ADDRESS: 7,
   SIGNING_PARTY: 8,
+  BYTES32: 9,
+  DOCUMENT: 10,
+  LARGE_TEXT: 11,
+  POSITIVE_NUMBER: 12,
 };
 
 const DATA_TYPES = {
@@ -60,6 +52,22 @@ const DATA_TYPES = {
   UINT: 8,
   INT: 18,
   ADDRESS: 40,
+};
+
+const PARAM_TYPE_TO_DATA_TYPE_MAP = {
+  0: { label: 'Boolean', dataType: DATA_TYPES.BOOLEAN, parameterType: PARAMETER_TYPES.BOOLEAN },
+  1: { label: 'Text', dataType: DATA_TYPES.STRING, parameterType: PARAMETER_TYPES.STRING },
+  2: { label: 'Number', dataType: DATA_TYPES.INT, parameterType: PARAMETER_TYPES.NUMBER },
+  3: { label: 'Date', dataType: DATA_TYPES.UINT, parameterType: PARAMETER_TYPES.DATE },
+  4: { label: 'Datetime', dataType: DATA_TYPES.UINT, parameterType: PARAMETER_TYPES.DATETIME },
+  5: { label: 'Monetary Amount', dataType: DATA_TYPES.INT, parameterType: PARAMETER_TYPES.MONETARY_AMOUNT },
+  6: { label: 'User/Organization', dataType: DATA_TYPES.ADDRESS, parameterType: PARAMETER_TYPES.USER_ORGANIZATION },
+  7: { label: 'Contract Address', dataType: DATA_TYPES.ADDRESS, parameterType: PARAMETER_TYPES.CONTRACT_ADDRESS },
+  8: { label: 'Signatory', dataType: DATA_TYPES.ADDRESS, parameterType: PARAMETER_TYPES.SIGNING_PARTY },
+  9: { label: '32-byte Value', dataType: DATA_TYPES.BYTES32, parameterType: PARAMETER_TYPES.BYTES32 },
+  10: { label: 'Document', dataType: DATA_TYPES.STRING, parameterType: PARAMETER_TYPES.DOCUMENT },
+  11: { label: 'Large Text', dataType: DATA_TYPES.STRING, parameterType: PARAMETER_TYPES.LARGE_TEXT },
+  12: { label: 'Positive Number', dataType: DATA_TYPES.UINT, parameterType: PARAMETER_TYPES.POSITIVE_NUMBER },
 };
 
 const DIRECTION = {
@@ -98,7 +106,7 @@ const NOTIFICATION = {
 
 module.exports = {
   MONAX_BUNDLES,
-  PARAMETER_TYPE,
+  PARAMETER_TYPES,
   DATA_TYPES,
   DIRECTION,
   PARAM_TYPE_TO_DATA_TYPE_MAP,

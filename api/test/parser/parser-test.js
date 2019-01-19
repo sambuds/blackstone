@@ -373,7 +373,7 @@ const gatewayProcess1 = {
       "lhDataPath": "Age",
       "operator": 4,
       "rhValue": "18",
-      "dataType": 8
+      "dataType": 18
     }
   }, {
     "id": "SequenceFlow_1jj19x9",

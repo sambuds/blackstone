@@ -25,7 +25,7 @@ const { hoard } = require(`${global.__controllers}/hoard-controller`);
 const logger = require(`${global.__common}/monax-logger`);
 const log = logger.getLogger('agreements');
 const sqlCache = require('./postgres-query-helper');
-const { PARAMETER_TYPE: PARAM_TYPE, AGREEMENT_PARTIES } = global.__monax_constants;
+const { PARAMETER_TYPES: PARAM_TYPE, AGREEMENT_PARTIES } = global.__monax_constants;
 
 const getArchetypes = asyncMiddleware(async (req, res) => {
   const retData = [];

@@ -1,14 +1,14 @@
 const logger = require(`${global.__common}/monax-logger`);
 const contracts = require('../controllers/contracts-controller');
 const CONTRACT_ACTIVE_AGREEMENT = global.__monax_bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT;
-const { PARAMETER_TYPE: PARAM_TYPE, DATA_TYPES } = global.__monax_constants;
+const { PARAMETER_TYPES: PARAM_TYPE, DATA_TYPES } = global.__monax_constants;
 const { chainPool } = require(`${global.__common}/postgres-db`);
 const log = logger.getLogger('agreements.data-storage');
 
 /* **********************************************************
  *       PARAMETER TYPES TO SOLIDITY DATA TYPES MAPPING
  *       dataTypes match DataTypes.sol uint8 data types
- *       parameterTypes match Agreements.ParameterType enums
+ *       parameterTypes match DataTypes.ParameterType enums
  ********************************************************** */
 
 const agreementDataSetters = {};
@@ -55,6 +55,14 @@ const setDataValueAsInt = (agreementAddr, fieldName, fieldValue) => new Promise(
 const setDataValueAsAddress = (agreementAddr, fieldName, fieldValue) => new Promise((resolve, reject) => {
   const agreement = contracts.getContract(global.__abi, CONTRACT_ACTIVE_AGREEMENT, agreementAddr);
   agreement.setDataValueAsAddress(fieldName, fieldValue, (err) => {
+    if (err) reject(err);
+    else resolve();
+  });
+});
+
+const setDataValueAsBytes32 = (agreementAddr, fieldName, fieldValue) => new Promise((resolve, reject) => {
+  const agreement = contracts.getContract(global.__abi, CONTRACT_ACTIVE_AGREEMENT, agreementAddr);
+  agreement.setDataValueAsBytes32(fieldName, fieldValue, (err) => {
     if (err) reject(err);
     else resolve();
   });
@@ -115,6 +123,17 @@ const getDataValueAsAddress = (agreementAddr, fieldName) => new Promise((resolve
     return resolve({
       name: global.hexToString(fieldName),
       value: data.raw[0].valueOf(),
+    });
+  });
+});
+
+const getDataValueAsBytes32 = (agreementAddr, fieldName) => new Promise((resolve, reject) => {
+  const agreement = contracts.getContract(global.__abi, CONTRACT_ACTIVE_AGREEMENT, agreementAddr);
+  agreement.getDataValueAsBytes32(fieldName, (err, data) => {
+    if (err) return reject(err);
+    return resolve({
+      name: global.hexToString(fieldName),
+      value: global.hexToString(data.raw[0].valueOf()),
     });
   });
 });
@@ -319,23 +338,31 @@ const getArchetypeValidParameters = archetypeAddr => new Promise((resolve, rejec
 
 agreementDataSetters[`${PARAM_TYPE.BOOLEAN}`] = setDataValueAsBool;
 agreementDataSetters[`${PARAM_TYPE.STRING}`] = setDataValueAsString;
-agreementDataSetters[`${PARAM_TYPE.NUMBER}`] = setDataValueAsUint;
+agreementDataSetters[`${PARAM_TYPE.NUMBER}`] = setDataValueAsInt;
 agreementDataSetters[`${PARAM_TYPE.DATE}`] = setDataValueAsUint;
 agreementDataSetters[`${PARAM_TYPE.DATETIME}`] = setDataValueAsUint;
-agreementDataSetters[`${PARAM_TYPE.MONETARY_AMOUNT}`] = setDataValueAsUint;
+agreementDataSetters[`${PARAM_TYPE.MONETARY_AMOUNT}`] = setDataValueAsInt;
 agreementDataSetters[`${PARAM_TYPE.USER_ORGANIZATION}`] = setDataValueAsAddress;
 agreementDataSetters[`${PARAM_TYPE.CONTRACT_ADDRESS}`] = setDataValueAsAddress;
 agreementDataSetters[`${PARAM_TYPE.SIGNING_PARTY}`] = setDataValueAsAddress;
+agreementDataSetters[`${PARAM_TYPE.BYTES32}`] = setDataValueAsBytes32;
+agreementDataSetters[`${PARAM_TYPE.DOCUMENT}`] = setDataValueAsString;
+agreementDataSetters[`${PARAM_TYPE.LARGE_TEXT}`] = setDataValueAsString;
+agreementDataSetters[`${PARAM_TYPE.POSITIVE_NUMBER}`] = setDataValueAsUint;
 
 agreementDataGetters[`${PARAM_TYPE.BOOLEAN}`] = getDataValueAsBool;
 agreementDataGetters[`${PARAM_TYPE.STRING}`] = getDataValueAsString;
 agreementDataGetters[`${PARAM_TYPE.NUMBER}`] = getDataValueAsUint;
 agreementDataGetters[`${PARAM_TYPE.DATE}`] = getDataValueAsUint;
 agreementDataGetters[`${PARAM_TYPE.DATETIME}`] = getDataValueAsUint;
-agreementDataGetters[`${PARAM_TYPE.MONETARY_AMOUNT}`] = getDataValueAsUint;
+agreementDataGetters[`${PARAM_TYPE.MONETARY_AMOUNT}`] = getDataValueAsInt;
 agreementDataGetters[`${PARAM_TYPE.USER_ORGANIZATION}`] = getDataValueAsAddress;
 agreementDataGetters[`${PARAM_TYPE.CONTRACT_ADDRESS}`] = getDataValueAsAddress;
 agreementDataGetters[`${PARAM_TYPE.SIGNING_PARTY}`] = getDataValueAsAddress;
+agreementDataGetters[`${PARAM_TYPE.BYTES32}`] = getDataValueAsBytes32;
+agreementDataGetters[`${PARAM_TYPE.DOCUMENT}`] = getDataValueAsString;
+agreementDataGetters[`${PARAM_TYPE.LARGE_TEXT}`] = getDataValueAsString;
+agreementDataGetters[`${PARAM_TYPE.POSITIVE_NUMBER}`] = getDataValueAsUint;
 
 activityInDataGetters[`${DATA_TYPES.BOOLEAN}`] = getActivityInDataAsBool;
 activityInDataGetters[`${DATA_TYPES.STRING}`] = getActivityInDataAsString;

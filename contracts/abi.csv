@@ -9,12 +9,8 @@ BpmService
 DOUG
 Ecosystem
 EcosystemRegistry
-IsoCountries
-IsoCurrencies
 Organization
-ParameterTypesAccess
 ProcessDefinition
 ProcessModel
 ProcessModelRepository
 ProcessInstance
-BpmRuntimeLib

@@ -23,7 +23,8 @@ contract ProcessModel is EventEmitter, Versioned, AbstractNamedElement {
 
 	event LogProcessModelDataCreation(
 		bytes32 indexed eventId,
-		bytes32 id,
+		bytes32 dataId,
+		bytes32 dataPath,
 		address model_address,
 		uint parameterType
 	);
@@ -158,10 +159,11 @@ contract ProcessModel is EventEmitter, Versioned, AbstractNamedElement {
 
 	/**
 	 * @dev Adds a data definition to this ProcessModel
-	 * @param _id the ID of the data object
+	 * @param _dataId the ID of the data object
+	 * @param _dataPath the path to a data value
 	 * @param _parameterType the DataTypes.ParameterType of the data object
 	 */
-	function addDataDefinition(bytes32 _id, DataTypes.ParameterType _parameterType) external;
+	function addDataDefinition(bytes32 _dataId, bytes32 _dataPath, DataTypes.ParameterType _parameterType) external;
 
 	/**
 	 * @dev Returns the number of data definitions in the ProcessModel
@@ -172,10 +174,10 @@ contract ProcessModel is EventEmitter, Versioned, AbstractNamedElement {
 	/**
 	 * @dev Returns details about the data definition at the given index position
 	 * @param _index the index position
-	 * @return id - the ID of the data definition
+	 * @return key - the key of the data definition
 	 * @return parameterType - the uint representation of the DataTypes.ParameterType
 	 */
-	function getDataDefinitionDetailsAtIndex(uint _index) external view returns (bytes32 id, uint parameterType);
+	function getDataDefinitionDetailsAtIndex(uint _index) external view returns (bytes32 key, uint parameterType);
 
 	/**
 	 * @dev To be called by a registered process definition to signal an update.

@@ -37,15 +37,17 @@ contract ProcessModelTest {
 
 		// data definitions
 		if (pm.getNumberOfDataDefinitions() != 0) return "There should not be any data definitions in the model after creation";
-		pm.addDataDefinition("Age", DataTypes.ParameterType.POSITIVE_NUMBER);
-		pm.addDataDefinition("Hash", DataTypes.ParameterType.BYTES32);
+		pm.addDataDefinition(EMPTY, "Age", DataTypes.ParameterType.POSITIVE_NUMBER);
+		pm.addDataDefinition("agreement", "Hash", DataTypes.ParameterType.BYTES32);
 		if (pm.getNumberOfDataDefinitions() != 2) return "There should 2 data definitions in the model";
-		bytes32 id;
+		bytes32 key;
 		uint paramType;
-		(id, paramType) = pm.getDataDefinitionDetailsAtIndex(0);
-		if (id != "Age" || paramType != uint(DataTypes.ParameterType.POSITIVE_NUMBER)) return "Data definition for Age not correctly retrieved";
-		(id, paramType) = pm.getDataDefinitionDetailsAtIndex(1);
-		if (id != "Hash" || paramType != uint(DataTypes.ParameterType.BYTES32)) return "Data definition for Hash not correctly retrieved";
+		(key, paramType) = pm.getDataDefinitionDetailsAtIndex(0);
+		if (key != keccak256(abi.encodePacked(EMPTY,bytes32("Age")))) return "Hashed key for Age data definition should match";
+		if (paramType != uint(DataTypes.ParameterType.POSITIVE_NUMBER)) return "Parameter type for Age data definition should be Number";
+		(key, paramType) = pm.getDataDefinitionDetailsAtIndex(1);
+		if (key != keccak256(abi.encodePacked(bytes32("agreement"),bytes32("Hash")))) return "Hashed key for Hash data definition should match";
+		if (paramType != uint(DataTypes.ParameterType.BYTES32)) return "Parameter type for Hash data definition should be Bytes32";
 
 		(error, newAddress) = pm.createProcessDefinition("p1");
 		if (error != BaseErrors.NO_ERROR()) return "Unexpected error creating ProcessDefinition p1";

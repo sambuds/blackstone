@@ -549,8 +549,14 @@
     "TableName": "PROCESS_MODEL_DATA",
     "Filter": "Log1Text = 'AN://process-model-data'",
     "Columns": {
-      "id": {
-        "name": "id",
+      "data_id": {
+        "name": "dataId",
+        "type": "bytes32",
+        "bytesToString": true,
+        "primary": true
+      },
+      "data_path": {
+        "name": "dataPath",
         "type": "bytes32",
         "bytesToString": true,
         "primary": true

@@ -265,12 +265,14 @@ contract DefaultProcessModel is ProcessModel, DefaultEventEmitter {
 
 	/**
 	 * @dev Adds a data definition to this ProcessModel
-	 * @param _id the ID of the data object
+	 * The data definitions are stored under an artificial key derived as the hash of the _dataId and _dataPath parameter values.
+	 * @param _dataId the ID of the data object
+	 * @param _dataPath the path to a data value
 	 * @param _parameterType the DataTypes.ParameterType of the data object
 	 */
-	function addDataDefinition(bytes32 _id, DataTypes.ParameterType _parameterType) external {
-		dataDefinitions.insertOrUpdate(_id, uint(_parameterType));
-		emit LogProcessModelDataCreation(EVENT_ID_PROCESS_MODEL_DATA, _id, address(this), uint(_parameterType));
+	function addDataDefinition(bytes32 _dataId, bytes32 _dataPath, DataTypes.ParameterType _parameterType) external {
+		dataDefinitions.insertOrUpdate(keccak256(abi.encodePacked(_dataId, _dataPath)), uint(_parameterType));
+		emit LogProcessModelDataCreation(EVENT_ID_PROCESS_MODEL_DATA, _dataId, _dataPath, address(this), uint(_parameterType));
 	}
 
 	/**
@@ -286,14 +288,14 @@ contract DefaultProcessModel is ProcessModel, DefaultEventEmitter {
 	 * REVERTS if:
 	 * - the index is out of bounds
 	 * @param _index the index position
-	 * @return id - the ID of the data definition
+	 * @return key - the key of the data definition
 	 * @return parameterType - the uint representation of the DataTypes.ParameterType
 	 */
-	function getDataDefinitionDetailsAtIndex(uint _index) external view returns (bytes32 id, uint parameterType) {
+	function getDataDefinitionDetailsAtIndex(uint _index) external view returns (bytes32 key, uint parameterType) {
 		ErrorsLib.revertIf(_index >= dataDefinitions.keys.length,
 			ErrorsLib.INVALID_INPUT(), "DefaultProcessModel.getDataDefinitionDetailsAtIndex", "The given index value is out-of-bounds of the data definitions collection");
-		id = dataDefinitions.keys[_index];
-		parameterType = dataDefinitions.get(id);
+		key = dataDefinitions.keys[_index];
+		parameterType = dataDefinitions.get(key);
 	}
 
 	/**

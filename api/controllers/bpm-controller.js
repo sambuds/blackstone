@@ -553,6 +553,16 @@ const addProcessesToModel = (modelAddress, processes) => new Promise((resolve, r
     .catch(error => reject(boom.badImplementation(`Failed to add processes to model at [ ${modelAddress} ]: ${error}`)));
 });
 
+/**
+ * Adds the provided dataStoreFields to the model contract specified by the given address.
+ */
+const addDataDefinitionsToModel = (modelAddress, dataStoreFields) => new Promise((resolve, reject) => {
+  const dataDefinitionPromises = dataStoreFields.map(field => contracts.addDataDefinitionToModel(modelAddress, field));
+  Promise.all(dataDefinitionPromises)
+    .then(dataDefinitionResponses => resolve(dataDefinitionResponses))
+    .catch(error => reject(boom.badImplementation(`Failed to add data definitions to model at [ ${modelAddress} ]: ${error}`)));
+});
+
 const createModelFromBpmn = asyncMiddleware(async (req, res) => {
   if (!req.user.address) throw boom.badRequest('No logged in user found');
   if (req.query.format && req.query.format !== 'bpmn') {
@@ -570,6 +580,7 @@ const createModelFromBpmn = asyncMiddleware(async (req, res) => {
   response.model.id = model.id;
   const hoardRef = await pushModelXmlToHoard(rawXml);
   response.model.address = await contracts.createProcessModel(model.id, model.name, model.version, model.author, model.private, hoardRef.address, hoardRef.secretKey);
+  response.model.dataStoreFields = await addDataDefinitionsToModel(response.model.address, model.dataStoreFields);
   response.processes = await addProcessesToModel(response.model.address, processes);
   response.processes = response.processes.map(_proc => Object.assign(_proc, { isPrivate: model.isPrivate, author: model.author }));
   response.parsedDiagram = parsedResponse;

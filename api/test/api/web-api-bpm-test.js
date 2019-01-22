@@ -423,6 +423,12 @@ describe(':: FORMATION - EXECUTION for Sale of Goods User Tasks ::', () => {
     archetype1.executionProcessDefinition = process2.address;
     expect(String(archetype1.formationProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
     expect(String(archetype1.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+    let modelDataResults = await chainPool.query({
+      text: 'SELECT data_id, data_path, parameter_type FROM PROCESS_MODEL_DATA WHERE model_address = $1',
+      values: [model.address]
+    });
+    expect(modelDataResults.rows.length).to.equal(3);
+
   }).timeout(30000);
 
   it('Should create an archetype', async () => {

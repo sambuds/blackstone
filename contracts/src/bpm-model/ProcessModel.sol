@@ -14,18 +14,18 @@ contract ProcessModel is EventEmitter, Versioned, AbstractNamedElement {
 
 	event LogProcessDefinitionCreation(
 		bytes32 indexed eventId,
-		address process_definition_address,
+		address processDefinitionAddress,
 		bytes32 id,
-		bytes32 interface_id,
-		bytes32 model_id,
-		address model_address
+		bytes32 interfaceId,
+		bytes32 modelId,
+		address modelAddress
 	);
 
 	event LogProcessModelDataCreation(
 		bytes32 indexed eventId,
 		bytes32 dataId,
 		bytes32 dataPath,
-		address model_address,
+		address modelAddress,
 		uint parameterType
 	);
 

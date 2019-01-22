@@ -765,6 +765,21 @@ const createProcessModel = (modelId, modelName, modelVersion, author, isPrivate,
       });
 });
 
+const addDataDefinitionToModel = (pmAddress, dataStoreField) => new Promise((resolve, reject) => {
+  const processModel = getContract(global.__abi, global.__monax_bundles.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
+  log.trace('Adding data definition %s to process model %s', JSON.stringify(dataStoreField), pmAddress);
+  const dataIdHex = global.stringToHex(dataStoreField.dataStorageId);
+  const dataPathHex = global.stringToHex(dataStoreField.dataPath);
+  processModel.addDataDefinition(dataIdHex, dataPathHex, dataStoreField.parameterType, (err) => {
+    if (err) {
+      return reject(boom
+        .badImplementation(`Failed to add data definition for dataId: ${dataStoreField.dataStorageId}, dataPath: ${dataStoreField.dataPath}, parameterType: ${dataStoreField.parameterType}: ${err}`));
+    }
+    log.info('Data definition %s added to Process Model at %s', JSON.stringify(dataStoreField), pmAddress);
+    return resolve();
+  });
+});
+
 const addProcessInterface = (pmAddress, interfaceId) => new Promise((resolve, reject) => {
   const processModel = getContract(global.__abi, global.__monax_bundles.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
   log.trace(`Adding process interface ${interfaceId} to process model at ${pmAddress}`);
@@ -1289,6 +1304,7 @@ module.exports = {
   addDepartmentUser,
   removeDepartmentUser,
   createProcessModel,
+  addDataDefinitionToModel,
   addProcessInterface,
   addParticipant,
   createProcessDefinition,

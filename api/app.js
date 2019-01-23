@@ -54,11 +54,11 @@ const monax = require('@monax/burrow');
       return settings;
     })();
 
-    global.hexToString = hex => monax.utils.hexToAscii(hex || '');
-    global.stringToHex = str => monax.utils.asciiToHex(str || '');
-
     global.__monax_constants = require(path.join(global.__common, 'monax-constants'));
     global.__monax_bundles = global.__monax_constants.MONAX_BUNDLES;
+    const { hexToString, stringToHex } = require(`${global.__common}/controller-dependencies`);
+    global.hexToString = hexToString;
+    global.stringToHex = stringToHex;
 
     if (customConfigs.globalVariables) customConfigs.globalVariables();
 

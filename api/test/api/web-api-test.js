@@ -59,13 +59,13 @@ var userData
 
 describe('hex to string conversions', () => {
   it('Should convert hex to string', (done) => {
-    let text1 = 'Test0 Contracts'
+    const text1 = 'Test0 Contracts00'
     let hex_text1 = global.stringToHex(text1)
     hex_text1 = rightPad(hex_text1, 32)
-    let conv_text1 = global.hexToString(hex_text1)
+    const conv_text1 = global.hexToString(hex_text1)
     expect(conv_text1).to.equal(text1)
-    done()
-  })
+    done();
+  });
 });
 
 /**

@@ -41,16 +41,17 @@ global.__settings = (() => {
   if (process.env.MONAX_CONTRACTS_LOAD) _.set(settings, 'monax.contracts.load', process.env.MONAX_CONTRACTS_LOAD)
   if (process.env.MONAX_BUNDLES_PATH) _.set(settings, 'monax.bundles.bundles_path', process.env.MONAX_BUNDLES_PATH)
   return settings
-})()
-
-global.global.hexToString = (hex) => { return monax.utils.hexToAscii(hex || '') }
-global.global.stringToHex = (str) => { return monax.utils.asciiToHex(str || '') }
+})();
 
 global.__monax_bundles = require(path.join(__common, 'monax-constants')).MONAX_BUNDLES
 global.__monax_constants = require(path.join(__common, 'monax-constants'));
 const sqlCache = require(path.join(__controllers, 'postgres-query-helper'))
 const contracts = require(path.join(__controllers, 'contracts-controller'))
 const { chainPool } = require(`${global.__common}/postgres-db`);
+
+const { hexToString, stringToHex } = require(`${global.__common}/controller-dependencies`);
+global.hexToString = hexToString;
+global.stringToHex = stringToHex;
 
 before(function (done) {
   this.timeout(99999999)

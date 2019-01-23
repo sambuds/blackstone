@@ -40,11 +40,11 @@ global.__settings = (() => {
   return settings
 })()
 
-global.global.hexToString = (hex) => { return monax.utils.hexToAscii(hex || '') }
-global.global.stringToHex = (str) => { return monax.utils.asciiToHex(str || '') }
-
 global.__monax_constants = require(path.join(__common, 'monax-constants'));
 global.__monax_bundles = require(path.join(__common, 'monax-constants')).MONAX_BUNDLES
+const { hexToString, stringToHex } = require(`${global.__common}/controller-dependencies`);
+global.hexToString = hexToString;
+global.stringToHex = stringToHex;
 
 const contracts = require(path.join(__controllers, 'contracts-controller'))
 const agreementsController = require(path.join(__controllers, 'agreements-controller'))

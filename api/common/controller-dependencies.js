@@ -10,6 +10,19 @@ const {
   PARAMETER_TYPES,
 } = global.__monax_constants;
 
+const trimBufferRightPadding = (buf) => {
+  let lo = 0;
+  let hi = buf.length;
+  for (let i = 0; i < buf.length && buf[i] === 0; i += 1) {
+    lo = i + 1;
+  }
+  for (let i = buf.length - 1; i > 0 && buf[i] === 0; i -= 1) {
+    hi = i;
+  }
+  return buf.slice(lo, hi);
+};
+const hexToString = (hex = '') => trimBufferRightPadding(Buffer.from(hex, 'hex')).toString('utf8');
+const stringToHex = (str = '') => Buffer.from(str).toString('hex');
 
 const dependencies = {
   rightPad: (hex, len) => {
@@ -52,7 +65,7 @@ const dependencies = {
         });
         break;
       case 'Access Point':
-        element.accessPointId = global.hexToString(element.accessPointId);
+        element.accessPointId = hexToString(element.accessPointId);
         break;
       case 'Archetype':
         if (!_.isEmpty(element.description)) element.description = _.unescape(element.description);
@@ -69,64 +82,64 @@ const dependencies = {
         element.isPrivate = Boolean(element.isPrivate);
         break;
       case 'Application':
-        element.id = global.hexToString(element.id);
-        element.webForm = global.hexToString(element.webForm);
+        element.id = hexToString(element.id);
+        element.webForm = hexToString(element.webForm);
         break;
       case 'Country': // TODO Temporary until front-end is updated to rely on alpha2
         element.country = element.alpha2;
         break;
       case 'Currency':
-        element.currency = global.hexToString(element.currency);
-        element.alpha3 = global.hexToString(element.alpha3);
-        element.m49 = global.hexToString(element.m49);
+        element.currency = hexToString(element.currency);
+        element.alpha3 = hexToString(element.alpha3);
+        element.m49 = hexToString(element.m49);
         break;
       case 'Data':
-        if (element.dataType === DATA_TYPES.BYTES32) element.value = global.hexToString(element.value);
+        if (element.dataType === DATA_TYPES.BYTES32) element.value = hexToString(element.value);
         break;
       case 'Data Mapping':
-        if (element.accessPath) element.accessPath = global.hexToString(element.accessPath);
-        if (element.dataMappingId) element.dataMappingId = global.hexToString(element.dataMappingId);
-        if (element.dataPath) element.dataPath = global.hexToString(element.dataPath);
-        if (element.dataStorageId) element.dataStorageId = global.hexToString(element.dataStorageId);
+        if (element.accessPath) element.accessPath = hexToString(element.accessPath);
+        if (element.dataMappingId) element.dataMappingId = hexToString(element.dataMappingId);
+        if (element.dataPath) element.dataPath = hexToString(element.dataPath);
+        if (element.dataStorageId) element.dataStorageId = hexToString(element.dataStorageId);
         break;
       case 'Department':
-        element.id = global.hexToString(element.id);
+        element.id = hexToString(element.id);
         break;
       case 'Document':
-        // obj.name = global.hexToString(obj.name);
+        // obj.name = hexToString(obj.name);
         break;
       case 'Parameter':
-        element.name = global.hexToString(element.name);
-        element.label = global.hexToString(element.label);
+        element.name = hexToString(element.name);
+        element.label = hexToString(element.label);
         break;
       case 'Party':
         if (element.signatureTimestamp) element.signatureTimestamp *= 1000;
-        if (element.organizationName) element.organizationName = global.hexToString(element.organizationName);
+        if (element.organizationName) element.organizationName = hexToString(element.organizationName);
         break;
       case 'Model':
         if ('active' in element) element.active = element.active === 1;
         element.isPrivate = Boolean(element.isPrivate);
         break;
       case 'Region':
-        element.country = global.hexToString(element.country);
-        element.alpha2 = global.hexToString(element.alpha2);
-        element.code2 = global.hexToString(element.code2);
-        element.code3 = global.hexToString(element.code3);
+        element.country = hexToString(element.country);
+        element.alpha2 = hexToString(element.alpha2);
+        element.code2 = hexToString(element.code2);
+        element.code3 = hexToString(element.code3);
         break;
       case 'Definition':
-        if (element.processDefinitionId != null) element.processDefinitionId = global.hexToString(element.processDefinitionId);
-        if (element.interfaceId != null) element.interfaceId = global.hexToString(element.interfaceId);
-        if (element.modelId != null) element.modelId = global.hexToString(element.modelId);
+        if (element.processDefinitionId != null) element.processDefinitionId = hexToString(element.processDefinitionId);
+        if (element.interfaceId != null) element.interfaceId = hexToString(element.interfaceId);
+        if (element.modelId != null) element.modelId = hexToString(element.modelId);
         element.isPrivate = Boolean(element.isPrivate);
         break;
       case 'Task':
         if (element.scope && element.scope !== element.organizationKey) {
           // organizationKey was originally entered in bytes32 and doesn't need to be converted to string
-          element.scope = global.hexToString(element.scope || '');
+          element.scope = hexToString(element.scope || '');
         }
         break;
       case 'ParameterType':
-        element.label = global.hexToString(element.label || '');
+        element.label = hexToString(element.label || '');
         break;
       case 'Parameter Value': {
         err.status = 400;
@@ -351,6 +364,9 @@ const dependencies = {
 
   getSHA256Hash: data => crypto.createHash('sha256').update(data).digest('hex'),
 
+  trimBufferRightPadding,
+  hexToString,
+  stringToHex,
 };
 
 module.exports = dependencies;

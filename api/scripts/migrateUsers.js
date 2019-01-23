@@ -12,9 +12,10 @@ global.__config = path.resolve(__dirname, '../', 'config')
 global.__controllers = path.resolve(__dirname, '../', 'controllers')
 global.__abi = path.resolve(__dirname, '../', 'public-abi')
 
-global.global.hexToString = (hex) => { return monax.utils.hexToAscii(hex || '') }
-global.global.stringToHex = (str) => { return monax.utils.asciiToHex(str || '') }
 global.__monax_constants = require(path.join(__common, 'monax-constants'));
+const { hexToString, stringToHex } = require(`${global.__common}/controller-dependencies`);
+global.hexToString = hexToString;
+global.stringToHex = stringToHex;
 
 (async function () {
   // Read configuration

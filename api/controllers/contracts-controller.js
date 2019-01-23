@@ -776,7 +776,7 @@ const addDataDefinitionToModel = (pmAddress, dataStoreField) => new Promise((res
         .badImplementation(`Failed to add data definition for dataId: ${dataStoreField.dataStorageId}, dataPath: ${dataStoreField.dataPath}, parameterType: ${dataStoreField.parameterType}: ${err}`));
     }
     log.info('Data definition %s added to Process Model at %s', JSON.stringify(dataStoreField), pmAddress);
-    return resolve();
+    return resolve(dataStoreField);
   });
 });
 

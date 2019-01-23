@@ -245,7 +245,7 @@ describe(':: FORMATION - EXECUTION for Incorporation Signing and Fulfilment ::',
     }, 3000);
   }).timeout(10000);
 
-  it('Should create an angreement and start formation process', done => {
+  it('Should create an agreement and start formation process', done => {
     // CREATE AGREEMENT
     setTimeout(async () => {
       try {
@@ -427,6 +427,7 @@ describe(':: FORMATION - EXECUTION for Sale of Goods User Tasks ::', () => {
       text: 'SELECT data_id, data_path, parameter_type FROM PROCESS_MODEL_DATA WHERE model_address = $1',
       values: [model.address]
     });
+    // merely checks the number of created data definitions in the table
     expect(modelDataResults.rows.length).to.equal(3);
 
   }).timeout(30000);
@@ -659,6 +660,13 @@ describe(':: DATA MAPPING TEST ::', () => {
     archetype.executionProcessDefinition = execution.process.address;
     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
     expect(String(archetype.executionProcessDefinition).match(/[0-9A-Fa-f]{40}/)).to.exist;
+    let dataMappingResults = await chainPool.query({
+      text: 'SELECT data_path, data_storage_id, data_storage, direction FROM DATA_MAPPINGS WHERE process_definition_address = $1',
+      values: [archetype.executionProcessDefinition]
+    });
+    // merely checks the number of data mappings to be created for the execution model
+    expect(dataMappingResults.rows.length).to.equal(2);
+
   }).timeout(30000);
 
   it('Should create an archetype', done => {

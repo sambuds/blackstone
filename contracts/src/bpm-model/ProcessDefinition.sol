@@ -14,8 +14,8 @@ contract ProcessDefinition is Bytes32Identifiable {
 
 	event LogProcessDefinitionInterfaceIdUpdate(
 		bytes32 indexed eventId,
-		address process_definition_address,
-		bytes32 interface_id
+		address processDefinitionAddress,
+		bytes32 interfaceId
 	);
 
 	event LogActivityDefinitionCreation(
@@ -33,8 +33,19 @@ contract ProcessDefinition is Bytes32Identifiable {
 		bytes32 sub_process_definition_id
 	);
 
+	event LogDataMappingCreation(
+		bytes32 indexed eventId,
+		address processDefinitionAddress,
+		bytes32 activityId,
+		bytes32 dataPath,
+		bytes32 dataStorageId,
+		address dataStorage,
+		uint direction
+	);
+
 	bytes32 public constant EVENT_ID_PROCESS_DEFINITIONS = "AN://process-definitions";
 	bytes32 public constant EVENT_ID_ACTIVITY_DEFINITIONS = "AN://activity-definitions";
+	bytes32 public constant EVENT_ID_DATA_MAPPINGS = "AN://data-mappings";
 
 	/**
 	 * @dev Creates a new activity definition with the specified parameters.

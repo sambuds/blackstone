@@ -573,6 +573,44 @@
     }
   },
   {
+    "TableName": "DATA_MAPPINGS",
+    "Filter": "Log1Text = 'AN://data-mappings'",
+    "Columns": {
+      "processDefinitionAddress": {
+        "name": "process_definition_address",
+        "type": "address",
+        "primary": true
+      },
+      "activityId": {
+        "name": "activity_id",
+        "type": "bytes32",
+        "bytesToString": true,
+        "primary": true
+      },
+      "dataPath": {
+        "name": "data_path",
+        "type": "bytes32",
+        "bytesToString": true,
+        "primary": true
+      },
+      "dataStorageId": {
+        "name": "data_storage_id",
+        "type": "bytes32",
+        "bytesToString": true,
+        "primary": true
+      },
+      "dataStorage": {
+        "name": "data_storage",
+        "type": "address",
+        "primary": true
+      },
+      "direction": {
+        "name": "direction",
+        "type": "uint"
+      }
+    }
+  },
+  {
     "TableName": "APPLICATIONS",
     "Filter": "Log1Text = 'AN://applications'",
     "Columns": {

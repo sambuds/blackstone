@@ -679,7 +679,7 @@ describe(':: External Users ::', () => {
     }, 3000);
   }).timeout(10000);
 
-  it('Should create an angreement with emails in the user/org/signatory parameters', done => {
+  it('Should create an agreement with emails in the user/org/signatory parameters', done => {
     // CREATE AGREEMENT
     setTimeout(async () => {
       try {

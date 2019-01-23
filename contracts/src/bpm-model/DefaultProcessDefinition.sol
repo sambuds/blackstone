@@ -72,9 +72,9 @@ contract DefaultProcessDefinition is ProcessDefinition, Owned {
 	 */
 	constructor(bytes32 _id, address _model) public {
 			ErrorsLib.revertIf(_id == "",
-				"BPM400","ProcessDefinition.constructor","_id is NULL");
+				ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(),"ProcessDefinition.constructor","_id is NULL");
 			ErrorsLib.revertIf(_model == 0x0,
-				"BPM400","ProcessDefinition.constructor","_model is NULL");
+				ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(),"ProcessDefinition.constructor","_model is NULL");
 			owner = msg.sender;
 			id = _id;
 			model = ProcessModel(_model);
@@ -260,6 +260,7 @@ contract DefaultProcessDefinition is ProcessDefinition, Owned {
 			}
 			graphElements.rows[_activityId].activity.outMappings[_accessPath] = DataStorageUtils.ConditionalData({dataPath: _dataPath, dataStorageId: _dataStorageId, dataStorage: _dataStorage, exists: true});
 		}
+		emit LogDataMappingCreation(EVENT_ID_DATA_MAPPINGS, address(this), _activityId, _dataPath, _dataStorageId, _dataStorage, uint(_direction));
 	}
 
 	/**

@@ -15,3 +15,6 @@ ProcessModel
 ProcessModelRepository
 ProcessInstance
 DataTypesAccess
+BpmRuntimeLib
+IsoCountries
+IsoCurrencies

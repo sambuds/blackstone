@@ -355,8 +355,8 @@ const registrationHandler = asyncMiddleware(async ({ body }, res) => {
 });
 
 const activateUser = asyncMiddleware(async (req, res) => {
-  const hash = crypto.createHash('sha256');
   log.info(`Activation request received with code: ${req.params.activationCode}`);
+  const hash = crypto.createHash('sha256');
   hash.update(req.params.activationCode);
   const codeHex = hash.digest('hex');
   const rows = await sqlCache.getUserByActivationCode(codeHex);
@@ -365,10 +365,10 @@ const activateUser = asyncMiddleware(async (req, res) => {
   }
   try {
     await sqlCache.updateUserActivation(rows[0].address, rows[0].userId, true, codeHex);
-    res.redirect(`${process.env.WEBAPP_URL}/?activated=true`);
+    res.redirect('/?activated=true');
   } catch (err) {
     log.error(`Failed to activate user account at ${rows[0].address}: ${err}`);
-    res.redirect(`${process.env.WEBAPP_URL}/help`);
+    res.redirect('/help');
   }
 });
 

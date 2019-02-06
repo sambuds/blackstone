@@ -21,8 +21,8 @@
     "test:contracts:fe:debug": "mocha --exit test/controllers/form-exec-usertask-test.js --inspect=0.0.0.0:9222 --timeout 99999999",
     "test:parser": "mocha --exit test/parser/parser-test.js --timeout 99999999",
     "test:parser:debug": "mocha --exit test/parser/parser-test.js --inspect=0.0.0.0:9222 --timeout 99999999",
-    "db:migrate:up": "node node_modules/db-migrate/bin/db-migrate up",
-    "db:migrate:create": "node node_modules/db-migrate/bin/db-migrate create",
+    "db:migrate:up": "DB_SCHEMA=${POSTGRES_DB_SCHEMA} node node_modules/db-migrate/bin/db-migrate up",
+    "db:migrate:create": "DB_SCHEMA=${POSTGRES_DB_SCHEMA} node node_modules/db-migrate/bin/db-migrate create",
     "migrate-users": "node scripts/migrateUsers.js"
   },
   "license": "SEE LICENSE IN LICENSE.md",

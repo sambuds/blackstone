@@ -37,7 +37,7 @@ services:
     - --db-url
     - postgres://blackstone_development:blackstone_development@postgres:5432/blackstone_development?sslmode=disable
     - --db-schema
-    - blackstone_development
+    - data
     - --grpc-addr
     - chain:10997
     - --log-level
@@ -66,8 +66,8 @@ services:
       POSTGRES_DB_PASSWORD: blackstone_development
       POSTGRES_DB_HOST: postgres
       POSTGRES_DB_PORT: 5432
-      POSTGRES_DB_SCHEMA: blackstone_development
-      POSTGRES_DB_SCHEMA_VENT: blackstone_development
+      POSTGRES_DB_SCHEMA: customers
+      POSTGRES_DB_SCHEMA_VENT: data
       HOARD_SALT: hoard-salt
     volumes:
     - .:/app

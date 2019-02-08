@@ -29,7 +29,7 @@ services:
     - -c
     - burrow start &> burrow.log
   vent:
-    image: quay.io/monax/vent:0.0.3
+    image: quay.io/monax/vent:0.0.5
     restart: always
     command:
     - --db-adapter

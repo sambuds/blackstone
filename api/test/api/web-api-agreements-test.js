@@ -32,7 +32,7 @@ before(function(done) {
   });
 });
 
-var hoardRef = { address: null, secretKey: null };
+var hoardGrant;
 
 /**
  * ######## HOARD ###############################################################################################################
@@ -58,8 +58,7 @@ describe(':: HOARD ::', () => {
             .expect(200)
             .end((err, res) => {
               expect(err).to.not.exist;
-              hoardRef.address = res.body.address.toUpperCase();
-              hoardRef.secretKey = res.body.secretKey.toUpperCase();
+              hoardGrant = res.body.grant;
             });
         }, 3000);
       } catch (err) {
@@ -196,8 +195,7 @@ describe('Archetypes', () => {
   it('POST a new complex archetype', (done) => {
     testArchetype.documents = [{
       name: 'doc1.pdf',
-      address: hoardRef.address,
-      secretKey: hoardRef.secretKey
+      grant: hoardGrant,
     }]
     chai
       .request(server)
@@ -282,8 +280,7 @@ describe(':: Archetype Packages and Agreement Collections ::', () => {
     jurisdictions: [],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: hoardGrant
     }],
     governingArchetypes: []
   };
@@ -299,8 +296,7 @@ describe(':: Archetype Packages and Agreement Collections ::', () => {
     jurisdictions: [],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: hoardGrant
     }],
     governingArchetypes: []
   };
@@ -465,8 +461,7 @@ describe(':: Archetype Packages and Agreement Collections ::', () => {
 
   it('Should fail to create publicArchetype1 by user1 in publicPackage2 created by user2', async () => {
     // CREATE ARCHETYPE
-    publicArchetype1.documents[0].address = hoardRef.address;
-    publicArchetype1.documents[0].secretKey = hoardRef.secretKey;
+    publicArchetype1.documents[0].grant = hoardGrant;
     publicArchetype1.packageId = publicPackage2.id;
     await assert.isRejected(api.createArchetype(publicArchetype1, user1.token));
   }).timeout(15000);
@@ -552,8 +547,7 @@ describe(':: Archetype Packages and Agreement Collections ::', () => {
 
   it('Should create privateArchetype1 by user2 with no package id', async () => {
     // CREATE ARCHETYPE
-    privateArchetype1.documents[0].address = hoardRef.address;
-    privateArchetype1.documents[0].secretKey = hoardRef.secretKey;
+    privateArchetype1.documents[0].grant = hoardGrant;
     Object.assign(privateArchetype1, await api.createArchetype(privateArchetype1, user2.token));
     expect(String(privateArchetype1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
   }).timeout(10000);
@@ -789,8 +783,7 @@ describe(':: External Users ::', () => {
     ],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: hoardGrant,
     }],
     jurisdictions: [],
     executionProcessDefinition: '',
@@ -852,8 +845,7 @@ describe(':: External Users ::', () => {
     // CREATE ARCHETYPE
     setTimeout(async () => {
       try {
-        archetype.documents[0].address = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
+        archetype.documents[0].grant = hoardGrant;
         Object.assign(archetype, await api.createArchetype(archetype, registeredUser.token));
         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         agreement.archetype = archetype.address;
@@ -880,8 +872,6 @@ describe(':: External Users ::', () => {
         agreement.parameters.push({ name: 'External1Lowercase', type: 6, value: externalUser1.email.toLowerCase() });
         agreement.parameters.push({ name: 'RegisteredNormal', type: 6, value: registeredUser.address });
         agreement.parameters.push({ name: 'RegisteredByEmail', type: 6, value: registeredUser.email.toLowerCase() });
-        agreement.address = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
         Object.assign(agreement, await api.createAgreement(agreement, registeredUser.token));
         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         done();

@@ -27,8 +27,8 @@ const should = chai.should();
 const expect = chai.expect;
 const assert = chai.assert;
 
-var hoardRef = { address: null, secretKey: null }
-var hoardRef2 = { address: null, secretKey: null }
+var hoardGrant;
+var hoardGrant2;
 
 // wait for the app to be fully bootstrapped
 before(function (done) {
@@ -285,8 +285,7 @@ describe('Hoard', () => {
       .expect(200)
       .end((err, res) => {
         if (err) return done(err)
-        hoardRef.address = res.body.address.toUpperCase()
-        hoardRef.secretKey = res.body.secretKey.toUpperCase()
+        hoardGrant = res.body.grant;
         done()
       })
   })
@@ -299,8 +298,7 @@ describe('Hoard', () => {
       .expect(200)
       .end((err, res) => {
         if (err) return done(err)
-        hoardRef2.address = res.body.address.toUpperCase()
-        hoardRef2.secretKey = res.body.secretKey.toUpperCase()
+        hoardGrant2 = res.body.grant;
         done()
       })
   })
@@ -648,8 +646,7 @@ describe(':: External Users ::', () => {
     ],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: '',
     }],
     jurisdictions: [],
     executionProcessDefinition: '',
@@ -711,8 +708,7 @@ describe(':: External Users ::', () => {
     // CREATE ARCHETYPE
     setTimeout(async () => {
       try {
-        archetype.documents[0].address = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
+        archetype.documents[0].grant = hoardGrant;
         Object.assign(archetype, await api.createArchetype(archetype, registeredUser.token));
         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         agreement.archetype = archetype.address;

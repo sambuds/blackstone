@@ -36,13 +36,11 @@ sample archetype:
   documents: [
     {
       name: 'pdf-test.pdf',
-      address: 'ffb95e8c8d8346c9a63f83078f2a6577b5c3c50896e8b3e5aab4ee4ae3ea9880',
-      secretKey: '8265c79f5e52c59b141f2113e10c7c3b08278cebf8f958be69d882329bff31fc',
+      grant: 'eyJTcGVjIjp7IlBsYWludGV4dCI6bnVsbCwiU3ltbWV0cmljIjp7IlNlY3JldElEIjoiczNjcjN0In0sIk9wZW5QR1AiOm51bGx9LCJFbmNyeXB0ZWRSZWZlcmVuY2UiOiJxeFBQaXp1UThZNG5iektXMlh1ZEZlNWdoTklqWlhUcWFxSEhTQ1Boc0lJZTFkSWZDNVRRSjNUYmhDYW02V2pjb2NBVGpkakxMWWFzUjJLbkkvenJISHNjR3dqTW13bzlkdnVuUEx0UXhnT2FzQXk4Wno3VUZRaWRNUVFLcWF3SDRVdnF2UVF2QkQzSUpVb0cwcWxJaVZSZERNMzgwWXUySG9KMXc4L1ZTdXU5cTM0QThOSzhSV1EyNjdQNU5XcXhvUEJoQlNoY2UwWGRlSmhsVG11L0RORlh4SnN0M0piUVBBME9HbmRuU2JBMEQzRS9wM212IiwiVmVyc2lvbiI6MH0='
     },
     {
       name: 'test.md',
-      address: '53920144769c88f6359a8f7e0eddae979a4363482fddbdc6f89ae4026a055de8',
-      secretKey: '93b4101e36ddeb7989f38b9657104a76fc6af144912d376d294d40a4a50e0360',
+      grant: 'eyJTcGVjIjp7IlBsYWludGV4dCI6bnVsbCwiU3ltbWV0cmljIjp7IlNlY3JldElEIjoiczNjcjN0In0sIk9wZW5QR1AiOm51bGx9LCJFbmNyeXB0ZWRSZWZlcmVuY2UiOiJxeFBQaXp1UThZNG5iektXMlh1ZEZlNWdoTklqWlhUcWFxSEhTQ1Boc0lJZTFkSWZDNVRRSjNUYmhDYW02V2pjb2NBVGpkakxMWWFzUjJLbkkvenJISHNjR3dqTW13bzlkdnVuUEx0UXhnT2FzQXk4Wno3VUZRaWRNUVFLcWF3SDRVdnF2UVF2QkQzSUpVb0cwcWxJaVZSZERNMzgwWXUySG9KMXc4L1ZTdXU5cTM0QThOSzhSV1EyNjdQNU5XcXhvUEJoQlNoY2UwWGRlSmhsVG11L0RORlh4SnN0M0piUVBBME9HbmRuU2JBMEQzRS9wM212IiwiVmVyc2lvbiI6MH0='
     },
   ],
   packageId: '9BBC0DA311D1C72DF9287B49E0DF1D2AF3BA26375BB3B546C679DD8B4FC21252',
@@ -97,8 +95,7 @@ const archetypeSchema = Joi.object().keys({
   documents: Joi.array().items(
     Joi.object().keys({
       name: Joi.string(),
-      address: Joi.string().hex(),
-      secretKey: Joi.string().hex(),
+      grant: Joi.string(),
     }),
   ),
   parameters: Joi.array().items(

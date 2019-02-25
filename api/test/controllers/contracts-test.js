@@ -161,7 +161,7 @@ describe('CONTRACTS', () => {
   }).timeout(10000)
 
   it('Should create a process model', async () => {
-    let res = await contracts.createProcessModel(model.id, model.version, arch.author, false, JSON.stringify({ address: '', secretKey: '' }));
+    let res = await contracts.createProcessModel(model.id, model.version, arch.author, false, "hoard-grant");
     res.should.match(/[0-9A-Fa-f]{40}/) // match for 20 byte hex
     pmAddress = res
   }).timeout(10000)
@@ -378,7 +378,7 @@ describe('CONTRACTS', () => {
   }).timeout(10000)
 
   it('Should update the event log hoard reference of an agreement', async () => {
-    await assert.isFulfilled(contracts.updateAgreementEventLog(agrAddress, { address: 'dummyaddress', secretKey: 'dummykey' }))
+    await assert.isFulfilled(contracts.updateAgreementEventLog(agrAddress, 'hoard-grant'))
   }).timeout(10000)
 
   // it('Should get activity definitions from cache', done => {

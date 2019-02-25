@@ -68,7 +68,6 @@ const dependencies = {
         break;
       case 'Agreement':
         element.isPrivate = Boolean(element.isPrivate);
-        element.eventLogFileReference = element.eventLogFileReference ? JSON.parse(element.eventLogFileReference) : null;
         break;
       case 'Application':
         element.id = hexToString(element.id);
@@ -102,7 +101,6 @@ const dependencies = {
       case 'Model':
         if ('active' in element) element.active = element.active === 1;
         element.isPrivate = Boolean(element.isPrivate);
-        element.modelFileReference = JSON.parse(element.modelFileReference);
         break;
       case 'Region':
         element.country = hexToString(element.country);

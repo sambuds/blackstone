@@ -221,7 +221,7 @@ const getArchetypeJurisdictions = (archetypeAddress) => {
 };
 
 const getArchetypeDocuments = (archetypeAddress) => {
-  const queryString = `SELECT document_key AS name, document_reference AS "fileReference"
+  const queryString = `SELECT document_key AS name, document_reference AS "grant"
     FROM archetype_documents WHERE archetype_address = $1;`;
   return runChainDbQuery(queryString, [archetypeAddress])
     .catch((err) => { throw boom.badImplementation(`Failed to get documents for archetype: ${err}`); });

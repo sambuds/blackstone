@@ -23,7 +23,7 @@ const parseBpmnModel = async (rawXml) => {
 const getActivityDetailsFromBpmn = async (pmAddress, processId, activityId) => {
   try {
     const model = (await sqlCache.getProcessModelData(pmAddress))[0];
-    const diagram = await getModelFromHoard(JSON.parse(model.modelFileReference));
+    const diagram = await getModelFromHoard(model.modelFileReference);
     const data = splitMeta(diagram);
     const { processes } = await parseBpmnModel(data.data.toString());
     const targetProcess = processes.filter(p => p.id === processId)[0];
@@ -75,7 +75,7 @@ const populateTaskNames = tasks => new Promise((resolve, reject) => {
 const getProcessNameFromBpmn = async (pmAddress, processId) => {
   try {
     const model = (await sqlCache.getProcessModelData(pmAddress))[0];
-    const diagram = await getModelFromHoard(JSON.parse(model.modelFileReference));
+    const diagram = await getModelFromHoard(model.modelFileReference);
     const data = splitMeta(diagram);
     const { processes } = await parseBpmnModel(data.data.toString());
     const targetProcess = processes.filter(p => p.id === processId)[0];
@@ -91,7 +91,6 @@ const coalesceProcessName = _processDefn => new Promise(async (resolve, reject) 
   try {
     // check if process is in postgres cache
     const _process = Object.assign({}, _processDefn);
-    if (_process.modelFileReference) _process.modelFileReference = JSON.parse(_process.modelFileReference);
     const data = await sqlCache.getProcessDetailsFromCache(_processDefn.modelId, _processDefn.processDefinitionId);
     if (data.processName) {
       // if it is, get name from postgres cache

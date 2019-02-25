@@ -233,6 +233,7 @@ const createArchetype = asyncMiddleware(async (req, res) => {
   }
   await sqlCache.insertArchetypeDetails({ address: archetypeAddress, name: req.body.name, description: _.escape(req.body.description) });
 
+  res.data = { archetypeAddress };
   return res
     .status(200)
     .set('content-type', 'application/json')
@@ -439,6 +440,7 @@ const createAgreement = asyncMiddleware(async (req, res) => {
   await sqlCache.insertAgreementDetails({ address: agreementAddress, name: req.body.name });
   const piAddress = await contracts.startProcessFromAgreement(agreementAddress);
   log.debug(`Process Instance Address: ${piAddress}`);
+  res.data = { agreementAddress };
   res
     .status(200)
     .set('content-type', 'application/json')

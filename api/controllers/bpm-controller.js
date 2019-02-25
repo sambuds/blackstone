@@ -13,6 +13,7 @@ const log = logger.getLogger('agreements.bpm');
 const parser = require(path.resolve(global.__lib, 'bpmn-parser.js'));
 const {
   hoard,
+  hoardPut,
   getModelFromHoard,
 } = require(`${global.__controllers}/hoard-controller`);
 const sqlCache = require('./postgres-query-helper');
@@ -285,7 +286,7 @@ const getModelDiagram = asyncMiddleware(async (req, res) => {
     !profileData.find(({ organization }) => organization === model.author)) {
     throw boom.forbidden('You are not authorized to view this private model');
   }
-  const diagram = await getModelFromHoard(JSON.parse(model.modelFileReference));
+  const diagram = await getModelFromHoard(model.modelFileReference);
   const data = splitMeta(diagram);
   if (req.headers.accept.includes('application/xml')) {
     res.attachment(data.meta.name);
@@ -303,20 +304,14 @@ const getModelDiagram = asyncMiddleware(async (req, res) => {
  ************************************************************************ */
 
 const pushModelXmlToHoard = async (rawXml) => {
-  let hoardRef;
+  let hoardGrant;
   try {
-    const plaintext = {
-      data: addMeta({
-        mime: 'application/xml',
-        name: 'bpmn_xml',
-      }, rawXml),
-      salt: Buffer.from(process.env.HOARD_SALT),
+    const meta = {
+      name: 'bpmn_xml',
+      mime: 'application/xml',
     };
-    hoardRef = await hoard.put(plaintext);
-    return JSON.stringify({
-      address: hoardRef.address.toString('hex'),
-      secretKey: hoardRef.secretKey.toString('hex'),
-    });
+    hoardGrant = await hoardPut(meta, Buffer.from(rawXml));
+    return hoardGrant;
   } catch (err) {
     throw boom.badImplementation(`Failed to upload data to hoard: ${err}`);
   }
@@ -503,8 +498,8 @@ const createModelFromBpmn = asyncMiddleware(async (req, res) => {
   const { model, processes } = parsedResponse;
   model.author = req.user.address;
   response.model.id = model.id;
-  const hoardRef = await pushModelXmlToHoard(rawXml);
-  response.model.address = await contracts.createProcessModel(model.id, model.version, model.author, model.private, hoardRef);
+  const hoardGrant = await pushModelXmlToHoard(rawXml);
+  response.model.address = await contracts.createProcessModel(model.id, model.version, model.author, model.private, hoardGrant);
   response.model.dataStoreFields = await addDataDefinitionsToModel(response.model.address, model.dataStoreFields);
   response.processes = await addProcessesToModel(response.model.address, processes);
   response.processes = response.processes.map(_proc => Object.assign(_proc, { isPrivate: model.isPrivate, author: model.author }));

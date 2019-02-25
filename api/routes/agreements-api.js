@@ -111,7 +111,7 @@ module.exports = (app, customMiddleware) => {
  * @apiSuccess {String} successor Address of the successor archetype
  * @apiSuccess {Object[]} parameters The "name" and "type" of all custom parameters used
  * by the Archetype
- * @apiSuccess {Object[]} documents The "name", "address" and "secretKey" (if any)
+ * @apiSuccess {Object[]} documents The "name", "grant" (if any)
  * sufficient to provide the information regarding the relevant documents associated with
  * the Archetype
  * @apiSuccess {Object[]} jurisdictions The "country" and "regions" which the Archetype
@@ -142,8 +142,7 @@ module.exports = (app, customMiddleware) => {
     ],
     "documents": [{
       "name": "Dok1",
-      "address": "E73C56F6124813EF082D8CDD2C5EC63AFFF95E562F9BE65720C9F69E3B3541A0",
-      "secretKey": "87A822883515B65247CBF5A2EE68AF72CB7C2B65B7103CB4340E0C1202FD325E"
+      "grant": "eyJTcG...iVmVyc2lvbiI6MH0="
     }],
     "jurisdictions": [{
         "country": "US",
@@ -187,7 +186,7 @@ module.exports = (app, customMiddleware) => {
  * system for the Archetype's documents
  * @apiBodyParameter {Object[]} parameters **(Optional)** The "name" (limit: 32 ASCII characters) and "type" of all custom parameters used
  * by the Archetype
- * @apiBodyParameter {Object[]} documents **(Optional)**  The "name", "address" and "secretKey" (if any)
+ * @apiBodyParameter {Object[]} documents **(Optional)**  The "name" and "grant" (if any)
  * sufficient to provide the information regarding the relevant documents associated with
  * the Archetype
  * @apiBodyParameter {Object[]} jurisdictions The "country" and "regions" which the Archetype
@@ -223,13 +222,11 @@ module.exports = (app, customMiddleware) => {
   ],
   "documents": [{
       "name": "test&stuff.pdf",
-      "address": "e73c56f6124813ef082d8cdd2c5ec63afff95e562f9be65720c9f69e3b3541a0",
-      "secretKey": "87a822883515b65247cbf5a2ee68af72cb7c2b65b7103cb4340e0c1202fd325e"
+      "grant": "eyJTcG...iVmVyc2lvbiI6MH0="
     },
     {
       "name": "Untitled document.docx",
-      "address": "1385440dd77393038d465314bb565d3fe8b7de2a97d122ddf4cbdb979716828e",
-      "secretKey": "06b35f914ef79d3fe890693d5f8af4cc58674ceb729f5b29df1166fad9de4a63"
+      "grant": "b9SMcG...iVmVyc2lvbiI6MH0="
     }
   ],
   "jurisdictions": [{
@@ -515,8 +512,7 @@ module.exports = (app, customMiddleware) => {
  * @apiSuccess {String} name Human readable name of the Active Agreement
  * @apiSuccess {String} archetype Address of the parent Archetype of the Active Agreement
  * @apiSuccess {Boolean} isPrivate Whether the encryption framework of the Active Agreement
- * @apiSuccess {Object} eventLogFileReference Object containing reference to file containing event log
- * is operational or not
+ * @apiSuccess {String} eventLogFileReference Hoard grant needed to access an existing event log if any
  * @apiSuccess {Number} numberOfParties The number of parties agreeing to the Active Agreement
  * @apiSuccessExample {json} Success Objects Array
        [{
@@ -524,10 +520,7 @@ module.exports = (app, customMiddleware) => {
          "archetype": "4EF5DAB8CE089AD7F2CE7A04A7CB5DB1C58DB707",
          "name": "Drone Lease",
          "creator": "AB3399395E9CAB5434022D1992D31BB3ACC2E3F1",
-         "eventLogFileReference": {
-          "address": "3133B11EB8D09DA7945A3ADBD452A6D8FF46F92C51BE003E9FC09D12EB6E5886",
-          "secretKey": "E00F74690D64089AD7012C4C3B4DE5AC478D8660D85F7C3888E057256177FB04"
-         },
+         "eventLogFileReference": "eyJTcG...iVmVyc2lvbiI6MH0=",
          "maxNumberOfEvents": 10,
          "isPrivate": 1,
          "legalState": 1,
@@ -600,13 +593,11 @@ module.exports = (app, customMiddleware) => {
     "documents": [
       {
         "name": "Template1.docx",
-        "address": "1385440DD77393038D465314BB565D3FE8B7DE2A97D122DDF4CBDB979716828E",
-        "secretKey": "06B35F914EF79D3FE890693D5F8AF4CC58674CEB729F5B29DF1166FAD9DE4A63"
+        "grant": "eyJTcG...iVmVyc2lvbiI6MH0="
       },
       {
         "name": "Template2.md",
-        "address": "3133B11EB8D09DA7945A3ADBD452A6D8FF46F92C51BE003E9FC09D12EB6E5886",
-        "secretKey": "E00F74690D64089AD7012C4C3B4DE5AC478D8660D85F7C3888E057256177FB04"
+        "grant": "b9UTcG...iVmVyc2lvbiI6MH0="
       },
     ],
     "parameters": [
@@ -709,12 +700,10 @@ module.exports = (app, customMiddleware) => {
     "content": "A description about the event.",
   }
 *
-* @apiSuccess {String} address The hoard address of the updated event log
-* @apiSuccess {String} secretKey The hoard secret key of the updated event log
+* @apiSuccess {String} grant The hoard grant of the updated event log
 * @apiSuccessExample {json} Success Object
   {
-    "address": "9F24307DA7E74BC54D1E829764E2DE7AD0D8DF6E",
-    "secretKey": ABCDEF0123456789ABCDEF0123456789
+    "grant": "eyJTcG...iVmVyc2lvbiI6MH0=",
   }
 *
 * @apiUse NotLoggedIn

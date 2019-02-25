@@ -248,7 +248,7 @@ const createArchetype = (type) => {
       archetype.governingArchetypes,
       (error, data) => {
         if (error || !data.raw) return reject(boomify(error, `Failed to create archetype ${archetype.name}`));
-        log.info(`Created new archetype ${archetype.name} at address ${data.raw[0]}`);
+        log.info(`Created new archetype by author ${archetype.author} at address ${data.raw[0]}`);
         return resolve(data.raw[0]);
       },
     );
@@ -387,9 +387,9 @@ const addArchetypeDocument = (address, name, fileReference) => new Promise((reso
 });
 
 const addArchetypeDocuments = async (archetypeAddress, documents) => {
-  log.trace(`Adding archetype documents to archetype at ${archetypeAddress}: ${JSON.stringify(documents)}`);
-  const resolvedDocs = await Promise.all(documents.map(async ({ name, address, secretKey }) => {
-    const result = await addArchetypeDocument(archetypeAddress, name, JSON.stringify({ address, secretKey }));
+  log.trace(`Adding archetype documents to archetype at ${archetypeAddress}: ${JSON.stringify(documents.map(doc => doc.name))}`);
+  const resolvedDocs = await Promise.all(documents.map(async ({ name, grant }) => {
+    const result = await addArchetypeDocument(archetypeAddress, name, grant);
     return result;
   }));
   return resolvedDocs;
@@ -546,11 +546,11 @@ const setAddressScopeForAgreementParameters = async (agreementAddr, parameters) 
   }
 };
 
-const updateAgreementEventLog = (agreementAddress, hoardRef) => new Promise((resolve, reject) => {
-  log.trace(`Updating event log hoard reference for agreement at ${agreementAddress} with new hoard reference ${JSON.stringify(hoardRef)}`);
+const updateAgreementEventLog = (agreementAddress, hoardGrant) => new Promise((resolve, reject) => {
+  log.trace(`Updating event log hoard reference for agreement at ${agreementAddress} with new hoard reference`);
   appManager
     .contracts['ActiveAgreementRegistry']
-    .factory.setEventLogReference(agreementAddress, hoardRef, (error) => {
+    .factory.setEventLogReference(agreementAddress, hoardGrant, (error) => {
       if (error) {
         return reject(boom.badImplementation(`Failed to update event log for agreement at ${agreementAddress}: ${error}`));
       }

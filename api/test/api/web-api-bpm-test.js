@@ -33,7 +33,7 @@ before(function(done) {
   });
 });
 
-var hoardRef = { address: null, secretKey: null };
+var hoardGrant;
 
 /**
  * ######## HOARD ###############################################################################################################
@@ -59,8 +59,7 @@ describe(':: HOARD ::', () => {
             .expect(200)
             .end((err, res) => {
               expect(err).to.not.exist;
-              hoardRef.address = res.body.address.toUpperCase();
-              hoardRef.secretKey = res.body.secretKey.toUpperCase();
+              hoardGrant = res.body.grant;
             });
         }, 3000);
       } catch (err) {
@@ -128,8 +127,7 @@ describe(':: FORMATION - EXECUTION for Incorporation Signing and Fulfilment ::',
     ],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: '',
     }],
     jurisdictions: [],
     executionProcessDefinition: '',
@@ -228,8 +226,7 @@ describe(':: FORMATION - EXECUTION for Incorporation Signing and Fulfilment ::',
     // CREATE ARCHETYPE
     setTimeout(async () => {
       try {
-        archetype.documents[0].address = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
+        archetype.documents[0].grant = hoardGrant;
         Object.assign(archetype, await api.createArchetype(archetype, signer.token));
         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         agreement.archetype = archetype.address;
@@ -349,8 +346,7 @@ describe(':: FORMATION - EXECUTION for Sale of Goods User Tasks ::', () => {
     jurisdictions: [{ country: "US", regions: [] }],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: '',
     }],
     governingArchetypes: []
   };
@@ -427,8 +423,7 @@ describe(':: FORMATION - EXECUTION for Sale of Goods User Tasks ::', () => {
 
   it('Should create an archetype', async () => {
     // CREATE ARCHETYPE
-    archetype1.documents[0].address = hoardRef.address;
-    archetype1.documents[0].secretKey = hoardRef.secretKey;
+    archetype1.documents[0].grant = hoardGrant;
     Object.assign(archetype1, await api.createArchetype(archetype1, user1.token));
     expect(String(archetype1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
   }).timeout(15000);
@@ -582,8 +577,7 @@ describe(':: DATA MAPPING TEST ::', () => {
     ],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: '',
     }],
     jurisdictions: [],
     executionProcessDefinition: '',
@@ -661,8 +655,7 @@ describe(':: DATA MAPPING TEST ::', () => {
     // CREATE ARCHETYPE
     setTimeout(async () => {
       try {
-        archetype.documents[0].address = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
+        archetype.documents[0].grant = hoardGrant;
         Object.assign(archetype, await api.createArchetype(archetype, manager.token));
         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         agreement.archetype = archetype.address;
@@ -679,8 +672,6 @@ describe(':: DATA MAPPING TEST ::', () => {
       try {
         agreement.parameters.push({ name: 'Manager', type: 8, value: manager.address });
         agreement.parameters.push({ name: 'Administrator', type: 6, value: admin.address });
-        agreement.address = hoardRef.address;
-        agreement.hoardSecret = hoardRef.secretKey;
         Object.assign(agreement, await api.createAgreement(agreement, manager.token));
         expect(String(agreement.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         done();
@@ -832,8 +823,7 @@ describe(':: GATEWAY TEST ::', () => {
     ],
     documents: [{
       name: 'doc1.md',
-      address: '0x0',
-      secretKey: '0x0',
+      grant: '',
     }],
     jurisdictions: [],
     executionProcessDefinition: '',
@@ -897,8 +887,7 @@ describe(':: GATEWAY TEST ::', () => {
     // CREATE ARCHETYPE
     setTimeout(async () => {
       try {
-        archetype.documents[0].address = hoardRef.address;
-        archetype.documents[0].secretKey = hoardRef.secretKey;
+        archetype.documents[0].grant = hoardGrant;
         Object.assign(archetype, await api.createArchetype(archetype, tenant.token));
         expect(String(archetype.address)).match(/[0-9A-Fa-f]{40}/).to.exist;
         agreement.archetype = archetype.address;

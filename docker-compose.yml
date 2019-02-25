@@ -73,6 +73,7 @@ services:
       POSTGRES_DB_SCHEMA: customers
       POSTGRES_DB_SCHEMA_VENT: data
       HOARD_SALT: hoard-salt
+      SECRET_ID: s3cr3t
     volumes:
     - .:/app
     ports:

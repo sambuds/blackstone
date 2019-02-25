@@ -9,7 +9,7 @@ const cookieParser = require('cookie-parser');
 const logger = require(`${global.__common}/monax-logger`);
 const contracts = require(`${global.__controllers}/contracts-controller`);
 
-const Hoard = require('../hoard/index.js');
+const Hoard = require('@monax/hoard');
 
 const hoard = new Hoard.Client(global.__settings.monax.hoard);
 

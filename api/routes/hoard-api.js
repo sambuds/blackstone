@@ -1,6 +1,6 @@
 const multer = require('multer');
 const upload = multer();
-const { createHoard, getHoard } = require(`${global.__controllers}/hoard-controller`);
+const { hoardPut, hoardGet } = require(`${global.__controllers}/hoard-controller`);
 
 const { ensureAuth } = require(`${global.__common}/middleware`);
 
@@ -23,7 +23,7 @@ module.exports = (app, customMiddleware) => {
   *     curl -i /hoard
   *
   */
-  app.get('/hoard', getHoard);
+  app.get('/hoard', hoardGet);
 
   /**
   * @api {post} /hoard Read Content Object
@@ -36,5 +36,5 @@ module.exports = (app, customMiddleware) => {
   * @apiUse NotLoggedIn
   * @apiUse AuthTokenRequired
   */
-  app.post('/hoard', middleware, upload.any(), createHoard);
+  app.post('/hoard', middleware, upload.any(), hoardPut);
 };

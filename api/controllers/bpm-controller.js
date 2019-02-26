@@ -12,7 +12,6 @@ const logger = require(`${global.__common}/monax-logger`);
 const log = logger.getLogger('agreements.bpm');
 const parser = require(path.resolve(global.__lib, 'bpmn-parser.js'));
 const {
-  hoard,
   hoardPut,
   getModelFromHoard,
 } = require(`${global.__controllers}/hoard-controller`);

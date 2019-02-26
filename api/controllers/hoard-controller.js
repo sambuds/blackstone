@@ -15,14 +15,14 @@ const hoardPut = (metadata, data) => new Promise((resolve, reject) => {
     },
     GrantSpec: {
       Symmetric: {
-        SecretID: Buffer.from(process.env.SECRET_ID),
+        PublicID: Buffer.from(process.env.PUBLIC_ID),
       },
     },
   };
   hoard
     .putseal(grantIn)
     .then((response) => {
-      const grant = Buffer.from(JSON.stringify(hoard.base64ify(response))).toString('base64');
+      const grant = JSON.stringify(hoard.base64ify(response));
       return resolve(grant);
     })
     .catch(err => reject(boom.badImplementation(err)));
@@ -38,7 +38,7 @@ const hoardPutApiHandler = asyncMiddleware(async (req, res) => {
 });
 
 const hoardGet = grant => new Promise((resolve, reject) => {
-  const _grant = JSON.parse(Buffer.from(grant, 'base64').toString('ascii'));
+  const _grant = JSON.parse(grant);
   hoard
     .unsealget(_grant)
     .then(response => resolve({ data: response.Data }))

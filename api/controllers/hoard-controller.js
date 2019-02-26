@@ -8,7 +8,7 @@ const Hoard = require('@monax/hoard');
 const hoard = new Hoard.Client(global.__settings.monax.hoard);
 
 const hoardPut = (metadata, data) => new Promise((resolve, reject) => {
-  const grantIn = {
+  const plaintext = {
     Plaintext: {
       Data: addMeta(metadata, data),
       Salt: Buffer.from(process.env.HOARD_SALT),
@@ -20,7 +20,7 @@ const hoardPut = (metadata, data) => new Promise((resolve, reject) => {
     },
   };
   hoard
-    .putseal(grantIn)
+    .putseal(plaintext)
     .then((response) => {
       const grant = JSON.stringify(hoard.base64ify(response));
       return resolve(grant);

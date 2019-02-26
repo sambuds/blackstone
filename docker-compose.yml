@@ -1,11 +1,13 @@
 version: "3.4"
 services:
   hoard:
-    image: quay.io/monax/hoard:2.0.0
+    image: quay.io/monax/hoard:3.0.0
     ports:
       - "53431"
-    environment:
-      HOARD_JSON_CONFIG: '{"ListenAddress":"tcp://:53431","Storage":{"StorageType":"filesystem","AddressEncoding":"base32","RootDirectory":"/store"},"Logging":{"LoggingType":"logfmt","Channels":["info","trace"]}}'
+    command:
+    - /bin/sh
+    - -c
+    - "hoard config memory -s hoard-api-secret-1:secret_pass | hoard -c-"
   postgres:
     image: postgres:9-alpine
     ports:
@@ -73,7 +75,7 @@ services:
       POSTGRES_DB_SCHEMA: customers
       POSTGRES_DB_SCHEMA_VENT: data
       HOARD_SALT: hoard-salt
-      PUBLIC_ID: hoard-api-test-1
+      PUBLIC_ID: hoard-api-secret-1
     volumes:
     - .:/app
     ports:

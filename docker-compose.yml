@@ -1,9 +1,13 @@
 version: "3.4"
 services:
   hoard:
-    image: quay.io/monax/hoard:2.0.0
+    image: quay.io/monax/hoard:3.0.0
     ports:
       - "53431"
+    command:
+    - /bin/sh
+    - -c
+    - "hoard config memory -s s3cr3t:secret_pass | hoard -c-"
   postgres:
     image: postgres:9-alpine
     ports:

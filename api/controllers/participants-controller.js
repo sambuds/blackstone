@@ -486,6 +486,7 @@ const createOrFindAccountsWithEmails = async (params, typeKey) => {
   });
   const client = await app_db_pool.connect();
   try {
+    let newUsers;
     if (newParams.withEmail.length) {
       const { rows } = await client.query({
         text: `SELECT LOWER(email) AS email, address FROM users WHERE LOWER(email) IN (${newParams.withEmail.map((param, i) => `LOWER($${i + 1})`)});`,
@@ -521,7 +522,7 @@ const createOrFindAccountsWithEmails = async (params, typeKey) => {
         await client.query({ text: queryString, values: [address, email, email, hash, false, true] });
         return { email, address };
       });
-      const newUsers = await Promise.all(createNewUserPromises);
+      newUsers = await Promise.all(createNewUserPromises);
       newParams.forNewUser = Object.keys(newParams.forNewUser).reduce((acc, emailAddr) => {
         const { address } = newUsers.find(({ email }) => email === emailAddr);
         const newUserParams = newParams.forNewUser[emailAddr].map(param => ({ ...param, value: address }));
@@ -531,7 +532,10 @@ const createOrFindAccountsWithEmails = async (params, typeKey) => {
     // Release client
     client.release();
     // Return all parameters
-    return newParams.notAccountOrEmail.concat(newParams.forExistingUser).concat(newParams.forNewUser);
+    return {
+      parameters: newParams.notAccountOrEmail.concat(newParams.forExistingUser).concat(newParams.forNewUser),
+      newUsers,
+    };
   } catch (err) {
     client.release();
     if (boom.isBoom(err)) throw err;

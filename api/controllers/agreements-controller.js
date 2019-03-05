@@ -232,7 +232,6 @@ const createArchetype = asyncMiddleware(async (req, res) => {
     await contracts.addJurisdictions(archetypeAddress, type.jurisdictions);
   }
   await sqlCache.insertArchetypeDetails({ address: archetypeAddress, name: req.body.name, description: _.escape(req.body.description) });
-
   res.data = { archetypeAddress };
   return res
     .status(200)
@@ -399,8 +398,8 @@ const setAgreementParameters = async (agreeAddr, archAddr, parameters) => {
 };
 
 const createAgreement = asyncMiddleware(async (req, res) => {
-  let parameters = req.body.parameters || [];
-  parameters = await createOrFindAccountsWithEmails(parameters, 'type');
+  const _parameters = req.body.parameters || [];
+  const { parameters, newUsers } = await createOrFindAccountsWithEmails(_parameters, 'type');
   const parties = req.body.parties || [];
   parameters.forEach((param) => {
     if (parseInt(param.type, 10) === PARAM_TYPE.SIGNING_PARTY) parties.push(param.value);
@@ -440,7 +439,7 @@ const createAgreement = asyncMiddleware(async (req, res) => {
   await sqlCache.insertAgreementDetails({ address: agreementAddress, name: req.body.name });
   const piAddress = await contracts.startProcessFromAgreement(agreementAddress);
   log.debug(`Process Instance Address: ${piAddress}`);
-  res.data = { agreementAddress };
+  res.data = { agreementAddress, archetypeAddress: agreement.archetype, newUsers };
   res
     .status(200)
     .set('content-type', 'application/json')

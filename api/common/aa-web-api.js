@@ -105,10 +105,11 @@ let app;
 
       // ERROR HANDLING MIDDLEWARE
       app.use((err, req, res, next) => {
-        log.error(err.stack);
         if (err.output) {
+          log.error(`[ ${err.output.statusCode} ${err.output.payload ? `- ${err.output.payload.error} ]` : ']'}`, err.stack);
           return res.status(err.output.statusCode).json(err.output.payload);
         }
+        log.error(err.stack);
         return res.sendStatus(500);
       });
 

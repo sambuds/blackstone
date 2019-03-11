@@ -42,6 +42,10 @@ let appManager;
 
 const boomify = (burrowError, message) => {
   const arr = burrowError.message ? burrowError.message.split('::') : [];
+  if (arr.length < 3) {
+    // Error is not the raw error from solidity
+    return boom.badImplementation(`${message}: ${burrowError.stack}`);
+  }
   const parsedError = {
     code: arr[0] || '',
     location: arr[1] || '',
@@ -50,23 +54,23 @@ const boomify = (burrowError, message) => {
   let error;
   switch (parsedError.code) {
     case ERR.UNAUTHORIZED:
-      error = boom.unauthorized(`${message}: ${parsedError.message}`);
+      error = boom.unauthorized(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;
     case ERR.RESOURCE_NOT_FOUND:
-      error = boom.notFound(`${message}: ${parsedError.message}`);
+      error = boom.notFound(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;
     case ERR.RESOURCE_ALREADY_EXISTS:
-      error = boom.conflict(`${message}: ${parsedError.message}`);
+      error = boom.conflict(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;
     case ERR.INVALID_INPUT || ERR.INVALID_PARAMETER_STATE ||
     ERR.NULL_PARAMETER_NOT_ALLOWED || ERR.OVERWRITE_NOT_ALLOWED:
-      error = boom.badRequest(`${message}: ${parsedError.message}`);
+      error = boom.badRequest(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;
     case ERR.RUNTIME_ERROR || ERR.INVALID_STATE || ERR.DEPENDENCY_NOT_FOUND:
-      error = boom.badImplementation(`${message}: ${parsedError.message}`);
+      error = boom.badImplementation(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;
     default:
-      error = boom.badImplementation(`${message}: ${burrowError ? parsedError.message : 'Unknown Error'}`);
+      error = boom.badImplementation(`${message}: ${burrowError ? parsedError.message : 'Unknown Error'}. ${burrowError.stack}`);
       break;
   }
   return error;

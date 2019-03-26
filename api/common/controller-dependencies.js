@@ -253,26 +253,24 @@ const dependencies = {
     };
   },
 
-  getParticipantNames: async (participants, registeredUsersOnly, addressKey = 'address') => {
-    const text = `SELECT username AS id, NULL AS name, address, external_user FROM users
-    UNION
-    SELECT NULL AS id, name, address, FALSE AS external_user FROM organizations
-    WHERE address = ANY($1)
-    ${registeredUsersOnly ? ' AND external_user = false;' : ';'}`;
+  getParticipantNames: async (participants, addressKey = 'address') => {
+    const text = `SELECT address, COALESCE(username, name) AS "displayName"
+    FROM (
+      SELECT username, NULL AS name, address FROM users
+      UNION
+      SELECT NULL AS username, name, address FROM organizations
+    ) accounts
+    WHERE address = ANY($1);`;
     try {
       const { rows: withNames } = await app_db_pool.query({
         text,
         values: [participants.map(({ [addressKey]: address }) => address)],
       });
       const names = {};
-      withNames.forEach(({ address, id, name }) => {
-        names[address] = {};
-        if (id) names[address].id = id;
-        if (name) names[address].name = name;
+      withNames.forEach(({ address, displayName }) => {
+        names[address] = { displayName };
       });
-      const returnData = participants.map(account => Object.assign({}, account, names[account[addressKey]]));
-      if (registeredUsersOnly) return returnData.filter(({ id, name }) => id || name);
-      return returnData;
+      return participants.map(account => Object.assign({}, account, names[account[addressKey]] || {}));
     } catch (err) {
       throw boom.badImplementation(err);
     }

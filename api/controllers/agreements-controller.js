@@ -506,10 +506,10 @@ const getAgreement = async (agrAddress, userAddress) => {
   data.parties = await sqlCache.getAgreementParties(agrAddress);
   data.documents = await sqlCache.getArchetypeDocuments(data.archetype);
   const parameters = await getAgreementParameters(agrAddress, data.privateParametersFileReference);
-  const withNames = await getParticipantNames(parameters, false, 'value');
+  const withNames = await getParticipantNames(parameters, 'value');
   const withNamesObj = {};
-  withNames.forEach(({ value, id, name }) => {
-    if (id || name) withNamesObj[value] = { value, displayValue: id || name };
+  withNames.forEach(({ value, displayName }) => {
+    if (displayName) withNamesObj[value] = { displayValue: displayName };
   });
   data.parameters = parameters.map(param => Object.assign(param, withNamesObj[param.value] || {}));
   data.governingAgreements = await sqlCache.getGoverningAgreements(agrAddress);

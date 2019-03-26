@@ -33,7 +33,7 @@ const chainEvents = new ChainEventEmitter();
 
 // Instantiate connection to node
 const serverAccount = global.__settings.monax.accounts.server;
-const chainURL = global.__settings.monax.chain.url || 'localhost:10997'
+const chainURL = global.__settings.monax.chain.url || 'localhost:10997';
 const db = new monaxDB.Connection(chainURL, serverAccount);
 
 let appManager;
@@ -132,18 +132,10 @@ const addExternalAddressToEcosystem = (externalAddress, ecosystemAddress) => new
 });
 
 const setToNameRegistry = (name, value, lease) => new Promise((resolve, reject) => {
-  log.trace(`Setting to name registry: ${JSON.stringify({
-    name,
-    value,
-    lease
-  })}`);
+  log.trace(`Setting to name registry: ${JSON.stringify({ name, value, lease })}`);
   db.burrow.namereg.set(name, value, lease, (err) => {
     if (err) {
-      return reject(boom.badImplementation(`Error setting ${JSON.stringify({
-        name,
-        value,
-        lease
-      })} to namereg: ${err.stack}`));
+      return reject(boom.badImplementation(`Error setting ${JSON.stringify({ name, value, lease })} to namereg: ${err.stack}`));
     }
     log.debug(`Set name-value pair ${name}:${value} to namereg`);
     return resolve();
@@ -369,15 +361,15 @@ const addArchetypeParameters = (address, parameters) => new Promise((resolve, re
   appManager
     .contracts['ArchetypeRegistry']
     .factory.addParameters(address, paramTypes, paramNames, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom.badImplementation(`Failed to add parameters to archetype at ${address}: ${error}`));
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom.badImplementation(`Error code adding parameter to archetype at ${address}: ${data.raw[0]}`));
-    }
-    log.info(`Added parameters ${paramNames} to archetype at ${address}`);
-    return resolve();
-  });
+      if (error || !data.raw) {
+        return reject(boom.badImplementation(`Failed to add parameters to archetype at ${address}: ${error}`));
+      }
+      if (parseInt(data.raw[0], 10) !== 1) {
+        return reject(boom.badImplementation(`Error code adding parameter to archetype at ${address}: ${data.raw[0]}`));
+      }
+      log.info(`Added parameters ${paramNames} to archetype at ${address}`);
+      return resolve();
+    });
 });
 
 const addArchetypeDocument = (address, fileReference) => new Promise((resolve, reject) => {
@@ -385,12 +377,12 @@ const addArchetypeDocument = (address, fileReference) => new Promise((resolve, r
   appManager
     .contracts['ArchetypeRegistry']
     .factory.addDocument(address, fileReference, (error, data) => {
-    if (error) {
-      return reject(boomify(error, `Failed to add document to archetype ${address}`));
-    }
-    log.info('Added document to archetype %s', address);
-    return resolve();
-  });
+      if (error) {
+        return reject(boomify(error, `Failed to add document to archetype ${address}`));
+      }
+      log.info('Added document to archetype %s', address);
+      return resolve();
+    });
 });
 
 const addArchetypeDocuments = async (archetypeAddress, documents) => {
@@ -418,15 +410,15 @@ const createArchetypePackage = (author, isPrivate, active) => new Promise((resol
   appManager
     .contracts['ArchetypeRegistry']
     .factory.createArchetypePackage(author, isPrivate, active, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom.badImplementation(`Failed to add archetype package by user ${author}: ${error}`));
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom.badImplementation(`Error code adding archetype package by user ${author}: ${data.raw[0]}`));
-    }
-    log.info(`Created new archetype package by author ${author} with id ${data.raw[1]}`);
-    return resolve(data.raw[1]);
-  });
+      if (error || !data.raw) {
+        return reject(boom.badImplementation(`Failed to add archetype package by user ${author}: ${error}`));
+      }
+      if (parseInt(data.raw[0], 10) !== 1) {
+        return reject(boom.badImplementation(`Error code adding archetype package by user ${author}: ${data.raw[0]}`));
+      }
+      log.info(`Created new archetype package by author ${author} with id ${data.raw[1]}`);
+      return resolve(data.raw[1]);
+    });
 });
 
 const activateArchetypePackage = (packageId, userAccount) => new Promise((resolve, reject) => {
@@ -444,12 +436,12 @@ const deactivateArchetypePackage = (packageId, userAccount) => new Promise((reso
   log.trace(`Deactivating archetype package with id ${packageId} by user at ${userAccount}`);
   appManager
     .contracts['ArchetypeRegistry'].factory.deactivatePackage(packageId, userAccount, (err) => {
-    if (err) {
-      return reject(boomify(err, `Failed to deactivate archetype package with id ${packageId} by user ${userAccount}`));
-    }
-    log.info(`Archetype package with id ${packageId} deactivated by user at ${userAccount}`);
-    return resolve();
-  });
+      if (err) {
+        return reject(boomify(err, `Failed to deactivate archetype package with id ${packageId} by user ${userAccount}`));
+      }
+      log.info(`Archetype package with id ${packageId} deactivated by user at ${userAccount}`);
+      return resolve();
+    });
 });
 
 const addArchetypeToPackage = (packageId, archetype) => new Promise((resolve, reject) => {
@@ -457,12 +449,12 @@ const addArchetypeToPackage = (packageId, archetype) => new Promise((resolve, re
   appManager
     .contracts['ArchetypeRegistry']
     .factory.addArchetypeToPackage(packageId, archetype, (err) => {
-    if (err) {
-      return reject(boomify(err, `Failed to add archetype at ${archetype} to package ${packageId}`));
-    }
-    log.info(`Added archetype at ${archetype} to package with id ${packageId}`);
-    return resolve();
-  });
+      if (err) {
+        return reject(boomify(err, `Failed to add archetype at ${archetype} to package ${packageId}`));
+      }
+      log.info(`Added archetype at ${archetype} to package with id ${packageId}`);
+      return resolve();
+    });
 });
 
 const addJurisdictions = (address, jurisdictions) => new Promise((resolve, reject) => {
@@ -512,13 +504,13 @@ const createAgreement = agreement => new Promise((resolve, reject) => {
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.createAgreement(archetype, creator, privateParametersFileReference, isPrivate,
-    parties, collectionId, governingAgreements, (error, data) => {
-      if (error || !data.raw) {
-        return reject(boomify(error, `Failed to create agreement by ${creator} from archetype at ${agreement.archetype}`));
-      }
-      log.info(`Created agreement by ${creator} at address ${data.raw[0]}`);
-      return resolve(data.raw[0]);
-    });
+      parties, collectionId, governingAgreements, (error, data) => {
+        if (error || !data.raw) {
+          return reject(boomify(error, `Failed to create agreement by ${creator} from archetype at ${agreement.archetype}`));
+        }
+        log.info(`Created agreement by ${creator} at address ${data.raw[0]}`);
+        return resolve(data.raw[0]);
+      });
 });
 
 const setMaxNumberOfAttachments = (agreementAddress, maxNumberOfAttachments) => new Promise((resolve, reject) => {
@@ -526,12 +518,12 @@ const setMaxNumberOfAttachments = (agreementAddress, maxNumberOfAttachments) => 
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.setMaxNumberOfEvents(agreementAddress, maxNumberOfAttachments, (error) => {
-    if (error) {
-      return reject(boom.badImplementation(`Failed to set max number of events to ${maxNumberOfAttachments} for agreement at ${agreementAddress}: ${error}`));
-    }
-    log.info(`Set max number of events to ${maxNumberOfAttachments} for agreement at ${agreementAddress}`);
-    return resolve();
-  });
+      if (error) {
+        return reject(boom.badImplementation(`Failed to set max number of events to ${maxNumberOfAttachments} for agreement at ${agreementAddress}: ${error}`));
+      }
+      log.info(`Set max number of events to ${maxNumberOfAttachments} for agreement at ${agreementAddress}`);
+      return resolve();
+    });
 });
 
 const setAddressScopeForAgreementParameters = async (agreementAddr, parameters) => {
@@ -558,12 +550,12 @@ const updateAgreementAttachments = (agreementAddress, hoardGrant) => new Promise
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.setEventLogReference(agreementAddress, hoardGrant, (error) => {
-    if (error) {
-      return reject(boom.badImplementation(`Failed to update attachments for agreement at ${agreementAddress}: ${error}`));
-    }
-    log.info(`Attachments hoard reference updated for agreement at ${agreementAddress}`);
-    return resolve();
-  });
+      if (error) {
+        return reject(boom.badImplementation(`Failed to update attachments for agreement at ${agreementAddress}: ${error}`));
+      }
+      log.info(`Attachments hoard reference updated for agreement at ${agreementAddress}`);
+      return resolve();
+    });
 });
 
 const createAgreementCollection = (author, collectionType, packageId) => new Promise((resolve, reject) => {
@@ -572,15 +564,15 @@ const createAgreementCollection = (author, collectionType, packageId) => new Pro
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.createAgreementCollection(author, collectionType, packageId, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom.badImplementation(`Failed to add agreement collection by ${author}: ${error}`));
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom.badImplementation(`Error code adding agreement collection by ${author}: ${data.raw[0]}`));
-    }
-    log.info(`Created new agreement collection by ${author} with id ${data.raw[1]}`);
-    return resolve(data.raw[1]);
-  });
+      if (error || !data.raw) {
+        return reject(boom.badImplementation(`Failed to add agreement collection by ${author}: ${error}`));
+      }
+      if (parseInt(data.raw[0], 10) !== 1) {
+        return reject(boom.badImplementation(`Error code adding agreement collection by ${author}: ${data.raw[0]}`));
+      }
+      log.info(`Created new agreement collection by ${author} with id ${data.raw[1]}`);
+      return resolve(data.raw[1]);
+    });
 });
 
 const addAgreementToCollection = (collectionId, agreement) => new Promise((resolve, reject) => {
@@ -588,12 +580,12 @@ const addAgreementToCollection = (collectionId, agreement) => new Promise((resol
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.addAgreementToCollection(collectionId, agreement, (error) => {
-    if (error) {
-      return reject(boomify(error, `Failed to add agreement at ${agreement} to collection ${collectionId}`));
-    }
-    log.info(`Added agreement at ${agreement} to collection with id ${collectionId}`);
-    return resolve();
-  });
+      if (error) {
+        return reject(boomify(error, `Failed to add agreement at ${agreement} to collection ${collectionId}`));
+      }
+      log.info(`Added agreement at ${agreement} to collection with id ${collectionId}`);
+      return resolve();
+    });
 });
 
 const createUserInEcosystem = (user, ecosystemAddress) => new Promise((resolve, reject) => {
@@ -601,12 +593,12 @@ const createUserInEcosystem = (user, ecosystemAddress) => new Promise((resolve, 
   appManager
     .contracts['ParticipantsManager']
     .factory.createUserAccount(user.username, '0x0', ecosystemAddress, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom.badImplementation(`Failed to create user ${user.username}: ${error}`));
-    }
-    log.info(`Created new user ${user.username} at address ${data.raw[0]}`);
-    return resolve(data.raw[0]);
-  });
+      if (error || !data.raw) {
+        return reject(boom.badImplementation(`Failed to create user ${user.username}: ${error}`));
+      }
+      log.info(`Created new user ${user.username} at address ${data.raw[0]}`);
+      return resolve(data.raw[0]);
+    });
 });
 
 const createUser = user => createUserInEcosystem(user, appManager.ecosystemAddress);
@@ -825,13 +817,13 @@ const createProcessDefinition = (modelAddress, processDefnId) => new Promise((re
   appManager
     .contracts['ProcessModelRepository']
     .factory.createProcessDefinition(modelAddress, processDefnIdHex, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to create process definition ${processDefnId} in model at ${modelAddress}: ${error}`));
-    }
-    log.info(`Process definition ${processDefnId} in model at ${modelAddress} created at ${data.raw[0]}`);
-    return resolve(data.raw[0]);
-  });
+      if (error || !data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to create process definition ${processDefnId} in model at ${modelAddress}: ${error}`));
+      }
+      log.info(`Process definition ${processDefnId} in model at ${modelAddress} created at ${data.raw[0]}`);
+      return resolve(data.raw[0]);
+    });
 });
 
 const addProcessInterfaceImplementation = (pmAddress, pdAddress, interfaceId) => new Promise((resolve, reject) => {
@@ -910,11 +902,7 @@ const createDataMapping = (processAddress, id, direction, accessPath, dataPath, 
 });
 
 const createGateway = (processAddress, gatewayId, gatewayType) => new Promise((resolve, reject) => {
-  log.trace(`Creating gateway with data: ${JSON.stringify({
-    processAddress,
-    gatewayId,
-    gatewayType
-  })}`);
+  log.trace(`Creating gateway with data: ${JSON.stringify({ processAddress, gatewayId, gatewayType })}`);
   const processDefinition = getContract(global.__abi, global.__monax_bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   processDefinition.createGateway(global.stringToHex(gatewayId), gatewayType, (error) => {
     if (error) {
@@ -948,11 +936,7 @@ const createTransition = (processAddress, sourceGraphElement, targetGraphElement
 });
 
 const setDefaultTransition = (processAddress, gatewayId, activityId) => new Promise((resolve, reject) => {
-  log.trace(`Setting default transition with data: ${JSON.stringify({
-    processAddress,
-    gatewayId,
-    activityId
-  })}`);
+  log.trace(`Setting default transition with data: ${JSON.stringify({ processAddress, gatewayId, activityId })}`);
   const processDefinition = getContract(global.__abi, global.__monax_bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   processDefinition.setDefaultTransition(global.stringToHex(gatewayId), global.stringToHex(activityId), (error) => {
     if (error) {
@@ -1112,12 +1096,12 @@ const getProcessDefinitionAddress = (modelId, processId) => new Promise((resolve
   const processIdHex = global.stringToHex(processId);
   appManager.contracts['ProcessModelRepository']
     .factory.getProcessDefinition(modelIdHex, processIdHex, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to get address of process definition with id ${processId} in model ${modelId}: ${error}`));
-    }
-    return resolve(data.raw[0]);
-  });
+      if (error || !data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to get address of process definition with id ${processId} in model ${modelId}: ${error}`));
+      }
+      return resolve(data.raw[0]);
+    });
 });
 
 const isValidProcess = processAddress => new Promise((resolve, reject) => {
@@ -1166,9 +1150,9 @@ const getProcessInstanceCount = () => new Promise((resolve, reject) => {
   log.trace('Fetching process instance count');
   appManager.contracts['BpmService']
     .factory.getNumberOfProcessInstances((error, data) => {
-    if (error || !data.raw) return reject(boom.badImplementation(`Failed to get process instance count: ${error}`));
-    return resolve(data.raw[0]);
-  });
+      if (error || !data.raw) return reject(boom.badImplementation(`Failed to get process instance count: ${error}`));
+      return resolve(data.raw[0]);
+    });
 });
 
 const getProcessInstanceForActivity = activityInstanceId => new Promise((resolve, reject) => {
@@ -1176,12 +1160,12 @@ const getProcessInstanceForActivity = activityInstanceId => new Promise((resolve
   appManager
     .contracts['BpmService']
     .factory.getProcessInstanceForActivity(activityInstanceId, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to get process instance for activity with id ${activityInstanceId}: ${error}`));
-    }
-    return resolve(data.raw[0].valueOf());
-  });
+      if (error || !data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to get process instance for activity with id ${activityInstanceId}: ${error}`));
+      }
+      return resolve(data.raw[0].valueOf());
+    });
 });
 
 const getDataMappingKeys = (processDefinition, activityId, direction) => new Promise((resolve, reject) => {
@@ -1235,14 +1219,14 @@ const getArchetypeProcesses = archAddress => new Promise((resolve, reject) => {
   let execution;
   appManager.contracts['ArchetypeRegistry']
     .factory.getArchetypeData(archAddress, (err, data) => {
-    if (err || !data.raw) return reject(boom.badImplementation(`Failed to get archetype processes: ${err}`));
-    formation = data.raw[5] ? data.raw[5].valueOf() : '';
-    execution = data.raw[6] ? data.raw[6].valueOf() : '';
-    return resolve({
-      formation,
-      execution,
+      if (err || !data.raw) return reject(boom.badImplementation(`Failed to get archetype processes: ${err}`));
+      formation = data.raw[5] ? data.raw[5].valueOf() : '';
+      execution = data.raw[6] ? data.raw[6].valueOf() : '';
+      return resolve({
+        formation,
+        execution,
+      });
     });
-  });
 });
 
 const getActivityInstanceData = (piAddress, activityInstanceId) => new Promise((resolve, reject) => {
@@ -1250,19 +1234,19 @@ const getActivityInstanceData = (piAddress, activityInstanceId) => new Promise((
   appManager
     .contracts['BpmService']
     .factory.getActivityInstanceData(piAddress, activityInstanceId, (err, data) => {
-    if (err || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to get data for activity instance with id ${activityInstanceId} in process instance at ${piAddress}: ${err}`));
-    }
-    return resolve({
-      activityId: data.raw[0] ? data.raw[0].valueOf() : '',
-      created: data.raw[1] ? data.raw[1].valueOf() : '',
-      completed: data.raw[2] ? data.raw[2].valueOf() : '',
-      performer: data.raw[3] ? data.raw[3].valueOf() : '',
-      completedBy: data.raw[4] ? data.raw[4].valueOf() : '',
-      state: data.raw[5] ? data.raw[5].valueOf() : '',
+      if (err || !data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to get data for activity instance with id ${activityInstanceId} in process instance at ${piAddress}: ${err}`));
+      }
+      return resolve({
+        activityId: data.raw[0] ? data.raw[0].valueOf() : '',
+        created: data.raw[1] ? data.raw[1].valueOf() : '',
+        completed: data.raw[2] ? data.raw[2].valueOf() : '',
+        performer: data.raw[3] ? data.raw[3].valueOf() : '',
+        completedBy: data.raw[4] ? data.raw[4].valueOf() : '',
+        state: data.raw[5] ? data.raw[5].valueOf() : '',
+      });
     });
-  });
 });
 
 const getActiveAgreementData = agreementAddress => new Promise((resolve, reject) => {
@@ -1270,21 +1254,21 @@ const getActiveAgreementData = agreementAddress => new Promise((resolve, reject)
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.getActiveAgreementData(agreementAddress, (err, data) => {
-    if (err || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to get data of agreement at ${agreementAddress}: ${err}`));
-    }
-    return resolve({
-      archetype: data.raw[0] ? data.raw[0].valueOf() : '',
-      name: data.raw[1] ? global.hexToString(data.raw[1].valueOf()) : '',
-      creator: data.raw[2] ? data.raw[2].valueOf() : '',
-      maxNumberOfAttachments: data.raw[7] ? data.raw[7].valueOf() : '',
-      isPrivate: data.raw[8] ? data.raw[8].valueOf() : '',
-      legalState: data.raw[9] ? data.raw[9].valueOf() : '',
-      formationProcessInstance: data.raw[10] ? data.raw[10].valueOf() : '',
-      executionProcessInstance: data.raw[11] ? data.raw[11].valueOf() : '',
+      if (err || !data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to get data of agreement at ${agreementAddress}: ${err}`));
+      }
+      return resolve({
+        archetype: data.raw[0] ? data.raw[0].valueOf() : '',
+        name: data.raw[1] ? global.hexToString(data.raw[1].valueOf()) : '',
+        creator: data.raw[2] ? data.raw[2].valueOf() : '',
+        maxNumberOfAttachments: data.raw[7] ? data.raw[7].valueOf() : '',
+        isPrivate: data.raw[8] ? data.raw[8].valueOf() : '',
+        legalState: data.raw[9] ? data.raw[9].valueOf() : '',
+        formationProcessInstance: data.raw[10] ? data.raw[10].valueOf() : '',
+        executionProcessInstance: data.raw[11] ? data.raw[11].valueOf() : '',
+      });
     });
-  });
 });
 
 module.exports = {

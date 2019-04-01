@@ -13,6 +13,8 @@ const {
   ERROR_CODES: ERR,
 } = global.__monax_constants;
 
+const NO_TRANSACTION_RESPONSE_ERR = 'No transaction response raw data received from burrow';
+
 /**
  * This module provides the application-specific functions for Active Agreements
  */
@@ -35,6 +37,9 @@ const chainEvents = new ChainEventEmitter();
 const serverAccount = global.__settings.monax.accounts.server;
 const chainURL = global.__settings.monax.chain.url || 'localhost:10997';
 const db = new monaxDB.Connection(chainURL, serverAccount);
+
+const ventHelper = require(`${global.__common}/VentHelper`)(global.__settings.db.chain_db_url);
+ventHelper.listen();
 
 let appManager;
 
@@ -97,19 +102,23 @@ const getEcosystem = ecosystemAddress => getContract(global.__abi, global.__mona
  * Returns a promise to call the forwardCall function of the given userAddress to invoke the function encoded in the given payload on the provided target address and return the result bytes representation
  * The 'payload' parameter must be the output of calling the 'encode(...)' function on a contract's function. E.g. <contract>.<function>.encode(param1, param2)
  */
-const callOnBehalfOf = (userAddress, targetAddress, payload) => new Promise((resolve, reject) => {
+const callOnBehalfOf = (userAddress, targetAddress, payload, waitForVent) => new Promise((resolve, reject) => {
   const actingUser = getUserAccount(userAddress);
   log.debug('Calling target %s on behalf of user %s with payload: %s', targetAddress, userAddress, payload);
-  actingUser.forwardCall(targetAddress, payload, (error, data) => {
-    if (error) {
-      return reject(boom.badImplementation(`Unexpected error in forwardCall function on user ${userAddress} attempting to call target ${targetAddress}: ${error}`));
-    }
-    if (!data.raw) {
-      return reject(boom.badImplementation(`The forwardCall function from user ${userAddress} to target ${targetAddress} returned no raw data!`));
-    }
-    log.debug('ReturnData from forwardCall: %s', data.raw[0]);
-    return resolve(data.raw[0]);
-  });
+  actingUser.forwardCall(targetAddress, payload)
+    .then((data) => {
+      if (!waitForVent) return new Promise(res => res(data));
+      return ventHelper.waitForVent(data);
+    })
+    .then((data) => {
+      if (!data.raw) throw boom.badImplementation(`The forwardCall function from user ${userAddress} to target ${targetAddress} returned no raw data!`);
+      log.debug('ReturnData from forwardCall: %s', data.raw[0]);
+      return resolve(data.raw[0]);
+    })
+    .catch((err) => {
+      if (err.isBoom) reject(err);
+      reject(boom.badImplementation(`Unexpected error in forwardCall function on user ${userAddress} attempting to call target ${targetAddress}: ${err.stack}`));
+    });
 });
 
 const createEcosystem = name => new Promise((resolve, reject) => {
@@ -221,39 +230,49 @@ const load = () => new Promise((resolve, reject) => {
  */
 const createOrganization = org => new Promise((resolve, reject) => {
   log.trace(`Creating organization with: ${JSON.stringify(org)}`);
-  appManager.contracts['ParticipantsManager'].factory.createOrganization(org.approvers ? org.approvers : [], org.defaultDepartmentId, (error, data) => {
-    if (error || !data.raw) return reject(boom.badImplementation(`Failed to create organization ${org.name}: ${error}`));
-    if (parseInt(data.raw[0], 10) === 1002) return reject(boom.badRequest('Organization id must be unique'));
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom.badImplementation(`Error code creating new organization: ${data.raw[0]}`));
-    }
-    log.info(`Created new organization at address ${data.raw[1]}, with approvers ${org.approvers}`);
-    return resolve(data.raw[1]);
-  });
+  appManager.contracts['ParticipantsManager']
+    .factory.createOrganization(org.approvers ? org.approvers : [], org.defaultDepartmentId)
+    .then(data => ventHelper.waitForVent(data))
+    .then((data) => {
+      if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
+      if (parseInt(data.raw[0], 10) === 1002) throw boom.badRequest('Organization id must be unique');
+      if (parseInt(data.raw[0], 10) !== 1) throw boom.badImplementation(`Error code creating new organization: ${data.raw[0]}`);
+      log.info(`Created new organization at address ${data.raw[1]}, with approvers ${org.approvers}`);
+      return resolve(data.raw[1]);
+    })
+    .catch((error) => {
+      if (error.isBoom) return reject(error);
+      return reject(boom.badImplementation(`Failed to create organization: ${error.stack}`));
+    });
 });
 
 const createArchetype = (type) => {
   const archetype = type;
   archetype.isPrivate = archetype.isPrivate || false;
   archetype.price = Math.floor(archetype.price * 100); // monetary unit conversion to cents which is the recorded unit on chain
-
   return new Promise((resolve, reject) => {
     log.trace(`Creating archetype with: ${JSON.stringify(archetype)}`);
-    appManager.contracts['ArchetypeRegistry'].factory.createArchetype(
-      archetype.price,
-      archetype.isPrivate,
-      archetype.active,
-      archetype.author,
-      archetype.formationProcessDefinition,
-      archetype.executionProcessDefinition,
-      archetype.packageId,
-      archetype.governingArchetypes,
-      (error, data) => {
-        if (error || !data.raw) return reject(boomify(error, `Failed to create archetype ${archetype.name}`));
+    appManager.contracts['ArchetypeRegistry']
+      .factory.createArchetype(
+        archetype.price,
+        archetype.isPrivate,
+        archetype.active,
+        archetype.author,
+        archetype.formationProcessDefinition,
+        archetype.executionProcessDefinition,
+        archetype.packageId,
+        archetype.governingArchetypes,
+      )
+      .then(data => ventHelper.waitForVent(data))
+      .then((data) => {
+        if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
         log.info(`Created new archetype by author ${archetype.author} at address ${data.raw[0]}`);
         return resolve(data.raw[0]);
-      },
-    );
+      })
+      .catch((err) => {
+        if (err.isBoom) return reject(err);
+        return reject(boomify(err, `Failed to create archetype ${archetype.name}`));
+      });
   });
 };
 
@@ -410,15 +429,17 @@ const createArchetypePackage = (author, isPrivate, active) => new Promise((resol
     `created by user at ${author}`);
   appManager
     .contracts['ArchetypeRegistry']
-    .factory.createArchetypePackage(author, isPrivate, active, (error, data) => {
-      if (error || !data.raw) {
-        return reject(boom.badImplementation(`Failed to add archetype package by user ${author}: ${error}`));
-      }
-      if (parseInt(data.raw[0], 10) !== 1) {
-        return reject(boom.badImplementation(`Error code adding archetype package by user ${author}: ${data.raw[0]}`));
-      }
+    .factory.createArchetypePackage(author, isPrivate, active)
+    .then(data => ventHelper.waitForVent(data))
+    .then((data) => {
+      if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
+      if (parseInt(data.raw[0], 10) !== 1) throw boom.badImplementation(`Error code adding archetype package by user ${author}: ${data.raw[0]}`);
       log.info(`Created new archetype package by author ${author} with id ${data.raw[1]}`);
       return resolve(data.raw[1]);
+    })
+    .catch((err) => {
+      if (err.isBoom) return reject(err);
+      return reject(boom.badImplementation(`Failed to add archetype package by user ${author}: ${err.stack}`));
     });
 });
 
@@ -593,13 +614,14 @@ const createUserInEcosystem = (user, ecosystemAddress) => new Promise((resolve, 
   log.trace(`Creating a new user with ID: ${user.id} in ecosystem at ${ecosystemAddress}`);
   appManager
     .contracts['ParticipantsManager']
-    .factory.createUserAccount(user.id, '0x0', ecosystemAddress, (error, data) => {
-      if (error || !data.raw) {
-        return reject(boom.badImplementation(`Failed to create user ${user.id}: ${error}`));
-      }
+    .factory.createUserAccount(user.id, '0x0', ecosystemAddress)
+    .then(data => ventHelper.waitForVent(data))
+    .then((data) => {
+      if (!data || !data.raw) throw new Error(NO_TRANSACTION_RESPONSE_ERR);
       log.info(`Created new user ${user.id} at address ${data.raw[0]}`);
       return resolve(data.raw[0]);
-    });
+    })
+    .catch(error => reject(boom.badImplementation(`Failed to create user ${user.id}: ${error}`)));
 });
 
 const createUser = user => createUserInEcosystem(user, appManager.ecosystemAddress);
@@ -635,7 +657,7 @@ const addUserToOrganization = (userAddress, organizationAddress, actingUserAddre
   log.trace('Adding user %s to organization %s', userAddress, organizationAddress);
   const organization = getOrganization(organizationAddress);
   const payload = organization.addUser.encode(userAddress);
-  callOnBehalfOf(actingUserAddress, organizationAddress, payload)
+  callOnBehalfOf(actingUserAddress, organizationAddress, payload, true)
     .then((returnData) => {
       const data = organization.addUser.decode(returnData);
       if (data.raw[0].valueOf() === true) {
@@ -651,7 +673,7 @@ const removeUserFromOrganization = (userAddress, organizationAddress, actingUser
   log.trace('Removing user %s from organization %s', userAddress, organizationAddress);
   const organization = getOrganization(organizationAddress);
   const payload = organization.removeUser.encode(userAddress);
-  callOnBehalfOf(actingUserAddress, organizationAddress, payload)
+  callOnBehalfOf(actingUserAddress, organizationAddress, payload, true)
     .then((returnData) => {
       const data = organization.removeUser.decode(returnData);
       if (data.raw[0].valueOf() === true) {
@@ -667,7 +689,7 @@ const createDepartment = (organizationAddress, id, actingUserAddress) => new Pro
   log.trace('Creating department ID %s with name %s in organization %s', id, organizationAddress);
   const organization = getOrganization(organizationAddress);
   const payload = organization.addDepartment.encode(id);
-  callOnBehalfOf(actingUserAddress, organizationAddress, payload)
+  callOnBehalfOf(actingUserAddress, organizationAddress, payload, true)
     .then((returnData) => {
       const data = organization.addDepartment.decode(returnData);
       if (data.raw[0].valueOf() === true) {
@@ -683,7 +705,7 @@ const removeDepartment = (organizationAddress, id, actingUserAddress) => new Pro
   log.trace('Removing department %s from organization %s', id, organizationAddress);
   const organization = getOrganization(organizationAddress);
   const payload = organization.removeDepartment.encode(id);
-  callOnBehalfOf(actingUserAddress, organizationAddress, payload)
+  callOnBehalfOf(actingUserAddress, organizationAddress, payload, true)
     .then((returnData) => {
       const data = organization.removeDepartment.decode(returnData);
       if (data.raw[0].valueOf() === true) {
@@ -699,7 +721,7 @@ const addDepartmentUser = (organizationAddress, depId, userAddress, actingUserAd
   log.trace('Adding user %s to department ID in organization %s', userAddress, depId, organizationAddress);
   const organization = getOrganization(organizationAddress);
   const payload = organization.addUserToDepartment.encode(userAddress, depId);
-  callOnBehalfOf(actingUserAddress, organizationAddress, payload)
+  callOnBehalfOf(actingUserAddress, organizationAddress, payload, true)
     .then((returnData) => {
       const data = organization.addUserToDepartment.decode(returnData);
       if (data.raw[0].valueOf() === true) {
@@ -715,7 +737,7 @@ const removeDepartmentUser = (organizationAddress, depId, userAddress, actingUse
   log.trace('Removing user %s from department ID %s in organization %s', userAddress, depId, organizationAddress);
   const organization = getOrganization(organizationAddress);
   const payload = organization.removeUserFromDepartment.encode(userAddress, depId);
-  callOnBehalfOf(actingUserAddress, organizationAddress, payload)
+  callOnBehalfOf(actingUserAddress, organizationAddress, payload, true)
     .then((returnData) => {
       const data = organization.removeUserFromDepartment.decode(returnData);
       if (data.raw[0].valueOf() === true) {
@@ -1002,11 +1024,11 @@ const signAgreement = (actingUserAddress, agreementAddress) => new Promise(async
   try {
     const agreement = getContract(global.__abi, global.__monax_bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
     const payload = agreement.sign.encode();
-    await callOnBehalfOf(actingUserAddress, agreementAddress, payload);
+    await callOnBehalfOf(actingUserAddress, agreementAddress, payload, false);
     log.info('Agreement %s signed by user %s', agreementAddress, actingUserAddress);
     return resolve();
   } catch (error) {
-    return reject(boom.badImplementation(`Error forwarding sign request via acting user ${actingUserAddress} to agreement ${agreementAddress}! Error: ${error}`));
+    return reject(boom.badImplementation(`Error forwarding sign request via acting user ${actingUserAddress} to agreement ${agreementAddress}! Error: ${error.stack}`));
   }
 });
 
@@ -1015,7 +1037,7 @@ const cancelAgreement = (actingUserAddress, agreementAddress) => new Promise(asy
   try {
     const agreement = getContract(global.__abi, global.__monax_bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
     const payload = agreement.cancel.encode();
-    await callOnBehalfOf(actingUserAddress, agreementAddress, payload);
+    await callOnBehalfOf(actingUserAddress, agreementAddress, payload, true);
     log.info('Agreement %s canceled by user %s', agreementAddress, actingUserAddress);
     return resolve();
   } catch (error) {
@@ -1061,7 +1083,7 @@ const completeActivity = (actingUserAddress, activityInstanceId, dataMappingId =
       payload = processInstance.completeActivity.encode(activityInstanceId, bpmService.address);
     }
 
-    const returnData = await callOnBehalfOf(actingUserAddress, piAddress, payload);
+    const returnData = await callOnBehalfOf(actingUserAddress, piAddress, payload, true);
 
     const data = processInstance.completeActivity.decode(returnData);
     const errorCode = data.raw[0].valueOf();
@@ -1124,27 +1146,35 @@ const isValidProcess = processAddress => new Promise((resolve, reject) => {
 
 const startProcessFromAgreement = agreementAddress => new Promise((resolve, reject) => {
   log.trace(`Starting formation process from agreement at address: ${agreementAddress}`);
-  appManager.contracts['ActiveAgreementRegistry'].factory.startProcessLifecycle(agreementAddress, (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to start formation process from agreement at ${agreementAddress}: ${error}`));
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom
-        .badImplementation(`Error code creating/starting process instance for agreement at ${agreementAddress}: ${data.raw[0]}`));
-    }
-    log.info(`Formation process for agreement at ${agreementAddress} created and started at address: ${data.raw[1]}`);
-    return resolve(data.raw[1]);
-  });
+  appManager.contracts['ActiveAgreementRegistry'].factory.startProcessLifecycle(agreementAddress)
+    .then(data => ventHelper.waitForVent(data))
+    .then((data) => {
+      if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
+      if (parseInt(data.raw[0], 10) !== 1) {
+        throw boom.badImplementation(`Error code creating/starting process instance for agreement at ${agreementAddress}: ${data.raw[0]}`);
+      }
+      log.info(`Formation process for agreement at ${agreementAddress} created and started at address: ${data.raw[1]}`);
+      return resolve(data.raw[1]);
+    })
+    .catch((err) => {
+      if (err.isBoom) return reject(err);
+      return reject(boom.badImplementation(`Failed to start formation process from agreement at ${agreementAddress}: ${err.stack}`));
+    });
 });
 
 const getStartActivity = processAddress => new Promise((resolve, reject) => {
   log.trace(`Getting start activity id for process at address: ${processAddress}`);
   const processDefinition = getContract(global.__abi, global.__monax_bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
-  processDefinition.getStartActivity((err, data) => {
-    if (err || !data.raw) return reject(boom.badImplementation(`Failed to get start activity for process: ${err}`));
-    return resolve(global.hexToString(data.raw[0]));
-  });
+  processDefinition.getStartActivity()
+    .then(data => ventHelper.waitForVent(data))
+    .then((data) => {
+      if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
+      return resolve(global.hexToString(data.raw[0]));
+    })
+    .catch((err) => {
+      if (err.isBoom) return reject(err);
+      return reject(boom.badImplementation(boom.badImplementation(`Failed to get start activity for process: ${err.stack}`)));
+    });
 });
 
 const getProcessInstanceCount = () => new Promise((resolve, reject) => {

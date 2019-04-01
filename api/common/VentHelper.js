@@ -1,6 +1,8 @@
 const { Client } = require('pg');
 const EventEmitter = require('events');
 
+const MAX_WAIT_TIME_MS = 3000;
+
 class VentHelper {
   constructor(connectionString) {
     this.connectionString = connectionString;
@@ -18,36 +20,42 @@ class VentHelper {
       if (height > this.high_water) {
         this.high_water = height;
         this.emitter.emit('height', this.high_water);
-        console.log(`Updated high_water to: ${this.high_water}`);
+        console.log(`Updated high_water to height: [ ${this.high_water} ]`);
       }
     }
   }
 
   waitForVent(result) {
-    const target = Number.parseInt(result.height, 10);
-    const self = this;
-    // If the height has already been reached return
-    if (this.high_water >= target) {
-      console.log(`Height ${this.high_water} has already been reached, resolving result`);
-      return new Promise((resolve, reject) => resolve(result));
+    if (result && result.height) {
+      const target = Number.parseInt(result.height, 10);
+      const self = this;
+      // If the height has already been reached return
+      if (this.high_water >= target) {
+        console.log(`Target height [ ${target} ] already surpassed, resolving result`);
+        return new Promise((resolve, reject) => resolve(result));
+      }
+      // otherwise we need to wait for vent -> return a promise
+      const P = new Promise((resolve, reject) => {
+        console.log(`Created promise for target height [ ${target} ]`);
+        const callback = (height) => {
+          // If the height has been reached, clean up listener and resolve promise
+          if (height >= target) {
+            console.log(`Resolving promise for target height [ ${target} ]`);
+            self.emitter.removeListener('height', callback);
+            resolve(result);
+          }
+        };
+        console.log(`Current high_water in promise: ${self.high_water}`);
+        self.emitter.on('height', callback);
+        console.log(`>>>>>>>>> NOTE <<<<<<<<<< ${new Date()}: Data will resolve in ${MAX_WAIT_TIME_MS}ms if target height notification not received`);
+        setTimeout(() => {
+          console.warn(`>>>>>>> WARNING <<<<<<<<< ${new Date()}: Target height notification not received, resolving response for target height [ ${target} ]`);
+          callback(target);
+        }, 3000);
+      });
+      return P;
     }
-    // otherwise we need to wait for vent -> return a promise
-    const P = new Promise((resolve, reject) => {
-      console.log(`Created promise for target ${target}`);
-      const callback = (height) => {
-        console.log(`Entered callback with height ${height}`);
-        // If the height has been reached, clean up listener and resolve promise
-        if (height >= target) {
-          console.log(`Postgres has caught up to height ${target}, resolving result`);
-          self.emitter.removeListener('height', callback);
-          resolve(result);
-        }
-      };
-      console.log(`Current high_water in promise: ${self.high_water}`);
-      self.emitter.on('height', callback);
-    });
-
-    return P;
+    return new Promise((resolve, reject) => resolve(result));
   }
 
   getEmitter() {

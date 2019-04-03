@@ -38,7 +38,7 @@ const serverAccount = global.__settings.monax.accounts.server;
 const chainURL = global.__settings.monax.chain.url || 'localhost:10997';
 const db = new monaxDB.Connection(chainURL, serverAccount);
 
-const ventHelper = require(`${global.__common}/VentHelper`)(global.__settings.db.chain_db_url);
+const ventHelper = require(`${global.__common}/VentHelper`)(global.__settings.db.chain_db_url, global.max_wait_for_vent_ms || 3000);
 ventHelper.listen();
 
 let appManager;

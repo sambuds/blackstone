@@ -1,14 +1,12 @@
 const { Client } = require('pg');
 const EventEmitter = require('events');
-
-const MAX_WAIT_TIME_MS = 3000;
-
 const logger = require('./monax-logger');
 const log = logger.getLogger('VENT-HELPER');
 
 class VentHelper {
-  constructor(connectionString) {
+  constructor(connectionString, maxWaitTime) {
     this.connectionString = connectionString;
+    this.MAX_WAIT_TIME_MS = maxWaitTime || 3000;
     this.client = new Client({ connectionString });
     this.high_water = 0;
     this.emitter = new EventEmitter();
@@ -54,10 +52,10 @@ class VentHelper {
         self.emitter.on('height', callback);
         setTimeout(() => {
           if (!resolved) {
-            log.warn(`>>>>>>> WARNING <<<<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${MAX_WAIT_TIME_MS}ms, resolving promise anyway`);
+            log.warn(`>>>>>>> WARNING <<<<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${self.MAX_WAIT_TIME_MS}ms, resolving promise anyway`);
             callback(target);
           }
-        }, MAX_WAIT_TIME_MS);
+        }, self.MAX_WAIT_TIME_MS);
       });
       return P;
     }

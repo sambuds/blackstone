@@ -35,6 +35,7 @@ const monax = require('@monax/burrow');
       if (process.env.MONAX_JWT_EXPIRES_IN) _.set(settings, 'monax.jwt.expiresIn', process.env.MONAX_JWT_EXPIRES_IN);
       if (process.env.MONAX_COOKIE_MAX_AGE) _.set(settings, 'monax.cookie.maxAge', process.env.MONAX_COOKIE_MAX_AGE);
       if (process.env.IDENTITY_PROVIDER) _.set(settings, 'identity_provider', process.env.IDENTITY_PROVIDER);
+      if (process.env.MAX_WAIT_FOR_VENT_MS) _.set(settings, 'max_wait_for_vent_ms', process.env.MAX_WAIT_FOR_VENT_MS);
       _.set(
         settings,
         'db.app_db_url',

@@ -446,10 +446,10 @@ const editProfile = asyncMiddleware(async (req, res) => {
       if (!isPassword) throw boom.forbidden('Invalid password provided');
       const salt = await bcrypt.genSalt(10);
       const hash = await bcrypt.hash(req.body.newPassword, salt);
-      delete req.body.currentPassword;
-      delete req.body.newPassword;
       req.body.passwordDigest = hash;
     }
+    delete req.body.currentPassword;
+    delete req.body.newPassword;
     const { text, values } = pgUpdate('users', req.body);
     values.push(userAddress);
     await client.query({

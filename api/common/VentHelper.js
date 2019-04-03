@@ -3,6 +3,9 @@ const EventEmitter = require('events');
 
 const MAX_WAIT_TIME_MS = 3000;
 
+const logger = require('./monax-logger');
+const log = logger.getLogger('VENT-HELPER');
+
 class VentHelper {
   constructor(connectionString) {
     this.connectionString = connectionString;
@@ -20,7 +23,7 @@ class VentHelper {
       if (height > this.high_water) {
         this.high_water = height;
         this.emitter.emit('height', this.high_water);
-        console.log(`Updated high_water to height: [ ${this.high_water} ]`);
+        log.debug(`Updated high_water to height: [ ${this.high_water} ]`);
       }
     }
   }
@@ -31,27 +34,30 @@ class VentHelper {
       const self = this;
       // If the height has already been reached return
       if (this.high_water >= target) {
-        console.log(`Target height [ ${target} ] already surpassed, resolving result`);
+        log.debug(`Target height [ ${target} ] already surpassed, resolving result promise`);
         return new Promise((resolve, reject) => resolve(result));
       }
       // otherwise we need to wait for vent -> return a promise
       const P = new Promise((resolve, reject) => {
-        console.log(`Created promise for target height [ ${target} ]`);
+        let resolved = false;
+        log.debug(`Created result promise for target height [ ${target} ]`);
         const callback = (height) => {
           // If the height has been reached, clean up listener and resolve promise
           if (height >= target) {
-            console.log(`Resolving promise for target height [ ${target} ]`);
+            log.debug(`Resolving result promise for target height [ ${target} ]`);
             self.emitter.removeListener('height', callback);
+            resolved = true;
             resolve(result);
           }
         };
-        console.log(`Current high_water in promise: ${self.high_water}`);
+        log.debug(`Current high_water in promise: ${self.high_water}`);
         self.emitter.on('height', callback);
-        console.log(`>>>>>>>>> NOTE <<<<<<<<<< ${new Date()}: Data will resolve in ${MAX_WAIT_TIME_MS}ms if target height notification not received`);
         setTimeout(() => {
-          console.warn(`>>>>>>> WARNING <<<<<<<<< ${new Date()}: Target height notification not received, resolving response for target height [ ${target} ]`);
-          callback(target);
-        }, 3000);
+          if (!resolved) {
+            log.warn(`>>>>>>> WARNING <<<<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${MAX_WAIT_TIME_MS}ms, resolving promise anyway`);
+            callback(target);
+          }
+        }, MAX_WAIT_TIME_MS);
       });
       return P;
     }

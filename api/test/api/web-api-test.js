@@ -245,7 +245,7 @@ describe('User Profile', () => {
         if (err) return done(err)
         res.body.should.be.a('object')
         res.body.address.toUpperCase().should.equal(userData.address)
-        res.body.id.should.equal(credentials.username)
+        res.body.username.should.equal(credentials.username)
         res.body.email.should.equal(credentials.email)
         res.body.firstName.should.equal(newProfileInfo.firstName)
         res.body.lastName.should.equal(newProfileInfo.lastName)
@@ -350,26 +350,24 @@ describe('User Profile', () => {
           .end((err, res) => {
             if (err) return done(err);
             res.should.have.status(200);
-            setTimeout(function () {
-              // verify users on this organization
-              chai
-                .request(server)
-                .get(`/organizations/${acme.address}`)
-                .set('Cookie', [`access_token=${orgTestToken}`])
-                .end((err, res) => {
-                  if (err) return done(err);
-                  res.should.have.status(200);
-                  res.body.should.be.a('object');
-                  res.body.users.should.be.a('array');
-                  res.body.users.should.have.length(1);
-                  res.body.users[0].should.be.a('object');
-                  res.body.users[0].address.should.exist;
-                  res.body.users[0].address.should.equal(approver.address);
-                  res.body.users[0].id.should.exist;
-                  res.body.users[0].id.should.equal(approver.username);
-                  done();
-                });
-            }, global.ventCatchUpMS);
+            // verify users on this organization
+            chai
+              .request(server)
+              .get(`/organizations/${acme.address}`)
+              .set('Cookie', [`access_token=${orgTestToken}`])
+              .end((err, res) => {
+                if (err) return done(err);
+                res.should.have.status(200);
+                res.body.should.be.a('object');
+                res.body.users.should.be.a('array');
+                res.body.users.should.have.length(1);
+                res.body.users[0].should.be.a('object');
+                res.body.users[0].address.should.exist;
+                res.body.users[0].address.should.equal(approver.address);
+                res.body.users[0].username.should.exist;
+                res.body.users[0].username.should.equal(approver.username);
+                done();
+              });
           });
       }).timeout(10000);
 
@@ -381,21 +379,19 @@ describe('User Profile', () => {
           .end((err, res) => {
             if (err) return done(err);
             res.should.have.status(200);
-            setTimeout(function () {
-              // verify users on this organization
-              chai
-                .request(server)
-                .get(`/organizations/${acme.address}`)
-                .set('Cookie', [`access_token=${orgTestToken}`])
-                .end((err, res) => {
-                  if (err) return done(err);
-                  res.should.have.status(200);
-                  res.body.should.be.a('object');
-                  res.body.users.should.be.a('array');
-                  res.body.users.should.have.length(2);
-                  done();
-                });
-            }, global.ventCatchUpMS);
+            // verify users on this organization
+            chai
+              .request(server)
+              .get(`/organizations/${acme.address}`)
+              .set('Cookie', [`access_token=${orgTestToken}`])
+              .end((err, res) => {
+                if (err) return done(err);
+                res.should.have.status(200);
+                res.body.should.be.a('object');
+                res.body.users.should.be.a('array');
+                res.body.users.should.have.length(2);
+                done();
+              });
           });
       }).timeout(10000);
 
@@ -407,19 +403,17 @@ describe('User Profile', () => {
           .end((err, res) => {
             if (err) return done(err);
             res.should.have.status(200);
-            setTimeout(function () {
-              // verify users on this organization
-              chai
-                .request(server)
-                .get(`/organizations/${acme.address}`)
-                .set('Cookie', [`access_token=${orgTestToken}`])
-                .end((err, res) => {
-                  if (err) return done(err);
-                  res.should.have.status(200);
-                  res.body.users.should.have.length(3);
-                  done();
-                });
-            }, global.ventCatchUpMS);
+            // verify users on this organization
+            chai
+              .request(server)
+              .get(`/organizations/${acme.address}`)
+              .set('Cookie', [`access_token=${orgTestToken}`])
+              .end((err, res) => {
+                if (err) return done(err);
+                res.should.have.status(200);
+                res.body.users.should.have.length(3);
+                done();
+              });
           });
       }).timeout(10000);
 
@@ -431,19 +425,17 @@ describe('User Profile', () => {
           .end((err, res) => {
             if (err) return done(err);
             res.should.have.status(200);
-            setTimeout(function () {
-              // verify users on this organization
-              chai
-                .request(server)
-                .get(`/organizations/${acme.address}`)
-                .set('Cookie', [`access_token=${orgTestToken}`])
-                .end((err, res) => {
-                  if (err) return done(err);
-                  res.should.have.status(200);
-                  res.body.users.should.have.length(2);
-                  done();
-                });
-            }, global.ventCatchUpMS);
+            // verify users on this organization
+            chai
+              .request(server)
+              .get(`/organizations/${acme.address}`)
+              .set('Cookie', [`access_token=${orgTestToken}`])
+              .end((err, res) => {
+                if (err) return done(err);
+                res.should.have.status(200);
+                res.body.users.should.have.length(2);
+                done();
+              });
           });
       }).timeout(10000);
 
@@ -457,73 +449,65 @@ describe('User Profile', () => {
             if (err) return done(err);
             accounting.id = res.body.id;
             res.should.have.status(200);
-            setTimeout(function () {
-              // verify departments on this organization
-              chai
-                .request(server)
-                .get(`/organizations/${acme.address}`)
-                .set('Cookie', [`access_token=${orgTestToken}`])
-                .end((err, res) => {
-                  if (err) return done(err);
-                  res.should.have.status(200);
-                  res.body.should.be.a('object');
-                  res.body.departments.should.be.a('array');
-                  // Length should be 2 now because the default department should have been created upon organization creation
-                  res.body.departments.should.have.length(2);
-                  const acctDep = res.body.departments.find(({ id }) => id === accounting.id);
-                  acctDep.should.be.a('object');
-                  acctDep.name.should.exist;
-                  acctDep.name.should.equal(accounting.name);
-                  acctDep.users.should.be.a('array');
-                  done();
-                });
-            }, global.ventCatchUpMS);
+            // verify departments on this organization
+            chai
+              .request(server)
+              .get(`/organizations/${acme.address}`)
+              .set('Cookie', [`access_token=${orgTestToken}`])
+              .end((err, res) => {
+                if (err) return done(err);
+                res.should.have.status(200);
+                res.body.should.be.a('object');
+                res.body.departments.should.be.a('array');
+                // Length should be 2 now because the default department should have been created upon organization creation
+                res.body.departments.should.have.length(2);
+                const acctDep = res.body.departments.find(({ id }) => id === accounting.id);
+                acctDep.should.be.a('object');
+                acctDep.name.should.exist;
+                acctDep.name.should.equal(accounting.name);
+                acctDep.users.should.be.a('array');
+                done();
+              });
           });
       }).timeout(10000);
 
       it('PUT users to accounting department in organization', (done) => {
-        setTimeout(() => {
-          chai
-            .request(server)
-            .put(`/organizations/${acme.address}/departments/${accounting.id}/users`)
-            .send({ users: [accountant.address] })
-            .set('Cookie', [`access_token=${orgTestToken}`])
-            .end((err, res) => {
-              if (err) return done(err);
-              res.should.have.status(200);
-              done();
-            });
-        }, global.ventCatchUpMS);
+        chai
+          .request(server)
+          .put(`/organizations/${acme.address}/departments/${accounting.id}/users`)
+          .send({ users: [accountant.address] })
+          .set('Cookie', [`access_token=${orgTestToken}`])
+          .end((err, res) => {
+            if (err) return done(err);
+            res.should.have.status(200);
+            done();
+          });
       }).timeout(10000);
 
       it('should include users in each department in GET organization', (done) => {
-        setTimeout(() => {
-          chai
-            .request(server)
-            .get(`/organizations/${acme.address}`)
-            .set('Cookie', [`access_token=${orgTestToken}`])
-            .end((err, res) => {
-              if (err) return done(err);
-              res.should.have.status(200);
-              const acctDep = res.body.departments.find(({ id }) => id === accounting.id);
-              acctDep.users[0].should.equal(accountant.address);
-              done();
-            });
-        }, global.ventCatchUpMS);
+        chai
+          .request(server)
+          .get(`/organizations/${acme.address}`)
+          .set('Cookie', [`access_token=${orgTestToken}`])
+          .end((err, res) => {
+            if (err) return done(err);
+            res.should.have.status(200);
+            const acctDep = res.body.departments.find(({ id }) => id === accounting.id);
+            acctDep.users[0].should.equal(accountant.address);
+            done();
+          });
       }).timeout(10000);
 
       it('DELETE user from accounting department in organization', (done) => {
-        setTimeout(() => {
-          chai
-            .request(server)
-            .delete(`/organizations/${acme.address}/departments/${accounting.id}/users/${accountant.address}`)
-            .set('Cookie', [`access_token=${orgTestToken}`])
-            .end((err, res) => {
-              if (err) return done(err);
-              res.should.have.status(200);
-              done();
-            });
-        }, global.ventCatchUpMS);
+        chai
+          .request(server)
+          .delete(`/organizations/${acme.address}/departments/${accounting.id}/users/${accountant.address}`)
+          .set('Cookie', [`access_token=${orgTestToken}`])
+          .end((err, res) => {
+            if (err) return done(err);
+            res.should.have.status(200);
+            done();
+          });
       }).timeout(10000);
 
       it('Should login a non-member of the organization', async () => {

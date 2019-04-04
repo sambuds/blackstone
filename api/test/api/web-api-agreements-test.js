@@ -208,23 +208,21 @@ describe('Archetypes', () => {
   }).timeout(8000);
 
   it('should GET complex archetype', done => {
-    setTimeout(() => {
-      chai
-        .request(server)
-        .get('/archetypes/' + complexArchetype)
-        .set('Cookie', [`access_token=${token}`])
-        .end((err, res) => {
-          if (err) done(err)
-          expect(res.body).to.exist
-          expect(res.body.name).to.equal(testArchetype.name)
-          expect(res.body.description).to.equal(testArchetype.description)
-          expect(res.body.parameters.length).to.equal(6)
-          expect(res.body.documents.length).to.equal(1)
-          expect(res.body.jurisdictions.length).to.equal(2)
-          expect(res.body.jurisdictions[0].regions.length).to.equal(2)
-          done()
-        })
-    },global.ventCatchUpMS )
+    chai
+      .request(server)
+      .get('/archetypes/' + complexArchetype)
+      .set('Cookie', [`access_token=${token}`])
+      .end((err, res) => {
+        if (err) done(err)
+        expect(res.body).to.exist
+        expect(res.body.name).to.equal(testArchetype.name)
+        expect(res.body.description).to.equal(testArchetype.description)
+        expect(res.body.parameters.length).to.equal(6)
+        expect(res.body.documents.length).to.equal(1)
+        expect(res.body.jurisdictions.length).to.equal(2)
+        expect(res.body.jurisdictions[0].regions.length).to.equal(2)
+        done()
+      });
   }).timeout(10000)
 
   it('should set archetype successor', async () => {
@@ -651,41 +649,35 @@ describe(':: Governing Archetypes and Agreements ::', () => {
     expect(user1.address).to.exist;
   }).timeout(5000);
 
-  it('Should login user1', done => {
+  it('Should login user1', async () => {
     // LOGIN USER
-    setTimeout(async () => {
-      try {
-        await api.activateUser(user1);
-        let loginResult1 = await api.loginUser(user1);
-        expect(loginResult1.token).to.exist;
-        user1.token = loginResult1.token;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, global.ventCatchUpMS);
+    try {
+      await api.activateUser(user1);
+      let loginResult1 = await api.loginUser(user1);
+      expect(loginResult1.token).to.exist;
+      user1.token = loginResult1.token;
+    } catch (err) {
+      throw err;
+    }
   }).timeout(10000);
 
-  it('Should deploy model', done => {
+  it('Should deploy model', async () => {
     // DEPLOY MODEL
-    setTimeout(async () => {
-      try {
-        let deployResponse = await api.createAndDeployModel(xml, user1.token);
-        expect(deployResponse).to.exist;
-        Object.assign(model, deployResponse.model);
-        Object.assign(process1, deployResponse.processes[0]);
-        Object.assign(process2, deployResponse.processes[1]);
-        expect(String(process1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-        expect(String(process2.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
-        employmentArchetype.formationProcessDefinition = process1.address;
-        employmentArchetype.executionProcessDefinition = process2.address;
-        ndaArchetype.formationProcessDefinition = process1.address;
-        ndaArchetype.executionProcessDefinition = process2.address;
-        done();
-      } catch (err) {
-        done(err);
-      }
-    }, global.ventCatchUpMS);
+    try {
+      let deployResponse = await api.createAndDeployModel(xml, user1.token);
+      expect(deployResponse).to.exist;
+      Object.assign(model, deployResponse.model);
+      Object.assign(process1, deployResponse.processes[0]);
+      Object.assign(process2, deployResponse.processes[1]);
+      expect(String(process1.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+      expect(String(process2.address).match(/[0-9A-Fa-f]{40}/)).to.exist;
+      employmentArchetype.formationProcessDefinition = process1.address;
+      employmentArchetype.executionProcessDefinition = process2.address;
+      ndaArchetype.formationProcessDefinition = process1.address;
+      ndaArchetype.executionProcessDefinition = process2.address;
+    } catch (err) {
+      throw err;
+    }
   }).timeout(global.testTimeoutMS);
 
   it('Should create employment and nda archetypes', async () => {

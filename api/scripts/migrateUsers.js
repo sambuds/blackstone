@@ -35,7 +35,7 @@ _.set(global, 'db.schema.app', process.env.POSTGRES_DB_SCHEMA);
   const logger = require(__common + '/logger')
   const log = logger.getLogger('scripts.migrate-users')
 
-  const pool = require(__common + '/postgres-db')();
+  const { pool } = require(__common + '/postgres-db');
   log.info('Postgres DB pools created.')
 
   const contracts = require(__controllers + '/contracts-controller')

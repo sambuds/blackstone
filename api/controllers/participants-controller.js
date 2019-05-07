@@ -16,7 +16,7 @@ const {
 const contracts = require('./contracts-controller');
 const logger = require(`${global.__common}/logger`);
 const log = logger.getLogger('controllers.participants');
-const pool = require(`${global.__common}/postgres-db`)();
+const { pool } = require(`${global.__common}/postgres-db`);
 const { DEFAULT_DEPARTMENT_ID } = require(`${global.__common}/constants`);
 const userSchema = require(`${global.__schemas}/user`);
 const userProfileSchema = require(`${global.__schemas}/userProfile`);

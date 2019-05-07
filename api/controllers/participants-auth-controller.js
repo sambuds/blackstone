@@ -7,7 +7,7 @@ const sqlCache = require(`${global.__controllers}/postgres-query-helper`);
 const { asyncMiddleware, prependHttps } = require(`${global.__common}/controller-dependencies`);
 const logger = require(`${global.__common}/logger`);
 const log = logger.getLogger('controllers.auth');
-const pool = require(`${global.__common}/postgres-db`)();
+const { pool } = require(`${global.__common}/postgres-db`);
 
 const login = (req, res, next) => {
   if ((!req.body.username && !req.body.email) || !req.body.password) {

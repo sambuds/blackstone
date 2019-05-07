@@ -46,4 +46,4 @@ pool.on('error', (err, client) => {
  * available, idle clients in the pool and all further calls to pool.connect will timeout
  * with an error or hang indefinitely if you have connectionTimeoutMills configured to 0.
  */
-module.exports = () => pool;
+module.exports = { pool };

@@ -14,7 +14,7 @@ const app = require('../../app')();
 const server = require(__common + '/aa-web-api');
 const logger = require(__common + '/logger');
 const log = logger.getLogger('tests');
-const pool = require(__common + '/postgres-db')();
+const { pool } = require(__common + '/postgres-db');
 const contracts = require(`${global.__controllers}/contracts-controller`);
 
 const api = require('./api-helper')(server);

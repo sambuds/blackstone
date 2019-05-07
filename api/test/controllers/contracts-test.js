@@ -43,7 +43,7 @@ global.__bundles = require(path.join(__common, 'constants')).BUNDLES
 global.__constants = require(path.join(__common, 'constants'));
 const sqlCache = require(path.join(__controllers, 'postgres-query-helper'))
 const contracts = require(path.join(__controllers, 'contracts-controller'))
-const pool = require(`${global.__common}/postgres-db`)();
+const { pool } = require(`${global.__common}/postgres-db`);
 
 const { hexToString, stringToHex } = require(`${global.__common}/controller-dependencies`);
 global.hexToString = hexToString;

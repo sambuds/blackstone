@@ -22,6 +22,7 @@ bin
 *output.json
 tmp*.json
 test-contracts*.log
+.target
 
 # node stuff
 node_modules

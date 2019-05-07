@@ -5,7 +5,7 @@ const fs = require('fs');
 const _ = require('lodash');
 const logger = require(__common + '/logger');
 const log = logger.getLogger('tests.api.helper');
-const pool = require(`${__common}/postgres-db`)();
+const { pool } = require(`${__common}/postgres-db`);
 
 module.exports = (server) => {
   return {

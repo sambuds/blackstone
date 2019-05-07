@@ -117,9 +117,7 @@ process.on('unhandledRejection', (reason, p) => {
   log.error('Unhandled Rejection at: Promise ', p, ' reason: ', reason);
 });
 
-process.on('uncaughtException', (err) => {
-  log.error(`uncaughtException, Error: ${err.message}, Stack: ${err.stack}`);
-});
+require('./gracefulShutdown');
 
 const portHTTP = global.__settings.server.port_http || 3080;
 http.createServer(app).listen(portHTTP);

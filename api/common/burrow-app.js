@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const EventEmitter = require('events');
 const util = require('util');
-const logger = require(`${global.__common}/logger`);
+const logger = require('./logger');
 
 (function bootstrapApp() {
   const log = logger.getLogger('burrow');
@@ -36,7 +36,7 @@ const logger = require(`${global.__common}/logger`);
     log.info(`Creating a new application manager for DOUG at address: ${dougAddress}`);
     self.db = db;
     // Attempt to resolve the DOUG abi, if not provided.
-    const _dougABI = dougABI || getAbi(global.__abi, 'DOUG');
+    const _dougABI = dougABI || getAbi(process.env.API_ABI_DIRECTORY, 'DOUG');
     self.doug = db.burrow.contracts.new(_dougABI, null, dougAddress);
     self.contracts = {};
     self.listen = new AppEvents();
@@ -54,7 +54,7 @@ const logger = require(`${global.__common}/logger`);
     return new Promise((resolve, reject) => {
       const self = this;
       self.contracts[name] = {};
-      self.contracts[name].abi = abi || getAbi(global.__abi, name);
+      self.contracts[name].abi = abi || getAbi(process.env.API_ABI_DIRECTORY, name);
       if (log.isDebugEnabled()) {
         log.debug(`Loading contract ${name}`);
       }

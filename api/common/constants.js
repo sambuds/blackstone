@@ -1,3 +1,5 @@
+const CONTRACTS = 'EcosystemRegistry, ParticipantsManager, ArchetypeRegistry, ActiveAgreementRegistry, ProcessModelRepository, ApplicationRegistry, BpmService';
+
 const BUNDLES = {
   AGREEMENTS: {
     contracts: {
@@ -110,6 +112,7 @@ const AGREEMENT_ATTACHMENT_CONTENT_TYPES = {
 };
 
 module.exports = {
+  CONTRACTS,
   BUNDLES,
   PARAMETER_TYPES,
   DATA_TYPES,

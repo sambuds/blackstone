@@ -47,7 +47,7 @@ all: | build_contracts deploy_contracts copy_abis install_api
 # Full test (run by CI)
 .PHONY: test
 # Ordered execution
-test: | all test_contracts test_api docs
+test: | all test_contracts
 
 .PHONY: clean
 clean:
@@ -101,8 +101,3 @@ build_ci_image:
 .PHONY: push_ci_image
 push_ci_image: build_ci_image
 	docker push ${CI_IMAGE}
-
-.PHONY: swaggerize
-swaggerize:
-	swagger-jsdoc -d swaggerDef.js api/routes/*
-	swagger validate swagger.json

@@ -1,20 +1,5 @@
 version: 2.1
 jobs:
-  swagger:
-    docker:
-    - image: quay.io/goswagger/swagger
-    steps:
-      - checkout
-      - run: apk add --update nodejs nodejs-npm
-      - run: npm config set unsafe-perm true
-      - run: npm install swagger-jsdoc -g
-      - run: make swaggerize
-      - run: |
-          if [ ! -z "$(git status --porcelain)" ];
-          then
-            echo "Uncommitted swagger changes.";
-          fi
-
   test:
     machine: &machine_defaults
       enabled: true
@@ -29,22 +14,7 @@ jobs:
       - store_artifacts:
           path: ./test/docker-compose.log
 
-  deploy_docs:
-    docker:
-    - image: quay.io/monax/blackstone:ci
-    steps:
-      - <<: *add_ssh_key
-      - checkout
-      - run: make build_contracts
-      - run: make push_docs
-
 workflows:
   test_and_deploy:
     jobs:
-      - swagger
       - test
-      - deploy_docs:
-          filters:
-            branches:
-              only:
-                - master

@@ -14,7 +14,21 @@ jobs:
       - store_artifacts:
           path: ./test/docker-compose.log
 
+  deploy_docs:
+    docker:
+    - image: quay.io/monax/blackstone:ci
+    steps:
+      - <<: *add_ssh_key
+      - checkout
+      - run: make build_contracts
+      - run: make push_docs
+
 workflows:
   test_and_deploy:
     jobs:
       - test
+      - deploy_docs:
+          filters:
+            branches:
+              only:
+                - master

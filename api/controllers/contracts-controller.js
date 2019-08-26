@@ -2,14 +2,18 @@ const EventEmitter = require('events');
 const util = require('util');
 const boom = require('@hapi/boom');
 
-const logger = require(`${global.__common}/logger`);
-const utils = require(`${global.__common}/utils`);
-const burrowDB = require(`${global.__common}/burrow-db`);
-const burrowApp = require(`${global.__common}/burrow-app`);
+const logger = require('../common/logger');
+const utils = require('../common/utils');
+const burrowDB = require('../common/burrow-db');
+const burrowApp = require('../common/burrow-app');
 const {
   DATA_TYPES,
   ERROR_CODES: ERR,
-} = global.__constants;
+  CONTRACTS,
+  BUNDLES,
+  DIRECTION,
+} = require('../common/constants');
+const { hexToString, hexFromString } = require('../lib/hex');
 
 const NO_TRANSACTION_RESPONSE_ERR = 'No transaction response raw data received from burrow';
 
@@ -32,11 +36,9 @@ util.inherits(ChainEventEmitter, EventEmitter);
 const chainEvents = new ChainEventEmitter();
 
 // Instantiate connection to node
-const serverAccount = global.__settings.accounts.server;
-const chainURL = global.__settings.chain.url || 'localhost:10997';
-const db = new burrowDB.Connection(chainURL, serverAccount);
+const db = new burrowDB.Connection(process.env.CHAIN_URL_GRPC, process.env.ACCOUNTS_SERVER_KEY);
 
-const ventHelper = require(`${global.__common}/VentHelper`)(global.db.connectionString, global.max_wait_for_vent_ms || 3000);
+const ventHelper = require('../common/VentHelper')(`postgres://${process.env.POSTGRES_DB_USER}:${process.env.POSTGRES_DB_PASSWORD}@${process.env.POSTGRES_DB_HOST}:${process.env.POSTGRES_DB_PORT}/${process.env.POSTGRES_DB_DATABASE}`, process.env.MAX_WAIT_FOR_VENT_MS);
 ventHelper.listen();
 
 let appManager;
@@ -95,10 +97,10 @@ const getContract = (abiPath, contractName, contractAddress) => {
 // shortcut functions to retrieve often needed objects and services
 // Note: contracts need to be loaded before invoking these functions. see load() function
 const getBpmService = () => appManager.contracts['BpmService'];
-const getUserAccount = userAddress => getContract(global.__abi, global.__bundles.COMMONS_AUTH.contracts.USER_ACCOUNT, userAddress);
-const getOrganization = orgAddress => getContract(global.__abi, global.__bundles.PARTICIPANTS_MANAGER.contracts.ORGANIZATION, orgAddress);
-const getProcessInstance = piAddress => getContract(global.__abi, global.__bundles.BPM_RUNTIME.contracts.PROCESS_INSTANCE, piAddress);
-const getEcosystem = ecosystemAddress => getContract(global.__abi, global.__bundles.COMMONS_AUTH.contracts.ECOSYSTEM, ecosystemAddress);
+const getUserAccount = userAddress => getContract(process.env.API_ABI_DIRECTORY, BUNDLES.COMMONS_AUTH.contracts.USER_ACCOUNT, userAddress);
+const getOrganization = orgAddress => getContract(process.env.API_ABI_DIRECTORY, BUNDLES.PARTICIPANTS_MANAGER.contracts.ORGANIZATION, orgAddress);
+const getProcessInstance = piAddress => getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_RUNTIME.contracts.PROCESS_INSTANCE, piAddress);
+const getEcosystem = ecosystemAddress => getContract(process.env.API_ABI_DIRECTORY, BUNDLES.COMMONS_AUTH.contracts.ECOSYSTEM, ecosystemAddress);
 
 /**
  * Returns a promise to call the forwardCall function of the given userAddress to invoke the function encoded in the given payload on the provided target address and return the result bytes representation
@@ -135,7 +137,7 @@ const createEcosystem = name => new Promise((resolve, reject) => {
 
 const addExternalAddressToEcosystem = (externalAddress, ecosystemAddress) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Add external address ${externalAddress} to Ecosystem at ${ecosystemAddress}`);
-  const ecosystem = getContract(global.__abi, global.__bundles.COMMONS_AUTH.contracts.ECOSYSTEM, ecosystemAddress);
+  const ecosystem = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.COMMONS_AUTH.contracts.ECOSYSTEM, ecosystemAddress);
   ecosystem.addExternalAddress(externalAddress, (err) => {
     if (err) return reject(boom.badImplementation(`Failed to add external address ${externalAddress} to ecosystem at ${ecosystemAddress}: ${err.stack}`));
     log.info(`SUCCESS: Added external address ${externalAddress} to ecosystem at ${ecosystemAddress}`);
@@ -191,13 +193,9 @@ const load = () => new Promise((resolve, reject) => {
     return resolve(DOUG);
   });
 }).then(() => {
-  // Then load the modules
-  let modules = [];
-  // load registered modules from settings
-  if (global.__settings.contracts && global.__settings.contracts.load) {
-    modules = utils.getArrayFromString(global.__settings.contracts.load);
-    log.info(`Detected ${modules.length} contract modules to be loaded from DOUG: ${modules}`);
-  }
+  // Then load registered modules from settings
+  const modules = utils.getArrayFromString(CONTRACTS);
+  log.info(`Detected ${modules.length} contract modules to be loaded from DOUG: ${modules}`);
   // create promises to load the contracts
   const loadPromises = [];
   modules.forEach(m => loadPromises.push(appManager.loadContract(m)));
@@ -205,8 +203,8 @@ const load = () => new Promise((resolve, reject) => {
 }).then(() => new Promise(async (resolve, reject) => {
   // Lastly, ensure Ecosystem setup
   // Resolve the Ecosystem address for this ContractsManager
-  if (global.__settings.identity_provider) {
-    const ecosystemName = global.__settings.identity_provider;
+  if (process.env.IDENTITY_PROVIDER) {
+    const ecosystemName = process.env.IDENTITY_PROVIDER;
     log.info(`Validating if Ecosystem ${ecosystemName} is in NameReg`);
     try {
       appManager.ecosystemAddress = await getFromNameRegistry(ecosystemName);
@@ -282,7 +280,7 @@ const createArchetype = (type) => {
 
 const isActiveArchetype = (archetypeAddress) => {
   log.debug(`REQUEST: Determine if archetype at ${archetypeAddress} is active`);
-  const archetype = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
+  const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
     archetype.isActive((err, data) => {
       if (err || !data.raw) {
@@ -296,7 +294,7 @@ const isActiveArchetype = (archetypeAddress) => {
 
 const getArchetypeAuthor = (archetypeAddress) => {
   log.debug(`REQUEST: Get archetype author for archetype at ${archetypeAddress}`);
-  const archetype = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
+  const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
     archetype.getAuthor((err, data) => {
       if (err || !data.raw) {
@@ -311,7 +309,7 @@ const getArchetypeAuthor = (archetypeAddress) => {
 
 const activateArchetype = (archetypeAddress, userAccount) => {
   log.debug(`REQUEST: Activate archetype at ${archetypeAddress} by user at ${userAccount}`);
-  const archetype = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
+  const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
     const payload = archetype.activate.encode();
     callOnBehalfOf(userAccount, archetypeAddress, payload, true)
@@ -325,7 +323,7 @@ const activateArchetype = (archetypeAddress, userAccount) => {
 
 const deactivateArchetype = (archetypeAddress, userAccount) => {
   log.debug(`REQUEST: Deactivate archetype at ${archetypeAddress} by user at ${userAccount}`);
-  const archetype = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
+  const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
     const payload = archetype.deactivate.encode();
     callOnBehalfOf(userAccount, archetypeAddress, payload, true)
@@ -339,7 +337,7 @@ const deactivateArchetype = (archetypeAddress, userAccount) => {
 
 const setArchetypeSuccessor = (archetypeAddress, successorAddress, userAccount) => {
   log.debug(`REQUEST: Set successor to ${successorAddress} for archetype at ${archetypeAddress} by user at ${userAccount}`);
-  const archetype = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
+  const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
     const payload = archetype.setSuccessor.encode(successorAddress);
     callOnBehalfOf(userAccount, archetypeAddress, payload, true)
@@ -392,7 +390,7 @@ const addArchetypeParameters = (address, parameters) => new Promise((resolve, re
   const paramNames = [];
   for (let i = 0; i < parameters.length; i += 1) {
     paramTypes[i] = parseInt(parameters[i].type, 10);
-    paramNames[i] = global.stringToHex(parameters[i].name);
+    paramNames[i] = hexFromString(parameters[i].name);
   }
   log.debug(`REQUEST: Add archetype parameters to archetype at address ${address}. ` +
     `Parameter Types: ${JSON.stringify(paramTypes)}, Parameter Names: ${JSON.stringify(paramNames)}`);
@@ -505,11 +503,11 @@ const addJurisdictions = (address, jurisdictions) => new Promise((resolve, rejec
   jurisdictions.forEach((item) => {
     if (item.regions.length > 0) {
       item.regions.forEach((region) => {
-        countries.push(global.stringToHex(item.country));
+        countries.push(hexFromString(item.country));
         regions.push(region);
       });
     } else {
-      countries.push(global.stringToHex(item.country));
+      countries.push(hexFromString(item.country));
       regions.push('');
     }
   });
@@ -558,13 +556,13 @@ const createAgreement = agreement => new Promise((resolve, reject) => {
 
 const grantLegalStateControllerPermission = agreementAddress => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Grant legal state controller permission for agreement ${agreementAddress}`);
-  const agreement = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+  const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
   agreement.ROLE_ID_LEGAL_STATE_CONTROLLER((permIdError, data) => {
     if (permIdError || !data.raw) {
       return reject(boomify(permIdError, `Failed to get legal state controller permission id for agreement ${agreementAddress}`));
     }
     const permissionId = data.raw[0];
-    return agreement.grantPermission(permissionId, serverAccount, (permGrantError) => {
+    return agreement.grantPermission(permissionId, process.env.ACCOUNTS_SERVER_KEY, (permGrantError) => {
       if (permGrantError) {
         return reject(boomify(permGrantError, `Failed to grant legal state controller permission for agreement ${agreementAddress}`));
       }
@@ -576,7 +574,7 @@ const grantLegalStateControllerPermission = agreementAddress => new Promise((res
 
 const setLegalState = (agreementAddress, legalState) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Set legal state of agreement ${agreementAddress} to ${legalState}`);
-  const agreement = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+  const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
   agreement.setLegalState(legalState, (error) => {
     if (error) {
       return reject(boomify(error, `Failed to set legal state of agreement ${agreementAddress} to ${legalState}`));
@@ -588,8 +586,8 @@ const setLegalState = (agreementAddress, legalState) => new Promise((resolve, re
 
 const initializeObjectAdministrator = agreementAddress => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Initializing agreement admin role for agreement: ${agreementAddress}`);
-  const agreement = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
-  agreement.initializeObjectAdministrator(serverAccount, (error) => {
+  const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+  agreement.initializeObjectAdministrator(process.env.ACCOUNTS_SERVER_KEY, (error) => {
     if (error) {
       return reject(boomify(error, `Failed to initialize object admin for agreement ${agreementAddress}`));
     }
@@ -613,9 +611,9 @@ const setMaxNumberOfAttachments = (agreementAddress, maxNumberOfAttachments) => 
 
 const setAddressScopeForAgreementParameters = async (agreementAddr, parameters) => {
   log.debug(`REQUEST: Add scopes to agreement ${agreementAddr} parameters: ${JSON.stringify(parameters)}`);
-  const agreement = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddr);
+  const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddr);
   const promises = parameters.map(({ name, value, scope }) => new Promise((resolve, reject) => {
-    agreement.setAddressScope(value, global.stringToHex(name), scope, '', '', '0x0', (error) => {
+    agreement.setAddressScope(value, hexFromString(name), scope, '', '', '0x0', (error) => {
       if (error) {
         return reject(boomify(error, `Failed to add scope ${scope} to address ${value} in context ${name}`));
       }
@@ -857,7 +855,7 @@ const createProcessModel = (modelId, modelVersion, author, isPrivate, modelFileR
     isPrivate,
     modelFileReference,
   })}`);
-  const modelIdHex = global.stringToHex(modelId);
+  const modelIdHex = hexFromString(modelId);
   appManager
     .contracts['ProcessModelRepository']
     .factory.createProcessModel(modelIdHex, modelVersion, author, isPrivate, modelFileReference)
@@ -871,10 +869,10 @@ const createProcessModel = (modelId, modelVersion, author, isPrivate, modelFileR
 });
 
 const addDataDefinitionToModel = (pmAddress, dataStoreField) => new Promise((resolve, reject) => {
-  const processModel = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
+  const processModel = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
   log.debug('REQUEST: Add data definition %s to process model %s', JSON.stringify(dataStoreField), pmAddress);
-  const dataIdHex = global.stringToHex(dataStoreField.dataStorageId);
-  const dataPathHex = global.stringToHex(dataStoreField.dataPath);
+  const dataIdHex = hexFromString(dataStoreField.dataStorageId);
+  const dataPathHex = hexFromString(dataStoreField.dataPath);
   processModel.addDataDefinition(dataIdHex, dataPathHex, dataStoreField.parameterType, (err) => {
     if (err) {
       return reject(boom
@@ -886,9 +884,9 @@ const addDataDefinitionToModel = (pmAddress, dataStoreField) => new Promise((res
 });
 
 const addProcessInterface = (pmAddress, interfaceId) => new Promise((resolve, reject) => {
-  const processModel = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
+  const processModel = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
   log.debug(`REQUEST: Add process interface ${interfaceId} to process model at ${pmAddress}`);
-  const interfaceIdHex = global.stringToHex(interfaceId);
+  const interfaceIdHex = hexFromString(interfaceId);
   processModel.addProcessInterface(interfaceIdHex, (err, data) => {
     if (err || !data.raw) {
       return reject(boom
@@ -908,16 +906,16 @@ const addProcessInterface = (pmAddress, interfaceId) => new Promise((resolve, re
 });
 
 const addParticipant = (pmAddress, participantId, accountAddress, dataPath, dataStorageId, dataStorageAddress) => new Promise((resolve, reject) => {
-  const processModel = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
+  const processModel = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
   log.debug(`REQUEST: Add participant ${participantId} to process model at ${pmAddress} with data: ${JSON.stringify({
     accountAddress,
     dataPath,
     dataStorageId,
     dataStorageAddress,
   })}`);
-  const participantIdHex = global.stringToHex(participantId);
-  const dataPathHex = global.stringToHex(dataPath);
-  const dataStorageIdHex = global.stringToHex(dataStorageId);
+  const participantIdHex = hexFromString(participantId);
+  const dataPathHex = hexFromString(dataPath);
+  const dataStorageIdHex = hexFromString(dataStorageId);
   log.debug(`Adding a participant with ID: ${participantId}`);
   processModel.addParticipant(participantIdHex, accountAddress, dataPathHex,
     dataStorageIdHex, dataStorageAddress, (err, data) => {
@@ -936,7 +934,7 @@ const addParticipant = (pmAddress, participantId, accountAddress, dataPath, data
 
 const createProcessDefinition = (modelAddress, processDefnId) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Create process definition with Id ${processDefnId} for process model ${modelAddress}`);
-  const processDefnIdHex = global.stringToHex(processDefnId);
+  const processDefnIdHex = hexFromString(processDefnId);
   appManager
     .contracts['ProcessModelRepository']
     .factory.createProcessDefinition(modelAddress, processDefnIdHex, (error, data) => {
@@ -951,8 +949,8 @@ const createProcessDefinition = (modelAddress, processDefnId) => new Promise((re
 
 const addProcessInterfaceImplementation = (pmAddress, pdAddress, interfaceId) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Add process interface implementation ${interfaceId} to process definition ${pdAddress} for process model ${pmAddress}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, pdAddress);
-  const interfaceIdHex = global.stringToHex(interfaceId);
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, pdAddress);
+  const interfaceIdHex = hexFromString(interfaceId);
   processDefinition.addProcessInterfaceImplementation(pmAddress, interfaceIdHex, (err, data) => {
     if (err || !data.raw) {
       return reject(boom
@@ -984,10 +982,10 @@ const createActivityDefinition = (processAddress, activityId, activityType, task
     subProcessModelId,
     subProcessDefinitionId,
   })}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
-  processDefinition.createActivityDefinition(global.stringToHex(activityId), activityType, taskType, behavior,
-    global.stringToHex(assignee), multiInstance, global.stringToHex(application), global.stringToHex(subProcessModelId),
-    global.stringToHex(subProcessDefinitionId), (error, data) => {
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  processDefinition.createActivityDefinition(hexFromString(activityId), activityType, taskType, behavior,
+    hexFromString(assignee), multiInstance, hexFromString(application), hexFromString(subProcessModelId),
+    hexFromString(subProcessDefinitionId), (error, data) => {
       if (error || !data.raw) {
         return reject(boom
           .badImplementation(`Failed to create activity definition ${activityId} in process at ${processAddress}: ${error}`));
@@ -1011,10 +1009,10 @@ const createDataMapping = (processAddress, id, direction, accessPath, dataPath, 
     dataStorageId,
     dataStorage,
   })}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   processDefinition
-    .createDataMapping(global.stringToHex(id), direction, global.stringToHex(accessPath),
-      global.stringToHex(dataPath), global.stringToHex(dataStorageId), dataStorage, (error) => {
+    .createDataMapping(hexFromString(id), direction, hexFromString(accessPath),
+      hexFromString(dataPath), hexFromString(dataStorageId), dataStorage, (error) => {
         if (error) {
           return reject(boom
             .badImplementation(`Failed to create data mapping for activity ${id} in process at ${processAddress}: ${error}`));
@@ -1026,8 +1024,8 @@ const createDataMapping = (processAddress, id, direction, accessPath, dataPath, 
 
 const createGateway = (processAddress, gatewayId, gatewayType) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Create gateway with data: ${JSON.stringify({ processAddress, gatewayId, gatewayType })}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
-  processDefinition.createGateway(global.stringToHex(gatewayId), gatewayType, (error) => {
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  processDefinition.createGateway(hexFromString(gatewayId), gatewayType, (error) => {
     if (error) {
       return reject(boom
         .badImplementation(`Failed to create gateway with id ${gatewayId} and type ${gatewayType} in process at ${processAddress}: ${error}`));
@@ -1043,8 +1041,8 @@ const createTransition = (processAddress, sourceGraphElement, targetGraphElement
     sourceGraphElement,
     targetGraphElement,
   })}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
-  processDefinition.createTransition(global.stringToHex(sourceGraphElement), global.stringToHex(targetGraphElement), (error, data) => {
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  processDefinition.createTransition(hexFromString(sourceGraphElement), hexFromString(targetGraphElement), (error, data) => {
     if (error || !data.raw) {
       return reject(boom
         .badImplementation(`Failed to create transition from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}: ${error}`));
@@ -1060,8 +1058,8 @@ const createTransition = (processAddress, sourceGraphElement, targetGraphElement
 
 const setDefaultTransition = (processAddress, gatewayId, activityId) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Set default transition with data: ${JSON.stringify({ processAddress, gatewayId, activityId })}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
-  processDefinition.setDefaultTransition(global.stringToHex(gatewayId), global.stringToHex(activityId), (error) => {
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  processDefinition.setDefaultTransition(hexFromString(gatewayId), hexFromString(activityId), (error) => {
     if (error) {
       return reject(boom
         .badImplementation(`Failed to set default transition between gateway ${gatewayId} and activity ${activityId} in process at ${processAddress}: ${error}`));
@@ -1072,7 +1070,7 @@ const setDefaultTransition = (processAddress, gatewayId, activityId) => new Prom
 });
 
 const getTransitionConditionFunctionByDataType = (processAddress, dataType) => {
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   const functions = {};
   functions[`${DATA_TYPES.BOOLEAN}`] = processDefinition.createTransitionConditionForBool;
   functions[`${DATA_TYPES.STRING}`] = processDefinition.createTransitionConditionForString;
@@ -1104,12 +1102,12 @@ const createTransitionCondition = (processAddress, dataType, gatewayId, activity
     formattedValue = (typeof value === 'string') ? (value.toLowerCase() === 'true') : Boolean(value);
     log.debug('Converted value to boolean: %s', formattedValue);
   } else if (dataType === DATA_TYPES.BYTES32) {
-    formattedValue = global.stringToHex(value);
+    formattedValue = hexFromString(value);
     log.debug('Converted value to bytes32: %s', formattedValue);
   } else {
     formattedValue = value;
   }
-  createFunction(global.stringToHex(gatewayId), global.stringToHex(activityId), global.stringToHex(dataPath), global.stringToHex(dataStorageId), dataStorage, operator, formattedValue, (error) => {
+  createFunction(hexFromString(gatewayId), hexFromString(activityId), hexFromString(dataPath), hexFromString(dataStorageId), dataStorage, operator, formattedValue, (error) => {
     if (error) {
       return reject(boom.badImplementation('Failed to add transition condition for gateway id ' +
         `${gatewayId} and activity id ${activityId} in process at address ${processAddress}: ${error}`));
@@ -1122,7 +1120,7 @@ const createTransitionCondition = (processAddress, dataType, gatewayId, activity
 const signAgreement = (actingUserAddress, agreementAddress) => new Promise(async (resolve, reject) => {
   log.debug('REQUEST: Sign agreement %s by user %s', agreementAddress, actingUserAddress);
   try {
-    const agreement = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+    const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
     const payload = agreement.sign.encode();
     await callOnBehalfOf(actingUserAddress, agreementAddress, payload, false);
     log.info('SUCCESS: Agreement %s signed by user %s', agreementAddress, actingUserAddress);
@@ -1135,7 +1133,7 @@ const signAgreement = (actingUserAddress, agreementAddress) => new Promise(async
 const cancelAgreement = (actingUserAddress, agreementAddress) => new Promise(async (resolve, reject) => {
   log.debug('REQUEST: Cancel agreement %s by user %s', agreementAddress, actingUserAddress);
   try {
-    const agreement = getContract(global.__abi, global.__bundles.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+    const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
     const payload = agreement.cancel.encode();
     await callOnBehalfOf(actingUserAddress, agreementAddress, payload, true);
     log.info('SUCCESS: Agreement %s canceled by user %s', agreementAddress, actingUserAddress);
@@ -1152,11 +1150,11 @@ const completeActivity = (actingUserAddress, activityInstanceId, dataMappingId =
     const piAddress = await bpmService.factory.getProcessInstanceForActivity(activityInstanceId)
       .then(data => data.raw[0]);
     log.info('Found process instance %s for activity instance ID %s', piAddress, activityInstanceId);
-    const processInstance = getContract(global.__abi, global.__bundles.BPM_RUNTIME.contracts.PROCESS_INSTANCE, piAddress);
+    const processInstance = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_RUNTIME.contracts.PROCESS_INSTANCE, piAddress);
     let payload;
     if (dataMappingId) {
       log.info('Completing activity with OUT data mapping ID:Value (%s:%s) for activityInstance %s in process instance %s', dataMappingId, value, activityInstanceId, piAddress);
-      const hexDataMappingId = global.stringToHex(dataMappingId);
+      const hexDataMappingId = hexFromString(dataMappingId);
       switch (dataType) {
         case DATA_TYPES.BOOLEAN:
           payload = processInstance.completeActivityWithBoolData.encode(activityInstanceId, bpmService.address, hexDataMappingId, value);
@@ -1204,7 +1202,7 @@ const getModelAddressFromId = (modelId) => {
   log.debug(`REQUEST: Get model address for model id ${modelId}`);
   return new Promise((resolve, reject) => {
     appManager.contracts['ProcessModelRepository'].factory.getModel(
-      global.stringToHex(modelId),
+      hexFromString(modelId),
       (error, data) => {
         if (error || !data.raw) return reject(boom.badImplementation(`Failed to get address of model with id ${modelId}: ${error}`));
         log.info(`SUCCESS: Retrieved model address ${data.raw[0]} for model id ${modelId}`);
@@ -1216,8 +1214,8 @@ const getModelAddressFromId = (modelId) => {
 
 const getProcessDefinitionAddress = (modelId, processId) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get process definition address for model Id ${modelId} and process Id ${processId}`);
-  const modelIdHex = global.stringToHex(modelId);
-  const processIdHex = global.stringToHex(processId);
+  const modelIdHex = hexFromString(modelId);
+  const processIdHex = hexFromString(processId);
   appManager.contracts['ProcessModelRepository']
     .factory.getProcessDefinition(modelIdHex, processIdHex, (error, data) => {
       if (error || !data.raw) {
@@ -1230,7 +1228,7 @@ const getProcessDefinitionAddress = (modelId, processId) => new Promise((resolve
 });
 
 const isValidProcess = processAddress => new Promise((resolve, reject) => {
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   log.debug(`REQUEST: Validate process definition at address: ${processAddress}`);
   processDefinition.validate((error, data) => {
     if (error || !data.raw) {
@@ -1239,7 +1237,7 @@ const isValidProcess = processAddress => new Promise((resolve, reject) => {
     }
     if (!data.raw[0]) {
       return reject(boom
-        .badImplementation(`Invalid process definition at ${processAddress}: ${global.hexToString(data.raw[1].valueOf())}`));
+        .badImplementation(`Invalid process definition at ${processAddress}: ${hexToString(data.raw[1].valueOf())}`));
     }
     log.info(`SUCCESS: Process Definition at ${processAddress} validated`);
     return resolve(data.raw[0]);
@@ -1266,12 +1264,12 @@ const startProcessFromAgreement = agreementAddress => new Promise((resolve, reje
 
 const getStartActivity = processAddress => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get start activity id for process at address: ${processAddress}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   processDefinition.getStartActivity()
     .then(data => ventHelper.waitForVent(data))
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
-      const activityId = global.hexToString(data.raw[0]);
+      const activityId = hexToString(data.raw[0]);
       log.info(`SUCCESS: Retrieved start activity id ${activityId} for process at ${processAddress}`);
       return resolve(activityId);
     })
@@ -1307,15 +1305,15 @@ const getProcessInstanceForActivity = activityInstanceId => new Promise((resolve
 
 const getDataMappingKeys = (processDefinition, activityId, direction) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}`);
-  const countPromise = direction === global.__constants.DIRECTION.IN ?
+  const countPromise = direction === DIRECTION.IN ?
     processDefinition.getInDataMappingKeys : processDefinition.getOutDataMappingKeys;
-  countPromise(global.stringToHex(activityId), (err, data) => {
+  countPromise(hexFromString(activityId), (err, data) => {
     if (err || !data.raw) {
       return reject(boom
         .badImplementation(`Failed to get ${direction ? 'out-' : 'in-'}data mapping ids for activity ${activityId}: ${err}`));
     }
     if (data.raw[0] && Array.isArray(data.raw[0])) {
-      const keys = data.raw[0].map(elem => global.hexToString(elem));
+      const keys = data.raw[0].map(elem => hexToString(elem));
       log.info(`SUCCESS: Retrieved data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}: ${JSON.stringify(keys)}`);
       return resolve(keys);
     }
@@ -1328,9 +1326,9 @@ const getDataMappingDetails = (processDefinition, activityId, dataMappingIds, di
   log.debug(`REQUEST: Get data mapping details for process definition at ${processDefinition}, activity ${activityId}, data mapping ids ${JSON.stringify(dataMappingIds)} and direction ${direction}`);
   const dataPromises = [];
   dataMappingIds.forEach((dataMappingId) => {
-    const getter = direction === global.__constants.DIRECTION.IN ?
+    const getter = direction === DIRECTION.IN ?
       processDefinition.getInDataMappingDetails : processDefinition.getOutDataMappingDetails;
-    dataPromises.push(getter(global.stringToHex(activityId), global.stringToHex(dataMappingId)));
+    dataPromises.push(getter(hexFromString(activityId), hexFromString(dataMappingId)));
   });
   Promise.all(dataPromises)
     .then((data) => {
@@ -1344,7 +1342,7 @@ const getDataMappingDetails = (processDefinition, activityId, dataMappingIds, di
 
 const getDataMappingDetailsForActivity = async (pdAddress, activityId, dataMappingIds = [], direction) => {
   log.debug(`REQUEST: Get ${direction ? 'out-' : 'in-'}data mapping details for activity ${activityId} in process definition at ${pdAddress}`);
-  const processDefinition = getContract(global.__abi, global.__bundles.BPM_MODEL.contracts.PROCESS_DEFINITION, pdAddress);
+  const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, pdAddress);
   try {
     const keys = dataMappingIds || (await getDataMappingKeys(processDefinition, activityId, direction)); // NOTE: activityId are hex converted inside getDataMappingKeys and not here
     const details = await getDataMappingDetails(processDefinition, activityId, keys, direction); // NOTE: activityId and dataMappingIds are hex converted inside getDataMappingDetails and not here
@@ -1410,7 +1408,7 @@ const getActiveAgreementData = agreementAddress => new Promise((resolve, reject)
       }
       const agData = {
         archetype: data.raw[0] ? data.raw[0].valueOf() : '',
-        name: data.raw[1] ? global.hexToString(data.raw[1].valueOf()) : '',
+        name: data.raw[1] ? hexToString(data.raw[1].valueOf()) : '',
         creator: data.raw[2] ? data.raw[2].valueOf() : '',
         maxNumberOfAttachments: data.raw[7] ? data.raw[7].valueOf() : '',
         isPrivate: data.raw[8] ? data.raw[8].valueOf() : '',

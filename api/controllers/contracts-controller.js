@@ -689,25 +689,27 @@ const createUserInEcosystem = (user, ecosystemAddress) => new Promise((resolve, 
 
 const createUser = user => createUserInEcosystem(user, appManager.ecosystemAddress);
 
-const getUserByUsernameAndEcosystem = (username, ecosystemAddress) => new Promise((resolve, reject) => {
-  log.trace(`REQUEST: Get user by username: ${username} in ecosystem at ${ecosystemAddress}`);
+const getUserByIdAndEcosystem = (id, ecosystemAddress) => new Promise((resolve, reject) => {
+  log.trace(`REQUEST: Get user by id: ${id} in ecosystem at ${ecosystemAddress}`);
   const ecosystem = getEcosystem(ecosystemAddress);
   ecosystem
-    .getUserAccount(username)
+    .getUserAccount(id)
     .then((data) => {
-      if (!data.raw) throw boom.badImplementation(`Failed to get address for user with username ${username}`);
-      log.trace(`SUCCESS: Retrieved user address ${data.raw[0]} by username ${username} and ecosystem ${ecosystemAddress}`);
+      if (!data.raw) throw boom.badImplementation(`Failed to get address for user with id ${id}`);
+      log.trace(`SUCCESS: Retrieved user address ${data.raw[0]} by id ${id} and ecosystem ${ecosystemAddress}`);
       return resolve({
         address: data.raw[0],
       });
     })
     .catch((err) => {
       if (err.isBoom) return reject(err);
-      return reject(boomify(err, `Failed to get address for user with username ${username}`));
+      return reject(boomify(err, `Failed to get address for user with id ${id}`));
     });
 });
 
-const getUserByUsername = username => getUserByUsernameAndEcosystem(username, appManager.ecosystemAddress);
+const getUserByUsername = username => getUserByIdAndEcosystem(username, appManager.ecosystemAddress);
+
+const getUserByUUID = uuid => getUserByIdAndEcosystem(uuid, appManager.ecosystemAddress);
 
 const addUserToEcosystem = (username, address) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Add user ${username} with address ${address} to ecosystem at ${appManager.ecosystemAddress}`);
@@ -719,6 +721,18 @@ const addUserToEcosystem = (username, address) => new Promise((resolve, reject) 
       resolve();
     })
     .catch(err => reject(boomify(err, `Failed to add user with username ${username} and address ${address} to ecosystem`)));
+});
+
+const migrateUserAccountInEcosystem = (userAddress, migrateFromId, migrateToId) => new Promise((resolve, reject) => {
+  log.debug(`REQUEST: Migrate user account ${userAddress} from id ${migrateFromId} to id ${migrateToId}`);
+  const ecosystem = getEcosystem(appManager.ecosystemAddress);
+  ecosystem
+    .migrateUserAccount(userAddress, migrateFromId, migrateToId)
+    .then(() => {
+      log.info(`SUCCESS: Successfully migrated user account ${userAddress} from id ${migrateFromId} to id ${migrateToId}`);
+      resolve();
+    })
+    .catch(err => reject(boomify(err, `Failed to migrate user account ${userAddress} from id ${migrateFromId} to id ${migrateToId}`)));
 });
 
 const addUserToOrganization = (userAddress, organizationAddress, actingUserAddress) => new Promise((resolve, reject) => {
@@ -1461,9 +1475,11 @@ module.exports = {
   addAgreementToCollection,
   createUserInEcosystem,
   createUser,
-  getUserByUsernameAndEcosystem,
+  getUserByUsernameAndEcosystem: getUserByIdAndEcosystem,
   getUserByUsername,
+  getUserByUUID,
   addUserToEcosystem,
+  migrateUserAccountInEcosystem,
   addUserToOrganization,
   removeUserFromOrganization,
   addApproverToOrganization,

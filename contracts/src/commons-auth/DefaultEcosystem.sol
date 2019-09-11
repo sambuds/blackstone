@@ -111,7 +111,7 @@ contract DefaultEcosystem is AbstractVersionedArtifact(1,0,1), AbstractDelegateT
         );
         uint error = userAccounts.insert(_migrateToId, mappedAddress);
         ErrorsLib.revertIf(
-            error != BaseErrors.NO_ERROR(), 
+            error != BaseErrors.NO_ERROR(),
             ErrorsLib.RUNTIME_ERROR(),
             "DefaultEcosystem.migrateUserAccount",
             "User with same _migrateToId already exists in given ecosystem"

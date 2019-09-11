@@ -98,6 +98,15 @@ contract DefaultEcosystem is AbstractVersionedArtifact(1,0,1), AbstractDelegateT
         );
     }
 
+    /**
+     * @dev Temporary function allowing the owner of the Ecosystem to perform a migration of user IDs.
+     * REVERTS if:
+     * - the _migrateFromId does not match the current user ID of the account
+     * - the _migrateToId is already being used in the Ecosystem
+     * @param _userAccount the account being migrated
+     * @param _migrateFromId the user ID currently associated with the account
+     * @param _migrateToId the new user ID for the account
+     */
     function migrateUserAccount(address _userAccount, bytes32 _migrateFromId, bytes32 _migrateToId) 
         external
         pre_onlyByOwner
@@ -111,7 +120,7 @@ contract DefaultEcosystem is AbstractVersionedArtifact(1,0,1), AbstractDelegateT
         );
         uint error = userAccounts.insert(_migrateToId, mappedAddress);
         ErrorsLib.revertIf(
-            error != BaseErrors.NO_ERROR(), 
+            error != BaseErrors.NO_ERROR(),
             ErrorsLib.RUNTIME_ERROR(),
             "DefaultEcosystem.migrateUserAccount",
             "User with same _migrateToId already exists in given ecosystem"

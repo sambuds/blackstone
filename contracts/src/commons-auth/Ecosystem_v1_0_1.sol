@@ -1,30 +1,15 @@
 pragma solidity ^0.4.25;
 
-import "commons-base/Owned.sol";
-import "commons-management/VersionedArtifact.sol";
+import "commons-auth/Ecosystem.sol";
 
 /**
- * @title Ecosystem Interface
- * @dev The interface describing interaction with an Ecosystem
+ * @title Ecosystem v1.0.1 Interface
+ * @dev Temporary Ecosystem interface that adds an upgrade function which allows the migration of user IDs in the ecosystem for upgrade purposes.
  */
-contract Ecosystem_v1_0_1 is VersionedArtifact, Owned {
+contract Ecosystem_v1_0_1 is Ecosystem {
 
-	/**
-	 * @dev Initializes this DefaultOrganization with the provided parameters. This function replaces the
-	 * contract constructor, so it can be used as the delegate target for an ObjectProxy.
-     * Sets the msg.sender as the owner of the Ecosystem
+    /**
+     * @dev Temporary function allowing to perform a migration of user IDs.
      */
-    function initialize() external;
-
-    function addExternalAddress(address _address) external;
-
-    function removeExternalAddress(address _address) external;
-
-    function isKnownExternalAddress(address _address) external view returns (bool);
-    
-    function addUserAccount(bytes32 _id, address _userAccount) external;
-
-    function getUserAccount(bytes32 _id) external view returns (address _account);
-
-    function migrateUserAccount(address _userAccount, bytes32 _migrateFromId, bytes32 _migrateToId) external pre_onlyByOwner;
+    function migrateUserAccount(address _userAccount, bytes32 _migrateFromId, bytes32 _migrateToId) external;
 }

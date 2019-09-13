@@ -27,8 +27,9 @@ workflows:
   test_and_deploy:
     jobs:
       - test
-      - deploy_docs:
-          filters:
-            branches:
-              only:
-                - master
+      # Commented out by JHS 9/13/2019 due to a broken docs pipeline
+      # - deploy_docs:
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master

@@ -2,12 +2,73 @@
 
 ## Release History
 
+- Version [0.9.0](#v0.9.0)
+- Version [0.8.0](#v0.8.0)
 - Version [0.7.0](#v0.7.0)
 - Version [0.6.1](#v0.6.1)
 - Version [0.6.0](#v0.6.0)
 - Version [0.5.2](#v0.5.2)
 - Version [0.5.1](#v0.5.1)
- 
+
+## <a name="v0.9.0">Release v0.9.0</a>
+
+This release fixes a critical bug of Release 0.8.0 which affected existing deployments < 0.8.0 resulting in an incompatibility in contract storage for Agreement and Archetype contracts. A feature was added to allow an agreement's legal state to be controlled from an external address.
+
+### Compatibility
+
+This release was tested with the following software and versions:
+
+|                    |        |
+| :----------------- | :----- |
+| Hyperledger Burrow | 0.28.2 |
+| Solc               | 0.4.25 |
+
+### Breaking Changes
+
+- The API for creating an archetype will now return an error if the process model contains and uses agreement parameters that are missing in the `Archetype`.
+- CRITICAL: Refactored `ActiveAgreement` v1.1.0 inheritance to fix storage incompatibility problem on existing deployments. The original ActiveAgreement v.1.0.1 was separated out into its own legacy smart contract and slightly modified to be usable as a base to be inherited by later versions, specifically, the DefaultActiveAgreement_v1_0_1 does not inherit AbstractVersionedArtifact anymore as the artifact version must be initialized in DefaultActiveAgreement. DefaultActiveAgreement now inherits its core behavior from DefaultActiveAgreement_v1_0_1 and only adds the delta on top. The same was done for the interface hierarchy: ActiveAgreement inherits from ActiveAgreement_v1_0_1.
+- CRITICAL: Refactored `Archetype` v1.1.0 inheritance to fix storage incompatibility problem on existing deployments. The original Archetype v.1.0.0 was separated out into its own legacy smart contract and slightly modified to be usable as a base to be inherited by later versions, specifically, the DefaultArchetype_v1_0_0 does not inherit AbstractVersionedArtifact anymore as the artifact version must be initialized in DefaultArchetype. DefaultArchetype now inherits its core behavior from DefaultArchetype_v1_0_0 and only adds the delta on top. The same was done for the interface hierarchy: Archetype inherits from Archetype_v1_0_0.
+
+### Features / Bug Fixes
+
+- Added support for Hyperledger Burrow 0.28.2
+- Integrated a new mode in Burrow's Vent to produce append-only log tables that can be used to feed into message queues or other event processing systems
+- Added the permissioned capability for an agreement to have its legal state controlled from another address. This will support the use case of relegating control over an agreement's legal state to a `ProcessInstance`. If no external permission is set, the `Agreement` behaves as before and changes its state to Executed after all signatures are applied.
+- The `AgreementsAPI` library was updated and requires an upgrade in DOUG on existing deployments.
+- Added additional `DataTypes.ParameterTypes` DURATION and CYCLE
+- Added new functions `getHolder` and `getPermissionDetails` to commons-auth/`Permissioned`
+- Added .gitattributes file for sol syntax highlighting on github
+
+
+## <a name="v0.8.0">Release v0.8.0</a>
+
+This release adds improvements on Agreement smart contracts to handle arbitrary numbers of file reference as well as the introduction of the AbstractPermissioned contract to manage bytes32 based permissions on objects. Wet signatures are now recorded via the API, referenced in an external file, and hashed into the Agreement smart contract. Also, approvers of an Organization can now add other approvers.
+
+### Compatibility
+
+This release was tested with the following software and versions:
+
+|                    |        |
+| :----------------- | :----- |
+| Hyperledger Burrow | 0.25.0 |
+| Solc               | 0.4.25 |
+
+### Features / Bug Fixes
+
+- Added support for Hyperledger Burrow 0.25.0
+- Versionized event definitions to provide old definitions in ABIs required e.g. for Vent running against older chains. The original event definitions `LogArchetypeCreation` and `LogAgreementCreation` were restored and v1_0_0 was appended to the new event definitions.
+- Added an owner field to the `Archetype` contract.
+- `Archetype` and `Agreement` are now capable of handling arbitrary permissions.
+- Improved handling of approvers for `Organization` contracts
+- Added support for wet-signatures that are recorded in a file and hashed into the `Agreement`.
+- The `Agreement` contract now possesses a mapping for file references to record any number of files
+- Added missing setSignatureLogReference function in ActiveAgreementRegistry. For previous installations it is required to run an upgrade yaml file for ActiveAgreementsRegistry.
+- The API now supports downloading a ZIP file containing a summary of the `Agreement` and all its attached files
+- The parity license was upgraded to v6.0.0
+- Changed the API to allow access to private process models by parties of an agreement that runs on these processes. This fixes a bug in the UI to be able to render diagrams for templates based on these models.
+- Added support for an arbitrary number of agreement attachments. A single file is referenced in the smart contract containing an array of raw text entries or references to other files.
+
+
 ## <a name="v0.7.0">Release v0.7.0</a>
 
 This release introduces breaking changes around the management of contracts via the DOUG contract and a major refactoring of all "object"-type contracts for which the storage and implementation have been separated using an "unstructured delegate proxy" approach to make them upgradeable.

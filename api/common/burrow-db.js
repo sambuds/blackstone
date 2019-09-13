@@ -2,10 +2,10 @@ const binstring = require('binstring');
 const burrow = require('@monax/burrow');
 const EventEmitter = require('events');
 const util = require('util');
-const logger = require(`${global.__common}/logger`);
 const I = require('iteray');
 const R = require('ramda');
 const stream = require('stream');
+const logger = require('./logger');
 
 (function startBurrowDb() {
   const log = logger.getLogger('burrow');

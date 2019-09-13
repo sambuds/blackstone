@@ -5,10 +5,6 @@ const should = chai.should();
 const expect = chai.expect;
 const assert = chai.assert;
 
-global.__config = path.resolve('config');
-global.__common = path.resolve('common');
-global.__constants = require(path.join(__common, 'constants'));
-
 const bpmnParser = require(path.resolve("lib", "bpmn-parser"));
 
 const xmlString = fs.readFileSync(path.resolve("data", "sample", "T2-example.bpmn"), "utf8");

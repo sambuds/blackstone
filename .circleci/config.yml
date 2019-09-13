@@ -1,20 +1,5 @@
 version: 2.1
 jobs:
-  swagger:
-    docker:
-    - image: quay.io/goswagger/swagger
-    steps:
-      - checkout
-      - run: apk add --update nodejs nodejs-npm
-      - run: npm config set unsafe-perm true
-      - run: npm install swagger-jsdoc -g
-      - run: make swaggerize
-      - run: |
-          if [ ! -z "$(git status --porcelain)" ];
-          then
-            echo "Uncommitted swagger changes.";
-          fi
-
   test:
     machine: &machine_defaults
       enabled: true
@@ -41,8 +26,8 @@ jobs:
 workflows:
   test_and_deploy:
     jobs:
-      - swagger
       - test
+      # Commented out by JHS 9/13/2019 due to a broken docs pipeline
       # - deploy_docs:
       #     filters:
       #       branches:

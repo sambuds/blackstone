@@ -7,7 +7,8 @@
     "test": "mocha --exit test/controllers/contracts-test.js --timeout 99999999",
     "test:debug": "mocha --exit test/controllers/contracts-test.js --inspect=0.0.0.0:9222 --timeout 99999999",
     "test:fe": "mocha --exit test/controllers/form-exec-usertask-test.js --timeout 99999999",
-    "test:fe:debug": "mocha --exit test/controllers/form-exec-usertask-test.js --inspect=0.0.0.0:9222 --timeout 99999999"
+    "test:fe:debug": "mocha --exit test/controllers/form-exec-usertask-test.js --inspect=0.0.0.0:9222 --timeout 99999999",
+    "test-user-migration": "mocha --exit test/controllers/user-migration-tests.js --timeout 99999999"
   },
   "license": "SEE LICENSE IN LICENSE.md",
   "dependencies": {

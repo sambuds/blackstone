@@ -1,0 +1,86 @@
+jobs:
+
+#####
+# Retrieve DOUG
+#####
+- name: DOUG
+  query-name:
+      name: DOUG
+      field: data
+
+#####
+# Retrieve Library Addresses
+#####
+- name: ErrorsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ErrorsLib]
+
+- name: MappingsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [MappingsLib]
+
+#####
+# Ecosystem Upgrade
+#####
+- name: EcosystemRegistry
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [EcosystemRegistry]
+
+- name: ObjectClassEcosystem
+  query-contract:
+    destination: $EcosystemRegistry
+    bin: EcosystemRegistry
+    function: OBJECT_CLASS_ECOSYSTEM
+
+- name: EcosystemImplementationCurrentLookup
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [$ObjectClassEcosystem]
+
+- name: EcosystemVersionBeforeUpgrade
+  query-contract:
+    destination: $EcosystemImplementationCurrentLookup
+    bin: Ecosystem
+    function: getArtifactVersion
+
+- name: EcosystemImplementationUpgrade
+  deploy:
+    contract: DefaultEcosystem.bin
+    libraries: ErrorsLib:$ErrorsLib, MappingsLib:$MappingsLib
+
+- name: RegisterEcosystemObjectClass
+  call:
+    destination: $DOUG
+    bin: DOUG
+    function: register
+    data: [$ObjectClassEcosystem, $EcosystemImplementationUpgrade]
+
+- name: EcosystemImplementationUpgradeLookup
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [$ObjectClassEcosystem]
+
+- name: EcosystemVersionAfterUpgrade
+  query-contract:
+    destination: $EcosystemImplementationUpgradeLookup
+    bin: Ecosystem
+    function: getArtifactVersion
+
+- name: AssertEcosystemUpgradeRegistered
+  assert:
+    key: $EcosystemImplementationUpgradeLookup
+    relation: eq
+    val: $EcosystemImplementationUpgrade

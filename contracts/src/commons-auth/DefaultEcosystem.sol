@@ -125,5 +125,12 @@ contract DefaultEcosystem is AbstractVersionedArtifact(1,0,1), AbstractDelegateT
             "DefaultEcosystem.migrateUserAccount",
             "User with same _migrateToId already exists in given ecosystem"
         );
+        error = userAccounts.remove(_migrateFromId);
+        ErrorsLib.revertIf(
+            error != BaseErrors.NO_ERROR(),
+            ErrorsLib.RUNTIME_ERROR(),
+            "DefaultEcosystem.migrateUserAccount",
+            "Failed to remove key _migrateFromId from userAccounts map"
+        );
     }
 }

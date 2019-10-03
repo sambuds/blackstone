@@ -162,7 +162,7 @@ const getFromNameRegistry = name => new Promise((resolve, reject) => {
     if (err && err.code !== 2) { // 2 UNKNOWN = entry does not exist
       return reject(boom.badImplementation(`Error getting entry for <${name}> from namereg: ${err.stack}`));
     }
-    log.info(`SUCCESS: Retrieved name-value pair ${name}:${JSON.stringify(result)} from namereg`);
+    log.info(`SUCCESS: Retrieved name-value pair ${name}:${result ? result.Data : null} from namereg`);
     return resolve((result && result.Data) ? result.Data : undefined);
   });
 });

@@ -6,7 +6,7 @@ const should = chai.should();
 const expect = chai.expect;
 const assert = chai.assert;
 const crypto = require('crypto');
-const uuid = require('uuid');
+const nanoid = require('nanoid');
 const logger = require('../../common/logger');
 const log = logger.getLogger('tests.Harness');
 
@@ -29,8 +29,8 @@ before(function(done) {
 
 describe('USER MIGRATION', () => {
   const user = {
-    uuid: uuid.v1(),
-    uuidHash: null,
+    userid: `monax_test|${nanoid()}`,
+    useridHash: null,
     username: `${rid(5, 'aA0')}`,
     usernameHash: null,
     address: '',
@@ -48,13 +48,13 @@ describe('USER MIGRATION', () => {
     user.address = address;
   }).timeout(10000);
 
-  it('Should migrate user account from username to uuid', async () => {
-    user.uuidHash = crypto
+  it('Should migrate user account from username to userid', async () => {
+    user.useridHash = crypto
       .createHash('sha256')
-      .update(user.uuid)
+      .update(user.userid)
       .digest('hex');
-    await contracts.migrateUserAccountInEcosystem(user.address, user.usernameHash, user.uuidHash);
-    const res = await contracts.getUserByUUID(user.uuidHash);
+    await contracts.migrateUserAccountInEcosystem(user.address, user.usernameHash, user.useridHash);
+    const res = await contracts.getUserByUserId(user.useridHash);
     expect(user.address).to.equal(res.address);
   }).timeout(10000);
 

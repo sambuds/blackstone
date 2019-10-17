@@ -709,7 +709,7 @@ const getUserByIdAndEcosystem = (id, ecosystemAddress) => new Promise((resolve, 
 
 const getUserByUsername = username => getUserByIdAndEcosystem(username, appManager.ecosystemAddress);
 
-const getUserByUUID = uuid => getUserByIdAndEcosystem(uuid, appManager.ecosystemAddress);
+const getUserByUserId = userid => getUserByIdAndEcosystem(userid, appManager.ecosystemAddress);
 
 const addUserToEcosystem = (username, address) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Add user ${username} with address ${address} to ecosystem at ${appManager.ecosystemAddress}`);
@@ -1477,7 +1477,7 @@ module.exports = {
   createUser,
   getUserByUsernameAndEcosystem: getUserByIdAndEcosystem,
   getUserByUsername,
-  getUserByUUID,
+  getUserByUserId,
   addUserToEcosystem,
   migrateUserAccountInEcosystem,
   addUserToOrganization,

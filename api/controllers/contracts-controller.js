@@ -1144,6 +1144,21 @@ const signAgreement = (actingUserAddress, agreementAddress) => new Promise(async
   }
 });
 
+const isAgreementSignedBy = (agreementAddress, userAddress) => new Promise(async (resolve, reject) => {
+  log.debug('REQUEST: Checking if agreement at %s has been signed by user at %s', agreementAddress, userAddress);
+  try {
+    const agreement = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+    const payload = agreement.isSignedBy.encode(userAddress);
+    const response = await callOnBehalfOf(userAddress, agreementAddress, payload, false);
+    const data = agreement.isSignedBy.decode(response);
+    const isSignedBy = data.raw[0].valueOf();
+    log.info('SUCCESS: Checked if agreement at %s has been signed by user at %s:', agreementAddress, userAddress);
+    return resolve(isSignedBy);
+  } catch (err) {
+    return reject(boom.badImplementation(`Error determining if agreement at ${agreementAddress} has been signed by user at ${userAddress}: ${err.tack}`));
+  }
+});
+
 const cancelAgreement = (actingUserAddress, agreementAddress) => new Promise(async (resolve, reject) => {
   log.debug('REQUEST: Cancel agreement %s by user %s', agreementAddress, actingUserAddress);
   try {
@@ -1502,6 +1517,7 @@ module.exports = {
   createTransitionCondition,
   completeActivity,
   signAgreement,
+  isAgreementSignedBy,
   getModelAddressFromId,
   getProcessDefinitionAddress,
   isValidProcess,

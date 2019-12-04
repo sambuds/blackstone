@@ -10,13 +10,18 @@
     "test:fe:debug": "mocha --exit test/controllers/form-exec-usertask-test.js --inspect=0.0.0.0:9222 --timeout 99999999",
     "test-user-migration": "mocha --exit test/controllers/user-migration-tests.js --timeout 99999999"
   },
+  "mocha": {
+    "bail": false
+  },
   "license": "SEE LICENSE IN LICENSE.md",
   "dependencies": {
-    "@grpc/proto-loader": "^0.4.0",
+    "@grpc/proto-loader": "^0.5.3",
     "@hapi/boom": "~7.4.2",
-    "@monax/burrow": "~0.24.3",
+    "@monax/burrow": "^0.24.3",
     "binstring": "~0.2.1",
     "csvtojson": "~2.0.8",
+    "dotenv": "^8.2.0",
+    "grpc": "^1.24.2",
     "iteray": "~0.5.1",
     "log4js": "~4.5.1",
     "pg": "~7.4.3",
@@ -24,14 +29,14 @@
     "util": "~0.10.3"
   },
   "devDependencies": {
-    "chai": "^4.0.2",
+    "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.14.0",
     "husky": "^1.3.1",
     "lint-staged": "^8.1.5",
-    "mocha": "^5.2.0",
+    "mocha": "^6.2.2",
     "random-id": "0.0.2"
   },
   "lint-staged": {

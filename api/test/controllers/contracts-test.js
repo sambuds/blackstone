@@ -1,3 +1,4 @@
+require('dotenv').config({path: '../.env'});
 require('../constants');
 const rid = require('random-id');
 const chai = require('chai');

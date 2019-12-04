@@ -26,43 +26,44 @@ class VentHelper {
   }
 
   waitForVent(result) {
-    if (result && result.height) {
+    const self = this;
+
+    return new Promise((resolve, reject) => {
+      if (!result || result.height === undefined) {
+        return reject(new Error(`waitForVent passed a value that does not look like a Burrow result: '${result}'`));
+      }
       const target = Number.parseInt(result.height, 10);
-      const self = this;
       // If the height has already been reached return
-      if (this.high_water >= target) {
+      if (self.high_water >= target) {
         log.debug(`Target height [ ${target} ] already surpassed, resolving result promise`);
-        return new Promise((resolve, reject) => resolve(result));
+        return resolve(result);
       }
       // otherwise we need to wait for vent -> return a promise
-      const P = new Promise((resolve, reject) => {
-        let resolved = false;
-        log.debug(`Created result promise for target height [ ${target} ]`);
-        const callback = (height) => {
-          // If the height has been reached, remove event listener and resolve promise
-          if (height >= target) {
-            self.emitter.removeListener('height', callback);
-            log.debug(`Resolving result promise for target height [ ${target} ]`);
-            resolved = true;
-            resolve(result);
-          }
-        };
-        log.debug(`Current high_water in promise: ${self.high_water}`);
-        self.emitter.on('height', callback);
-        setTimeout(() => {
-          if (!resolved) {
-            log.warn(`>>>>>>> WARNING <<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${self.maxWaitTime}ms, resolving promise anyway`);
-            callback(target);
-          }
-        }, self.maxWaitTime);
-      });
-      return P;
-    }
-    return new Promise((resolve, reject) => resolve(result));
-  }
+      let resolved = false;
+      log.debug(`Created result promise for target height [ ${target} ]`);
 
-  getEmitter() {
-    return this.emitter;
+      const registerHeight = (height) => {
+        // If the height has been reached, remove event listener and resolve promise
+        if (!resolved && height >= target) {
+          log.debug(`Resolving result promise for target height [ ${target} ]`);
+          self.emitter.removeListener('height', registerHeight);
+          resolved = true;
+          resolve(result);
+        }
+      };
+
+      log.debug(`Current high_water in promise: ${self.high_water}`);
+      self.emitter.on('height', registerHeight);
+
+      setTimeout(() => {
+        if (!resolved) {
+          log.warn(`>>>>>>> WARNING <<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${self.maxWaitTime}ms, resolving promise anyway`);
+          registerHeight(target);
+        }
+      }, self.maxWaitTime);
+
+      return null;
+    });
   }
 
   listen() {

@@ -6,14 +6,14 @@ import "commons-auth/AbstractPermissioned.sol";
 
 import "agreements/Archetype.sol";
 import "agreements/ActiveAgreement.sol";
-import "agreements/AbstractActiveAgreement_v1_0_1.sol";
+import "agreements/AbstractActiveAgreement_v1_0_2.sol";
 
 /**
  * @title DefaultActiveAgreement
  * @dev Default implementation of the ActiveAgreement interface. This contract represents the latest "version" of the artifact by inheriting from past versions to guarantee the order
  * of storage variable declarations. It also inherits and instantiates AbstractVersionedArtifact.
  */
-contract DefaultActiveAgreement is AbstractVersionedArtifact(1,3,0), AbstractActiveAgreement_v1_0_1, AbstractPermissioned, ActiveAgreement {
+contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractActiveAgreement_v1_0_2, AbstractPermissioned, ActiveAgreement {
 
 	/**
 	 * @dev Legacy initialize function that is not supported anymore in this version of DefaultArchetype and will always revert.
@@ -50,12 +50,12 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,3,0), AbstractAct
 	 * @param _governingAgreements array of agreement addresses which govern this agreement (optional)
 	 */
 	function initialize(
-		address _archetype, 
-		address _creator, 
-		address _owner, 
-		string calldata _privateParametersFileReference, 
-		bool _isPrivate, 
-		address[] calldata _parties, 
+		address _archetype,
+		address _creator,
+		address _owner,
+		string calldata _privateParametersFileReference,
+		bool _isPrivate,
+		address[] calldata _parties,
 		address[] calldata _governingAgreements)
 		external
 		pre_post_initialize
@@ -68,7 +68,7 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,3,0), AbstractAct
 			ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(), "DefaultActiveAgreement.initialize", "Archetype address must not be empty");
 		ErrorsLib.revertIf(!Archetype(_archetype).isActive(),
 			ErrorsLib.INVALID_PARAMETER_STATE(), "DefaultActiveAgreement.initialize", "Archetype must be active");
-		
+
 		validateGoverningAgreements(_governingAgreements, Archetype(_archetype).getGoverningArchetypes());
 
     	addInterfaceSupport(ERC165_ID_Address_Scopes);

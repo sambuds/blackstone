@@ -315,6 +315,7 @@ jobs:
     relation: eq
     val: success
 
+# TODO: reinstate this once the shared test helpers between this and the redaction test below are properly independent
 - name: testCanceledAgreementWorkflow
   call:
     destination: $ActiveAgreementWorkflowTest
@@ -324,5 +325,17 @@ jobs:
 - name: assertCanceledAgreementWorkflow
   assert:
     key: $testCanceledAgreementWorkflow
+    relation: eq
+    val: success
+
+- name: testRedactedAgreementWorkflow
+  call:
+    destination: $ActiveAgreementWorkflowTest
+    bin: ActiveAgreementWorkflowTest
+    function: testRedactedAgreementWorkflow
+
+- name: assertRedactedAgreementWorkflow
+  assert:
+    key: $testRedactedAgreementWorkflow
     relation: eq
     val: success

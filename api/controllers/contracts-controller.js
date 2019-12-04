@@ -41,6 +41,8 @@ const db = new burrowDB.Connection(process.env.CHAIN_URL_GRPC, process.env.ACCOU
 const ventHelper = require('../common/VentHelper')(`postgres://${process.env.POSTGRES_DB_USER}:${process.env.POSTGRES_DB_PASSWORD}@${process.env.POSTGRES_DB_HOST}:${process.env.POSTGRES_DB_PORT}/${process.env.POSTGRES_DB_DATABASE}`, process.env.MAX_WAIT_FOR_VENT_MS);
 ventHelper.listen();
 
+const waitForVent = ventHelper.waitForVent.bind(ventHelper);
+
 let appManager;
 
 const boomify = (burrowError, message) => {
@@ -105,15 +107,15 @@ const getEcosystem = ecosystemAddress => getContract(process.env.API_ABI_DIRECTO
 /**
  * Returns a promise to call the forwardCall function of the given userAddress to invoke the function encoded in the given payload on the provided target address and return the result bytes representation
  * The 'payload' parameter must be the output of calling the 'encode(...)' function on a contract's function. E.g. <contract>.<function>.encode(param1, param2)
- * 'waitForVent' is a boolean parameter which indicates whether callOnBehalfOf should to wait for vent db to catch up to the block height in the forwardCall response, before resolving the promise.
+ * 'shouldWaitForVent' is a boolean parameter which indicates whether callOnBehalfOf should to wait for vent db to catch up to the block height in the forwardCall response, before resolving the promise.
  */
-const callOnBehalfOf = (userAddress, targetAddress, payload, waitForVent) => new Promise((resolve, reject) => {
+const callOnBehalfOf = (userAddress, targetAddress, payload, shouldWaitForVent) => new Promise((resolve, reject) => {
   const actingUser = getUserAccount(userAddress);
   log.debug('REQUEST: Call target %s on behalf of user %s with payload: %s', targetAddress, userAddress, payload);
   actingUser.forwardCall(targetAddress, payload)
     .then((data) => {
-      if (!waitForVent) return new Promise(res => res(data));
-      return ventHelper.waitForVent(data);
+      if (!shouldWaitForVent) return new Promise(res => res(data));
+      return waitForVent(data);
     })
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(`The forwardCall function from user ${userAddress} to target ${targetAddress} returned no raw data!`);
@@ -128,11 +130,14 @@ const callOnBehalfOf = (userAddress, targetAddress, payload, waitForVent) => new
 
 const createEcosystem = name => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Create new Ecosystem with name ${name}`);
-  appManager.contracts['EcosystemRegistry'].factory.createEcosystem(name, (err, data) => {
-    if (err || !data.raw) return reject(boomify(err, `Failed to create Ecosystem ${name}: ${err.stack}`));
-    log.info(`SUCCESS: Created Ecosystem ${name} at ${data.raw[0]}`);
-    return resolve(data.raw[0]);
-  });
+  appManager.contracts['EcosystemRegistry'].factory.createEcosystem(name)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) return reject(new Error(`Failed to create Ecosystem ${name}: no result returned}`));
+      log.info(`SUCCESS: Created Ecosystem ${name} at ${data.raw[0]}`);
+      return resolve(data.raw[0]);
+    })
+    .catch(err => reject(boomify(err, `Failed to create Ecosystem ${name}: ${err.stack}`)));
 });
 
 const addExternalAddressToEcosystem = (externalAddress, ecosystemAddress) => new Promise((resolve, reject) => {
@@ -233,7 +238,7 @@ const createOrganization = org => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Create organization with: ${JSON.stringify(org)}`);
   appManager.contracts['ParticipantsManager']
     .factory.createOrganization(org.approvers ? org.approvers : [], org.defaultDepartmentId)
-    .then(data => ventHelper.waitForVent(data))
+    .then(waitForVent)
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
       if (parseInt(data.raw[0], 10) === 1002) throw boom.badRequest('Organization id must be unique');
@@ -265,7 +270,7 @@ const createArchetype = (type) => {
         archetype.packageId,
         archetype.governingArchetypes,
       )
-      .then(data => ventHelper.waitForVent(data))
+      .then(waitForVent)
       .then((data) => {
         if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
         log.info(`SUCCESS: Created new archetype by author ${archetype.author} at address ${data.raw[0]}`);
@@ -282,13 +287,16 @@ const isActiveArchetype = (archetypeAddress) => {
   log.debug(`REQUEST: Determine if archetype at ${archetypeAddress} is active`);
   const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
-    archetype.isActive((err, data) => {
-      if (err || !data.raw) {
-        return reject(boom.badImplementation(`Failed to determine if archetype at ${archetypeAddress} is active: ${err}`));
-      }
-      log.info(`SUCCESS: Archetype at ${archetypeAddress} has been found to be ${data.raw[0] ? 'active' : 'inactive'}`);
-      return resolve(data.raw[0]);
-    });
+    archetype.isActive()
+      .then(waitForVent)
+      .then((data) => {
+        if (!data.raw) {
+          return reject(boom.badImplementation(`Failed to determine if archetype at ${archetypeAddress} is active: no result returned`));
+        }
+        log.info(`SUCCESS: Archetype at ${archetypeAddress} has been found to be ${data.raw[0] ? 'active' : 'inactive'}`);
+        return resolve(data.raw[0]);
+      })
+      .catch(err => reject(boom.badImplementation(`Failed to determine if archetype at ${archetypeAddress} is active: ${err}`)));
   });
 };
 
@@ -296,13 +304,16 @@ const getArchetypeAuthor = (archetypeAddress) => {
   log.debug(`REQUEST: Get archetype author for archetype at ${archetypeAddress}`);
   const archetype = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.AGREEMENTS.contracts.ARCHETYPE, archetypeAddress);
   return new Promise((resolve, reject) => {
-    archetype.getAuthor((err, data) => {
-      if (err || !data.raw) {
-        return reject(boom.badImplementation(`Failed to get author of archetype at ${archetypeAddress}: ${err}`));
-      }
-      log.info(`SUCCESS: Retrieved archetype author for archetype at ${archetypeAddress}: ${data.raw[0]}`);
-      return resolve(data.raw[0]);
-    });
+    archetype.getAuthor()
+      .then(waitForVent)
+      .then((data) => {
+        if (!data.raw) {
+          return reject(boom.badImplementation(`Failed to get author of archetype at ${archetypeAddress}: no result returned`));
+        }
+        log.info(`SUCCESS: Retrieved archetype author for archetype at ${archetypeAddress}: ${data.raw[0]}`);
+        return resolve(data.raw[0]);
+      })
+      .catch(err => reject(boom.badImplementation(`Failed to get author of archetype at ${archetypeAddress}: ${err}`)));
   });
 };
 
@@ -352,11 +363,13 @@ const setArchetypeSuccessor = (archetypeAddress, successorAddress, userAccount) 
 const getArchetypeSuccessor = (archetypeAddress) => {
   log.debug(`REQUEST: Get successor for archetype at ${archetypeAddress}`);
   return new Promise((resolve, reject) => {
-    appManager.contracts['ArchetypeRegistry'].factory.getArchetypeSuccessor(archetypeAddress, (err, data) => {
-      if (err) return reject(boomify(err, `Failed to get successor for archetype at ${archetypeAddress}`));
-      log.info(`SUCCESS: Retrieved successor for archetype at ${archetypeAddress}`);
-      return resolve(data.raw[0]);
-    });
+    appManager.contracts['ArchetypeRegistry'].factory.getArchetypeSuccessor(archetypeAddress)
+      .then(waitForVent)
+      .then((data) => {
+        log.info(`SUCCESS: Retrieved successor for archetype at ${archetypeAddress}`);
+        return resolve(data.raw[0]);
+      })
+      .catch(err => reject(boomify(err, `Failed to get successor for archetype at ${archetypeAddress}`)));
   });
 };
 
@@ -371,7 +384,9 @@ const getArchetypeSuccessor = (archetypeAddress) => {
 //       config.fulfillment,
 //       config.amount,
 //       config.currency,
-//       (error, data) => {
+//       ).then((data) => {
+// })
+// .catch(error => {
 //         if (error) {
 //           return reject(boom.badImplementation(
 //             `Failed to configure archetype at ${address}: ${error}`));
@@ -396,16 +411,19 @@ const addArchetypeParameters = (address, parameters) => new Promise((resolve, re
     `Parameter Types: ${JSON.stringify(paramTypes)}, Parameter Names: ${JSON.stringify(paramNames)}`);
   appManager
     .contracts['ArchetypeRegistry']
-    .factory.addParameters(address, paramTypes, paramNames, (error, data) => {
-      if (error || !data.raw) {
-        return reject(boom.badImplementation(`Failed to add parameters to archetype at ${address}: ${error}`));
+    .factory.addParameters(address, paramTypes, paramNames)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom.badImplementation(`Failed to add parameters to archetype at ${address}: no result returned`));
       }
       if (parseInt(data.raw[0], 10) !== 1) {
         return reject(boom.badImplementation(`Error code adding parameter to archetype at ${address}: ${data.raw[0]}`));
       }
       log.info(`SUCCESS: Added parameters ${parameters.map(({ name }) => name)} to archetype at ${address}`);
       return resolve();
-    });
+    })
+    .catch(err => reject(boom.badImplementation(`Failed to add parameters to archetype at ${address}: ${err}`)));
 });
 
 const addArchetypeDocument = (address, fileReference) => new Promise((resolve, reject) => {
@@ -448,7 +466,7 @@ const createArchetypePackage = (author, isPrivate, active) => new Promise((resol
   appManager
     .contracts['ArchetypeRegistry']
     .factory.createArchetypePackage(author, isPrivate, active)
-    .then(data => ventHelper.waitForVent(data))
+    .then(waitForVent)
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
       if (parseInt(data.raw[0], 10) !== 1) throw boom.badImplementation(`Error code adding archetype package by user ${author}: ${data.raw[0]}`);
@@ -463,38 +481,38 @@ const createArchetypePackage = (author, isPrivate, active) => new Promise((resol
 
 const activateArchetypePackage = (packageId, userAccount) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Activate archetype package with id ${packageId} by user at ${userAccount}`);
-  appManager.contracts['ArchetypeRegistry'].factory.activatePackage(packageId, userAccount, (err) => {
-    if (err) {
-      return reject(boomify(err, `Failed to activate archetype package with id ${packageId} by user ${userAccount}`));
-    }
-    log.info(`SUCCESS: Archetype package with id ${packageId} activated by user at ${userAccount}`);
-    return resolve();
-  });
+  appManager.contracts['ArchetypeRegistry'].factory.activatePackage(packageId, userAccount)
+    .then(waitForVent)
+    .then(() => {
+      log.info(`SUCCESS: Archetype package with id ${packageId} activated by user at ${userAccount}`);
+      return resolve();
+    })
+    .catch(err => reject(boomify(err, `Failed to activate archetype package with id ${packageId} by user ${userAccount}`)));
 });
 
 const deactivateArchetypePackage = (packageId, userAccount) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Deactivate archetype package with id ${packageId} by user at ${userAccount}`);
   appManager
-    .contracts['ArchetypeRegistry'].factory.deactivatePackage(packageId, userAccount, (err) => {
-      if (err) {
-        return reject(boomify(err, `Failed to deactivate archetype package with id ${packageId} by user ${userAccount}`));
-      }
+    .contracts['ArchetypeRegistry'].factory.deactivatePackage(packageId, userAccount)
+    .then(waitForVent)
+    .then(() => {
       log.info(`SUCCESS: Archetype package with id ${packageId} deactivated by user at ${userAccount}`);
       return resolve();
-    });
+    })
+    .catch(err => reject(boomify(err, `Failed to deactivate archetype package with id ${packageId} by user ${userAccount}`)));
 });
 
 const addArchetypeToPackage = (packageId, archetype) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Add archetype at ${archetype} to package ${packageId}`);
   appManager
     .contracts['ArchetypeRegistry']
-    .factory.addArchetypeToPackage(packageId, archetype, (err) => {
-      if (err) {
-        return reject(boomify(err, `Failed to add archetype at ${archetype} to package ${packageId}`));
-      }
+    .factory.addArchetypeToPackage(packageId, archetype)
+    .then(waitForVent)
+    .then(() => {
       log.info(`SUCCESS: Added archetype at ${archetype} to package with id ${packageId}`);
       return resolve();
-    });
+    })
+    .catch(err => reject(boomify(err, `Failed to add archetype at ${archetype} to package ${packageId}`)));
 });
 
 const addJurisdictions = (address, jurisdictions) => new Promise((resolve, reject) => {
@@ -513,21 +531,19 @@ const addJurisdictions = (address, jurisdictions) => new Promise((resolve, rejec
   });
   log.debug(`REQUEST: Add jurisdictions to archetype at ${address}. ` +
     `Countries: ${JSON.stringify(countries)}, Regions: ${JSON.stringify(regions)}`);
-  appManager.contracts['ArchetypeRegistry'].factory.addJurisdictions(
-    address,
-    countries,
-    regions,
-    (error, data) => {
-      if (error || !data.raw) {
-        return reject(boom.badImplementation(`Failed to add juridictions to archetype at ${address}: ${error}`));
+  appManager.contracts['ArchetypeRegistry'].factory.addJurisdictions(address, countries, regions)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom.badImplementation(`Failed to add juridictions to archetype at ${address} since no result}`));
       }
       if (parseInt(data.raw[0], 10) !== 1) {
         return reject(boom.badImplementation(`Error code adding jurisdictions to archetype at ${address}: ${data.raw[0]}`));
       }
       log.info(`SUCCESS: Added jurisdictions to archetype at ${address}`);
       return resolve();
-    },
-  );
+    })
+    .catch(error => reject(boom.badImplementation(`Failed to add juridictions to archetype at ${address}: ${error}`)));
 });
 
 const createAgreement = agreement => new Promise((resolve, reject) => {
@@ -545,13 +561,16 @@ const createAgreement = agreement => new Promise((resolve, reject) => {
   appManager
     .contracts['ActiveAgreementRegistry']
     .factory.createAgreement(archetype, creator, owner, privateParametersFileReference, isPrivate,
-      parties, collectionId, governingAgreements, (error, data) => {
-        if (error || !data.raw) {
-          return reject(boomify(error, `Failed to create agreement by ${creator} from archetype at ${agreement.archetype}`));
-        }
-        log.info(`SUCCESS: Created agreement by ${creator} at address ${data.raw[0]}`);
-        return resolve(data.raw[0]);
-      });
+      parties, collectionId, governingAgreements)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom.badImplementation(`Failed to create agreement by ${creator} from archetype at ${agreement.archetype}: no result returned`));
+      }
+      log.info(`SUCCESS: Created agreement by ${creator} at address ${data.raw[0]}`);
+      return resolve(data.raw[0]);
+    })
+    .catch(err => reject(boomify(err, `Failed to create agreement by ${creator} from archetype at ${agreement.archetype}`)));
 });
 
 const grantLegalStateControllerPermission = agreementAddress => new Promise((resolve, reject) => {
@@ -648,16 +667,19 @@ const createAgreementCollection = (author, collectionType, packageId) => new Pro
     `and packageId ${packageId} created by user at ${author}`);
   appManager
     .contracts['ActiveAgreementRegistry']
-    .factory.createAgreementCollection(author, collectionType, packageId, (error, data) => {
-      if (error || !data.raw) {
-        return reject(boom.badImplementation(`Failed to add agreement collection by ${author}: ${error}`));
+    .factory.createAgreementCollection(author, collectionType, packageId)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom.badImplementation(`Failed to add agreement collection by ${author}: no result returned`));
       }
       if (parseInt(data.raw[0], 10) !== 1) {
         return reject(boom.badImplementation(`Error code adding agreement collection by ${author}: ${data.raw[0]}`));
       }
       log.info(`SUCCESS: Created new agreement collection by ${author} with id ${data.raw[1]}`);
       return resolve(data.raw[1]);
-    });
+    })
+    .catch(err => reject(boom.badImplementation(`Failed to add agreement collection by ${author}: ${err}`)));
 });
 
 const addAgreementToCollection = (collectionId, agreement) => new Promise((resolve, reject) => {
@@ -678,7 +700,7 @@ const createUserInEcosystem = (user, ecosystemAddress) => new Promise((resolve, 
   appManager
     .contracts['ParticipantsManager']
     .factory.createUserAccount(user.username, '0x0', ecosystemAddress)
-    .then(data => ventHelper.waitForVent(data))
+    .then(waitForVent)
     .then((data) => {
       if (!data || !data.raw) throw new Error(NO_TRANSACTION_RESPONSE_ERR);
       log.info(`SUCCESS: Created new user ${user.username} at address ${data.raw[0]}`);
@@ -692,8 +714,8 @@ const createUser = user => createUserInEcosystem(user, appManager.ecosystemAddre
 const getUserByIdAndEcosystem = (id, ecosystemAddress) => new Promise((resolve, reject) => {
   log.trace(`REQUEST: Get user by id: ${id} in ecosystem at ${ecosystemAddress}`);
   const ecosystem = getEcosystem(ecosystemAddress);
-  ecosystem
-    .getUserAccount(id)
+  ecosystem.getUserAccount(id)
+    .then(waitForVent)
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(`Failed to get address for user with id ${id}`);
       log.trace(`SUCCESS: Retrieved user address ${data.raw[0]} by id ${id} and ecosystem ${ecosystemAddress}`);
@@ -873,6 +895,7 @@ const createProcessModel = (modelId, modelVersion, author, isPrivate, modelFileR
   appManager
     .contracts['ProcessModelRepository']
     .factory.createProcessModel(modelIdHex, modelVersion, author, isPrivate, modelFileReference)
+    .then(waitForVent)
     .then((data) => {
       log.info(`SUCCESS: Model with Id ${modelId} created at ${data.raw[1]}`);
       return resolve(data.raw[1]);
@@ -901,22 +924,26 @@ const addProcessInterface = (pmAddress, interfaceId) => new Promise((resolve, re
   const processModel = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_MODEL, pmAddress);
   log.debug(`REQUEST: Add process interface ${interfaceId} to process model at ${pmAddress}`);
   const interfaceIdHex = hexFromString(interfaceId);
-  processModel.addProcessInterface(interfaceIdHex, (err, data) => {
-    if (err || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to add process interface ${interfaceId}to model at ${pmAddress}: ${err}`));
-    }
-    if (parseInt(data.raw[0], 10) === 1002) {
-      // interfaceId already registered to model
+  processModel.addProcessInterface(interfaceIdHex)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to add process interface ${interfaceId}to model at ${pmAddress}: no data`));
+      }
+      if (parseInt(data.raw[0], 10) === 1002) {
+        // interfaceId already registered to model
+        return resolve();
+      }
+      if (parseInt(data.raw[0], 10) !== 1) {
+        return reject(boom
+          .badImplementation(`Error code while adding process interface ${interfaceId} to model at ${pmAddress}: ${data.raw[0]}`));
+      }
+      log.info(`SUCCESS: Interface ${interfaceId} added to Process Model at ${pmAddress}`);
       return resolve();
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom
-        .badImplementation(`Error code while adding process interface ${interfaceId} to model at ${pmAddress}: ${data.raw[0]}`));
-    }
-    log.info(`SUCCESS: Interface ${interfaceId} added to Process Model at ${pmAddress}`);
-    return resolve();
-  });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to add process interface ${interfaceId}to model at ${pmAddress}: ${err}`)));
 });
 
 const addParticipant = (pmAddress, participantId, accountAddress, dataPath, dataStorageId, dataStorageAddress) => new Promise((resolve, reject) => {
@@ -931,11 +958,12 @@ const addParticipant = (pmAddress, participantId, accountAddress, dataPath, data
   const dataPathHex = hexFromString(dataPath);
   const dataStorageIdHex = hexFromString(dataStorageId);
   log.debug(`Adding a participant with ID: ${participantId}`);
-  processModel.addParticipant(participantIdHex, accountAddress, dataPathHex,
-    dataStorageIdHex, dataStorageAddress, (err, data) => {
-      if (err || !data.raw) {
+  processModel.addParticipant(participantIdHex, accountAddress, dataPathHex, dataStorageIdHex, dataStorageAddress)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to add participant ${participantId} to model ${pmAddress}: ${err}`));
+          .badImplementation(`Failed to add participant ${participantId} to model ${pmAddress}: no result returned`));
       }
       if (parseInt(data.raw[0], 10) !== 1) {
         return reject(boom
@@ -943,7 +971,9 @@ const addParticipant = (pmAddress, participantId, accountAddress, dataPath, data
       }
       log.info(`SUCCESS: Participant ${participantId} added to model ${pmAddress}`);
       return resolve();
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to add participant ${participantId} to model ${pmAddress}: ${err}`)));
 });
 
 const createProcessDefinition = (modelAddress, processDefnId) => new Promise((resolve, reject) => {
@@ -951,36 +981,42 @@ const createProcessDefinition = (modelAddress, processDefnId) => new Promise((re
   const processDefnIdHex = hexFromString(processDefnId);
   appManager
     .contracts['ProcessModelRepository']
-    .factory.createProcessDefinition(modelAddress, processDefnIdHex, (error, data) => {
-      if (error || !data.raw) {
+    .factory.createProcessDefinition(modelAddress, processDefnIdHex)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to create process definition ${processDefnId} in model at ${modelAddress}: ${error}`));
+          .badImplementation(`Failed to create process definition ${processDefnId} in model at ${modelAddress}: no result returned`));
       }
       log.info(`SUCCESS: Process definition ${processDefnId} in model at ${modelAddress} created at ${data.raw[0]}`);
       return resolve(data.raw[0]);
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to create process definition ${processDefnId} in model at ${modelAddress}: ${err}`)));
 });
 
 const addProcessInterfaceImplementation = (pmAddress, pdAddress, interfaceId) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Add process interface implementation ${interfaceId} to process definition ${pdAddress} for process model ${pmAddress}`);
   const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, pdAddress);
   const interfaceIdHex = hexFromString(interfaceId);
-  processDefinition.addProcessInterfaceImplementation(pmAddress, interfaceIdHex, (err, data) => {
-    if (err || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to add interface implementation ${interfaceId} to process at ${pdAddress}: ${err}`));
-    }
-    if (parseInt(data.raw[0], 10) === 1001) {
-      return reject(boom
-        .badData(`InterfaceId ${interfaceId} for process at ${pdAddress} is not registered to the model at ${pmAddress}`));
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom
-        .badImplementation(`Error code while adding process interface implementation ${interfaceId} to process at ${pdAddress}: ${data.raw[0]}`));
-    }
-    log.info(`SUCCESS: Interface implementation ${interfaceId} added to Process Definition at ${pdAddress}`);
-    return resolve();
-  });
+  processDefinition.addProcessInterfaceImplementation(pmAddress, interfaceIdHex)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom.badImplementation(`Failed to add interface implementation ${interfaceId} to process at ${pdAddress}: no result returned`));
+      }
+      if (parseInt(data.raw[0], 10) === 1001) {
+        return reject(boom
+          .badData(`InterfaceId ${interfaceId} for process at ${pdAddress} is not registered to the model at ${pmAddress}`));
+      }
+      if (parseInt(data.raw[0], 10) !== 1) {
+        return reject(boom
+          .badImplementation(`Error code while adding process interface implementation ${interfaceId} to process at ${pdAddress}: ${data.raw[0]}`));
+      }
+      log.info(`SUCCESS: Interface implementation ${interfaceId} added to Process Definition at ${pdAddress}`);
+      return resolve();
+    })
+    .catch(err => reject(boom.badImplementation(`Failed to add interface implementation ${interfaceId} to process at ${pdAddress}: ${err}`)));
 });
 
 const createActivityDefinition = (processAddress, activityId, activityType, taskType, behavior, assignee, multiInstance, application, subProcessModelId, subProcessDefinitionId) => new Promise((resolve, reject) => {
@@ -999,10 +1035,12 @@ const createActivityDefinition = (processAddress, activityId, activityType, task
   const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   processDefinition.createActivityDefinition(hexFromString(activityId), activityType, taskType, behavior,
     hexFromString(assignee), multiInstance, hexFromString(application), hexFromString(subProcessModelId),
-    hexFromString(subProcessDefinitionId), (error, data) => {
-      if (error || !data.raw) {
+    hexFromString(subProcessDefinitionId))
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to create activity definition ${activityId} in process at ${processAddress}: ${error}`));
+          .badImplementation(`Failed to create activity definition ${activityId} in process at ${processAddress}: no result found`));
       }
       if (parseInt(data.raw[0], 10) !== 1) {
         return reject(boom
@@ -1010,7 +1048,9 @@ const createActivityDefinition = (processAddress, activityId, activityType, task
       }
       log.info(`SUCCESS: Activity definition ${activityId} created in process at ${processAddress}`);
       return resolve();
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to create activity definition ${activityId} in process at ${processAddress}: ${err}`)));
 });
 
 const createDataMapping = (processAddress, id, direction, accessPath, dataPath, dataStorageId, dataStorage) => new Promise((resolve, reject) => {
@@ -1056,18 +1096,22 @@ const createTransition = (processAddress, sourceGraphElement, targetGraphElement
     targetGraphElement,
   })}`);
   const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
-  processDefinition.createTransition(hexFromString(sourceGraphElement), hexFromString(targetGraphElement), (error, data) => {
-    if (error || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to create transition from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}: ${error}`));
-    }
-    if (parseInt(data.raw[0], 10) !== 1) {
-      return reject(boom
-        .badImplementation(`Error code creating transition from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}: ${data.raw[0]}`));
-    }
-    log.info(`SUCCESS: Transition created from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}`);
-    return resolve();
-  });
+  processDefinition.createTransition(hexFromString(sourceGraphElement), hexFromString(targetGraphElement))
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to create transition from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}: no result found`));
+      }
+      if (parseInt(data.raw[0], 10) !== 1) {
+        return reject(boom
+          .badImplementation(`Error code creating transition from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}: ${data.raw[0]}`));
+      }
+      log.info(`SUCCESS: Transition created from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}`);
+      return resolve();
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to create transition from ${sourceGraphElement} to ${targetGraphElement} in process at ${processAddress}: ${err}`)));
 });
 
 const setDefaultTransition = (processAddress, gatewayId, activityId) => new Promise((resolve, reject) => {
@@ -1177,6 +1221,7 @@ const completeActivity = (actingUserAddress, activityInstanceId, dataMappingId =
   try {
     const bpmService = appManager.contracts['BpmService'];
     const piAddress = await bpmService.factory.getProcessInstanceForActivity(activityInstanceId)
+      .then(waitForVent)
       .then(data => data.raw[0]);
     log.info('Found process instance %s for activity instance ID %s', piAddress, activityInstanceId);
     const processInstance = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_RUNTIME.contracts.PROCESS_INSTANCE, piAddress);
@@ -1230,14 +1275,14 @@ const completeActivity = (actingUserAddress, activityInstanceId, dataMappingId =
 const getModelAddressFromId = (modelId) => {
   log.debug(`REQUEST: Get model address for model id ${modelId}`);
   return new Promise((resolve, reject) => {
-    appManager.contracts['ProcessModelRepository'].factory.getModel(
-      hexFromString(modelId),
-      (error, data) => {
-        if (error || !data.raw) return reject(boom.badImplementation(`Failed to get address of model with id ${modelId}: ${error}`));
+    appManager.contracts['ProcessModelRepository'].factory.getModel(hexFromString(modelId))
+      .then(waitForVent)
+      .then((data) => {
+        if (!data.raw) return reject(boom.badImplementation(`Failed to get address of model with id ${modelId}: no result returned`));
         log.info(`SUCCESS: Retrieved model address ${data.raw[0]} for model id ${modelId}`);
         return resolve(data.raw[0]);
-      },
-    );
+      })
+      .catch(err => reject(boom.badImplementation(`Failed to get address of model with id ${modelId}: ${err}`)));
   });
 };
 
@@ -1246,37 +1291,44 @@ const getProcessDefinitionAddress = (modelId, processId) => new Promise((resolve
   const modelIdHex = hexFromString(modelId);
   const processIdHex = hexFromString(processId);
   appManager.contracts['ProcessModelRepository']
-    .factory.getProcessDefinition(modelIdHex, processIdHex, (error, data) => {
-      if (error || !data.raw) {
+    .factory.getProcessDefinition(modelIdHex, processIdHex)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to get address of process definition with id ${processId} in model ${modelId}: ${error}`));
+          .badImplementation(`Failed to get address of process definition with id ${processId} in model ${modelId}: no result returned`));
       }
       log.info(`SUCCESS: Retrieved process definition address ${data.raw[0]} for model id ${modelId} and process id ${processId}`);
       return resolve(data.raw[0]);
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to get address of process definition with id ${processId} in model ${modelId}: ${err}`)));
 });
 
 const isValidProcess = processAddress => new Promise((resolve, reject) => {
   const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   log.debug(`REQUEST: Validate process definition at address: ${processAddress}`);
-  processDefinition.validate((error, data) => {
-    if (error || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to validate process at ${processAddress}: ${error}`));
-    }
-    if (!data.raw[0]) {
-      return reject(boom
-        .badImplementation(`Invalid process definition at ${processAddress}: ${hexToString(data.raw[1].valueOf())}`));
-    }
-    log.info(`SUCCESS: Process Definition at ${processAddress} validated`);
-    return resolve(data.raw[0]);
-  });
+  processDefinition.validate()
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to validate process at ${processAddress}: no result returned`));
+      }
+      if (!data.raw[0]) {
+        return reject(boom
+          .badImplementation(`Invalid process definition at ${processAddress}: ${hexToString(data.raw[1].valueOf())}`));
+      }
+      log.info(`SUCCESS: Process Definition at ${processAddress} validated`);
+      return resolve(data.raw[0]);
+    })
+    .catch(err => reject(boom.badImplementation(`Failed to validate process at ${processAddress}: ${err}`)));
 });
 
 const startProcessFromAgreement = agreementAddress => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Start formation process from agreement at address: ${agreementAddress}`);
   appManager.contracts['ActiveAgreementRegistry'].factory.startProcessLifecycle(agreementAddress)
-    .then(data => ventHelper.waitForVent(data))
+    .then(waitForVent)
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
       if (parseInt(data.raw[0], 10) !== 1) {
@@ -1295,7 +1347,7 @@ const getStartActivity = processAddress => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get start activity id for process at address: ${processAddress}`);
   const processDefinition = getContract(process.env.API_ABI_DIRECTORY, BUNDLES.BPM_MODEL.contracts.PROCESS_DEFINITION, processAddress);
   processDefinition.getStartActivity()
-    .then(data => ventHelper.waitForVent(data))
+    .then(waitForVent)
     .then((data) => {
       if (!data.raw) throw boom.badImplementation(NO_TRANSACTION_RESPONSE_ERR);
       const activityId = hexToString(data.raw[0]);
@@ -1311,44 +1363,56 @@ const getStartActivity = processAddress => new Promise((resolve, reject) => {
 const getProcessInstanceCount = () => new Promise((resolve, reject) => {
   log.debug('REQUEST: Get process instance count');
   appManager.contracts['BpmService']
-    .factory.getNumberOfProcessInstances((error, data) => {
-      if (error || !data.raw) return reject(boom.badImplementation(`Failed to get process instance count: ${error}`));
+    .factory.getNumberOfProcessInstances()
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) return reject(boom.badImplementation('Failed to get process instance count: no result returned'));
       log.info(`SUCCESS: Retrievef process instance count: ${data.raw[0]}`);
       return resolve(data.raw[0]);
-    });
+    })
+    .catch(err => reject(boom.badImplementation(`Failed to get process instance count: ${err}`)));
 });
 
 const getProcessInstanceForActivity = activityInstanceId => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get process instance for activity ${activityInstanceId}`);
   appManager
     .contracts['BpmService']
-    .factory.getProcessInstanceForActivity(activityInstanceId, (error, data) => {
-      if (error || !data.raw) {
+    .factory.getProcessInstanceForActivity(activityInstanceId)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to get process instance for activity with id ${activityInstanceId}: ${error}`));
+          .badImplementation(`Failed to get process instance for activity with id ${activityInstanceId}: no result returned`));
       }
       log.info(`SUCCESS: Retrieved process instance for activity ${activityInstanceId}: ${data.raw[0].valueOf()}`);
       return resolve(data.raw[0].valueOf());
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to get process instance for activity with id ${activityInstanceId}: ${err}`)));
 });
 
 const getDataMappingKeys = (processDefinition, activityId, direction) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}`);
   const countPromise = direction === DIRECTION.IN ?
-    processDefinition.getInDataMappingKeys : processDefinition.getOutDataMappingKeys;
-  countPromise(hexFromString(activityId), (err, data) => {
-    if (err || !data.raw) {
-      return reject(boom
-        .badImplementation(`Failed to get ${direction ? 'out-' : 'in-'}data mapping ids for activity ${activityId}: ${err}`));
-    }
-    if (data.raw[0] && Array.isArray(data.raw[0])) {
-      const keys = data.raw[0].map(elem => hexToString(elem));
-      log.info(`SUCCESS: Retrieved data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}: ${JSON.stringify(keys)}`);
-      return resolve(keys);
-    }
-    log.info(`SUCCESS: No data mapping keys found for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}`);
-    return resolve([]);
-  });
+    processDefinition.getInDataMappingKeys :
+    processDefinition.getOutDataMappingKeys;
+  countPromise(hexFromString(activityId))
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
+        return reject(boom
+          .badImplementation(`Failed to get ${direction ? 'out-' : 'in-'}data mapping ids for activity ${activityId}: no result returned`));
+      }
+      if (data.raw[0] && Array.isArray(data.raw[0])) {
+        const keys = data.raw[0].map(elem => hexToString(elem));
+        log.info(`SUCCESS: Retrieved data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}: ${JSON.stringify(keys)}`);
+        return resolve(keys);
+      }
+      log.info(`SUCCESS: No data mapping keys found for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}`);
+      return resolve([]);
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to get ${direction ? 'out-' : 'in-'}data mapping ids for activity ${activityId}: ${err}`)));
 });
 
 const getDataMappingDetails = (processDefinition, activityId, dataMappingIds, direction) => new Promise((resolve, reject) => {
@@ -1357,7 +1421,7 @@ const getDataMappingDetails = (processDefinition, activityId, dataMappingIds, di
   dataMappingIds.forEach((dataMappingId) => {
     const getter = direction === DIRECTION.IN ?
       processDefinition.getInDataMappingDetails : processDefinition.getOutDataMappingDetails;
-    dataPromises.push(getter(hexFromString(activityId), hexFromString(dataMappingId)));
+    dataPromises.push(getter(hexFromString(activityId), hexFromString(dataMappingId)).then(waitForVent));
   });
   Promise.all(dataPromises)
     .then((data) => {
@@ -1391,8 +1455,10 @@ const getArchetypeProcesses = archAddress => new Promise((resolve, reject) => {
   let formation;
   let execution;
   appManager.contracts['ArchetypeRegistry']
-    .factory.getArchetypeData(archAddress, (err, data) => {
-      if (err || !data.raw) return reject(boom.badImplementation(`Failed to get archetype processes: ${err}`));
+    .factory.getArchetypeData(archAddress)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) return reject(boom.badImplementation('Failed to get archetype processes: no result returned'));
       formation = data.raw[5] ? data.raw[5].valueOf() : '';
       execution = data.raw[6] ? data.raw[6].valueOf() : '';
       log.info(`SUCCESS: Retreived processes for archetype at ${archAddress}: ${JSON.stringify({ formation, execution })}`);
@@ -1400,17 +1466,20 @@ const getArchetypeProcesses = archAddress => new Promise((resolve, reject) => {
         formation,
         execution,
       });
-    });
+    })
+    .catch(err => reject(boom.badImplementation(`Failed to get archetype processes: ${err}`)));
 });
 
 const getActivityInstanceData = (piAddress, activityInstanceId) => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get activity instance data for activity id ${activityInstanceId} in process instance at address ${piAddress}`);
   appManager
     .contracts['BpmService']
-    .factory.getActivityInstanceData(piAddress, activityInstanceId, (err, data) => {
-      if (err || !data.raw) {
+    .factory.getActivityInstanceData(piAddress, activityInstanceId)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to get data for activity instance with id ${activityInstanceId} in process instance at ${piAddress}: ${err}`));
+          .badImplementation(`Failed to get data for activity instance with id ${activityInstanceId} in process instance at ${piAddress}: no result returned`));
       }
       const aiData = {
         activityId: data.raw[0] ? data.raw[0].valueOf() : '',
@@ -1423,17 +1492,21 @@ const getActivityInstanceData = (piAddress, activityInstanceId) => new Promise((
       log.info(`SUCCESS: Retrieved actvity instance data for activity id ${activityInstanceId} in process instance at address ${piAddress}: 
         ${JSON.stringify(aiData)}`);
       return resolve(aiData);
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to get data for activity instance with id ${activityInstanceId} in process instance at ${piAddress}: ${err}`)));
 });
 
 const getActiveAgreementData = agreementAddress => new Promise((resolve, reject) => {
   log.debug(`REQUEST: Get data for agreement at address ${agreementAddress}`);
   appManager
     .contracts['ActiveAgreementRegistry']
-    .factory.getActiveAgreementData(agreementAddress, (err, data) => {
-      if (err || !data.raw) {
+    .factory.getActiveAgreementData(agreementAddress)
+    .then(waitForVent)
+    .then((data) => {
+      if (!data.raw) {
         return reject(boom
-          .badImplementation(`Failed to get data of agreement at ${agreementAddress}: ${err}`));
+          .badImplementation(`Failed to get data of agreement at ${agreementAddress}: no result returned`));
       }
       const agData = {
         archetype: data.raw[0] ? data.raw[0].valueOf() : '',
@@ -1447,7 +1520,9 @@ const getActiveAgreementData = agreementAddress => new Promise((resolve, reject)
       };
       log.info(`SUCCESS: Retreieved data for agreement at ${agreementAddress}: ${JSON.stringify(agData)}`);
       return resolve(agData);
-    });
+    })
+    .catch(err => reject(boom
+      .badImplementation(`Failed to get data of agreement at ${agreementAddress}: ${err}`)));
 });
 
 module.exports = {

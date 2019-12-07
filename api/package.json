@@ -1,5 +1,5 @@
 {
-  "name": "agreements-network-api",
+  "name": "blackstone",
   "version": "0.5.1",
   "description": "REST API for the Agreements Network",
   "main": "app.js",

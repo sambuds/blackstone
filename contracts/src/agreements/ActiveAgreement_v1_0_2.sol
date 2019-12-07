@@ -5,6 +5,7 @@ import "commons-collections/AddressScopes.sol";
 import "commons-events/EventEmitter.sol";
 import "documents-commons/Signable.sol";
 import "commons-management/VersionedArtifact.sol";
+import "agreements/Agreements.sol";
 
 /**
  * @title ActiveAgreement Interface v1.0.2
@@ -21,5 +22,7 @@ contract ActiveAgreement_v1_0_2 is VersionedArtifact, DataStorage, AddressScopes
         bytes32 indexed eventId,
         int __DELETE__,
         address agreementAddress
-);
+    );
+
+    function redact() external returns (Agreements.LegalState);
 }

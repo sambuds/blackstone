@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const logger = require(__common + '/logger');
 const log = logger.getLogger('tests.Harness');
 
-const contracts = require('../../controllers/contracts-controller');
+const contracts = require('../../contracts');
 
 before(function(done) {
   this.timeout(99999999);

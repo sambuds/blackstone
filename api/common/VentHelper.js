@@ -3,6 +3,13 @@ const EventEmitter = require('events');
 const logger = require('./logger');
 const log = logger.getLogger('vent-helper');
 
+function heightFromResult(result) {
+  if (!result) return undefined;
+  if (result.height !== undefined) return result.height;
+  if (result.Header && result.Header.Height) return result.Header.Height;
+  return undefined;
+}
+
 class VentHelper {
   constructor(connectionString, maxWaitTime) {
     this.connectionString = connectionString;
@@ -11,28 +18,40 @@ class VentHelper {
     this.emitter = new EventEmitter();
   }
 
-  handleHeight(msg) {
-    if (msg.channel === 'height') {
-      // Extract height from notification payload
-      const payload = JSON.parse(msg.payload);
-      const height = Number.parseInt(payload._height, 10);
-      // Conditionally update high water mark and emit event
-      if (height > this.high_water) {
-        this.high_water = height;
-        this.emitter.emit('height', this.high_water);
-        log.trace(`Updated high_water to height: [ ${this.high_water} ]`);
+  /**
+   * Returns a function that can be passed Burrow results and records the maximum height seen.
+   * The function has a `wait()` function that returns a promise waiting for Vent to reach the maximum height recorded
+   * when `wait()` was invoked. This makes it possible to defer the `waitForVent` function and string together multiple
+   * calls while capturing the high-water-mark of transaction results.
+   *
+   * @returns {function(*=): *} that can be passed multiple Burrow results (containing height) key
+   */
+  newVentWaiter() {
+    const capture = { height: 0 };
+
+    const max = (result) => {
+      if (result && result.height !== undefined) {
+        const newHeight = Number.parseInt(result.height, 10);
+        if (newHeight > capture.height) {
+          capture.height = newHeight;
+        }
       }
-    }
+      return result;
+    };
+
+    max.wait = this.waitForVent.bind(this, capture);
+    return max;
   }
 
   waitForVent(result) {
     const self = this;
 
     return new Promise((resolve, reject) => {
-      if (!result || result.height === undefined) {
-        return reject(new Error(`waitForVent passed a value that does not look like a Burrow result: '${result}'`));
+      const targetString = heightFromResult(result);
+      if (targetString === undefined) {
+        return reject(new Error(`waitForVent passed a value that does not look like a Burrow result: '${JSON.stringify(result)}'`));
       }
-      const target = Number.parseInt(result.height, 10);
+      const target = Number.parseInt(targetString, 10);
       // If the height has already been reached return
       if (self.high_water >= target) {
         log.debug(`Target height [ ${target} ] already surpassed, resolving result promise`);
@@ -43,6 +62,7 @@ class VentHelper {
       log.debug(`Created result promise for target height [ ${target} ]`);
 
       const registerHeight = (height) => {
+        console.log(`got ${height}...`);
         // If the height has been reached, remove event listener and resolve promise
         if (!resolved && height >= target) {
           log.debug(`Resolving result promise for target height [ ${target} ]`);
@@ -66,9 +86,24 @@ class VentHelper {
     });
   }
 
-  listen() {
+  handleHeight(msg) {
+    if (msg.channel === 'height') {
+      // Extract height from notification payload
+      const payload = JSON.parse(msg.payload);
+      const height = Number.parseInt(payload._height, 10);
+      // Conditionally update high water mark and emit event
+      if (height > this.high_water) {
+        this.high_water = height;
+        this.emitter.emit('height', this.high_water);
+        log.trace(`Updated high_water to height: [ ${this.high_water} ]`);
+      }
+    }
+  }
+
+
+  async listen() {
     this.client = new Client({ connectionString: this.connectionString });
-    this.client.connect();
+    await this.client.connect();
     this.client.on('error', (err) => {
       log.error(`Encountered VentHelper pg client error: ${err.stack}`);
     });
@@ -82,4 +117,4 @@ class VentHelper {
   }
 }
 
-module.exports = (connectionString, maxWaitTime) => new VentHelper(connectionString, maxWaitTime);
+module.exports = VentHelper;

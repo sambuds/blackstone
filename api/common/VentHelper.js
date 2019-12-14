@@ -62,7 +62,6 @@ class VentHelper {
       log.debug(`Created result promise for target height [ ${target} ]`);
 
       const registerHeight = (height) => {
-        console.log(`got ${height}...`);
         // If the height has been reached, remove event listener and resolve promise
         if (!resolved && height >= target) {
           log.debug(`Resolving result promise for target height [ ${target} ]`);

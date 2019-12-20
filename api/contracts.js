@@ -1650,6 +1650,11 @@ class Contracts {
     }
   }
 
+  /**
+   * Returns the addresses for the formation and execution processes for the archetype identified by the given address
+   * @param {string} archAddress - the address of an archetype
+   * @return {Object} {formation: string, execution: string}
+   */
   getArchetypeProcesses(archAddress) {
     return new Promise((resolve, reject) => {
       log.debug(`REQUEST: Get formation and execution processes for archetype at address ${archAddress}`);
@@ -1660,13 +1665,10 @@ class Contracts {
         .then(this.interceptor)
         .then((data) => {
           if (!data.raw) return reject(boom.badImplementation('Failed to get archetype processes: no result returned'));
-          formation = data.raw[5] ? data.raw[5].valueOf() : '';
-          execution = data.raw[6] ? data.raw[6].valueOf() : '';
-          log.info(`SUCCESS: Retreived processes for archetype at ${archAddress}: ${JSON.stringify({ formation, execution })}`);
-          return resolve({
-            formation,
-            execution,
-          });
+          formation = data.values.formationProcessDefinition ? data.values.formationProcessDefinition.valueOf() : '';
+          execution = data.values.executionProcessDefinition ? data.values.executionProcessDefinition.valueOf() : '';
+          log.info(`SUCCESS: Retreived processes for archetype ${archAddress}. Formation: ${formation}, Execution: ${execution}}`);
+          return resolve({ formation, execution });
         })
         .catch(err => reject(boom.badImplementation(`Failed to get archetype processes: ${err}`)));
     });

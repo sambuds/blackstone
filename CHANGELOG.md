@@ -174,7 +174,7 @@ This release was tested with the following software and versions:
 ### Features / Bug Fixes
 
 - Added support for Hyperledger Burrow 0.23.3
-- Fixed a bug in contracts-controller.js to use the completeActivityWithData function correctly and complete an ActivityInstance with single data in one transaction
+- Fixed a bug in contracts.js to use the completeActivityWithData function correctly and complete an ActivityInstance with single data in one transaction
 - Added performer name to GET /bpm/activity-instances response
 - Allow external users to register for an account address only via email
 - Updated GET /bpm/process-definitions route to add optional query params

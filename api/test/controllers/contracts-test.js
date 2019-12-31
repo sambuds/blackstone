@@ -1,3 +1,4 @@
+require('dotenv').config({path: '../.env'});
 require('../constants');
 const rid = require('random-id');
 const chai = require('chai');
@@ -10,7 +11,7 @@ const crypto = require('crypto');
 const logger = require('../../common/logger');
 const log = logger.getLogger('tests.Harness');
 
-const contracts = require('../../controllers/contracts-controller');
+const contracts = require('../../contracts');
 
 before(function (done) { // eslint-disable-line func-names
   this.timeout(99999999);

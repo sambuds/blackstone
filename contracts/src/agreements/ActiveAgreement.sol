@@ -3,13 +3,14 @@ pragma solidity ^0.5.12;
 import "commons-auth/Permissioned.sol";
 
 import "agreements/ActiveAgreement_v1_0_1.sol";
+import "agreements/ActiveAgreement_v1_0_2.sol";
 
 /**
  * @title ActiveAgreement Interface
  * @dev API for interaction with an ActiveAgreement. This contract represents the latest "version" of the interface by inheriting from past versions and guaranteeing
  * the existence of past event and function signatures.
  */
-contract ActiveAgreement is ActiveAgreement_v1_0_1, Permissioned {
+contract ActiveAgreement is ActiveAgreement_v1_0_1, ActiveAgreement_v1_0_2, Permissioned {
 
 	// v1.1.0 LogAgreementCreation event with added field 'owner' and modified parameters ordering
 	event LogAgreementCreation_v1_1_0(
@@ -48,12 +49,12 @@ contract ActiveAgreement is ActiveAgreement_v1_0_1, Permissioned {
 	 * @param _governingAgreements array of agreement addresses which govern this agreement
 	 */
 	function initialize(
-		address _archetype, 
-		address _creator, 
-		address _owner, 
-		string calldata _privateParametersFileReference, 
-		bool _isPrivate, 
-		address[] calldata _parties, 
+		address _archetype,
+		address _creator,
+		address _owner,
+		string calldata _privateParametersFileReference,
+		bool _isPrivate,
+		address[] calldata _parties,
 		address[] calldata _governingAgreements)
 		external;
 

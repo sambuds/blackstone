@@ -10,6 +10,14 @@
 
 CI_IMAGE="quay.io/monax/blackstone:ci"
 
+# Provide environment
+# Probably best if we don't talk about this...
+# Convert each assigment to if-not-set '?=' assignment to match behaviour of dotenv module within files
+dotenv := $(shell grep -v '^\#' .env | sed 's/=/?=/')
+# This is work-around my makefile syntax checker...
+exp:=export
+$(foreach pair,$(dotenv),$(eval $(exp) $(pair)))
+
 ### Contracts
 
 .PHONY: build_contracts
@@ -77,7 +85,7 @@ docker_test: docker_run_deps
 # Just run the dependency services in docker compose (you can build and deploy contracts and the run the API locally)
 .PHONY: docker_run_deps
 docker_run_deps:
-	docker-compose up -d chain vent postgres hoard
+	docker-compose up -d chain vent postgres
 
 # Build all the contracts and run the API its dependencies
 .PHONY: docker_run_all

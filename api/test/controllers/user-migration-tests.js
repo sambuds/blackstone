@@ -10,7 +10,7 @@ const nanoid = require('nanoid');
 const logger = require('../../common/logger');
 const log = logger.getLogger('tests.Harness');
 
-const contracts = require('../../controllers/contracts-controller');
+const contracts = require('../../contracts');
 
 before(function(done) {
   this.timeout(99999999);

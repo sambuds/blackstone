@@ -102,7 +102,8 @@
         "ColumnName": "signature_log_file_reference",
         "Type": "string"
       }
-    ]
+    ],
+    "DeleteMarkerField": "__DELETE__"
   },
   {
     "TableName": "agreement_collections",

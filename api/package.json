@@ -50,10 +50,6 @@
       "pre-commit": "lint-staged"
     }
   },
-  "engines": {
-    "node": "^9.5.0",
-    "npm": "^5.6.0"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/agreements-network/blackstone.git"

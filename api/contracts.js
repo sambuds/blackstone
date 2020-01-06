@@ -301,9 +301,7 @@ class Contracts {
           return resolve((result && result.Data) ? result.Data : undefined);
         })
         .catch((err) => {
-          // FIXME: this is just GRPC 'unknown error' code. https://github.com/hyperledger/burrow/pull/1313 PR changes
-          // endpoint to emit status.NOT_FOUND
-          if (err.code === status.UNKNOWN) { // 2 UNKNOWN = entry does not exist
+          if (err.code === status.NOT_FOUND) {
             return resolve(undefined);
           }
           return reject(boom.badImplementation(`Error getting entry for <${name}> from namereg: ${err.stack}`));

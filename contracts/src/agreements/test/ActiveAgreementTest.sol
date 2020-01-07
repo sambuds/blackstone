@@ -19,6 +19,7 @@ contract ActiveAgreementTest {
 	string constant functionSigAgreementInitialize = "initialize(address,address,address,string,bool,address[],address[])";
 	string constant functionSigAgreementSign = "sign()";
 	string constant functionSigAgreementCancel = "cancel()";
+	string constant functionSigAgreementRedact = "redact()";
 	string constant functionSigAgreementSetLegalState = "setLegalState(uint8)";
 	string constant functionSigAgreementTestLegalState = "testLegalState(uint8)";
 	string constant functionSigUpgradeOwnerPermission = "upgradeOwnerPermission(address)";
@@ -303,6 +304,62 @@ contract ActiveAgreementTest {
 
 		return SUCCESS;
 	}
+
+	/**
+	 * @dev Verifies the conditions and state changes when redacting an agreement. 
+	 */
+	function testAgreementRedaction() external returns (string memory) {
+
+		// agreeement with no signatories can be redacted by the owner at any stage. If it has running processes, they need to be cancelled. However, running through the cancel function might not be what we want. At a minimum, the authorizePartyActor() can throw if the owner is not a party.
+		// agreement that is final can be redacted by the owner
+		// should the owner always be able to redact at any stage and we'll just have to handle it in the function, i.e. abort processes if necessary? ... if we were able to update the AgreementRegistry, it could spot the redacted state and abort processes and we would not have to use cancel()
+
+		ActiveAgreement agreementNoSignatories;
+		ActiveAgreement agreementWithSignatories;
+		Archetype archetype;
+		bool success;
+
+		signer1 = new DefaultUserAccount();
+		signer1.initialize(address(this), address(0));
+		signer2 = new DefaultUserAccount();
+		signer2.initialize(address(this), address(0));
+
+		// set up the parties for the second agreement
+		delete parties;
+		parties.push(address(signer1));
+		parties.push(address(signer2));
+
+		archetype = new DefaultArchetype();
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyArray);
+		agreementNoSignatories = new DefaultActiveAgreement();
+		agreementNoSignatories.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, emptyArray, emptyArray);
+		agreementWithSignatories = new DefaultActiveAgreement();
+		agreementWithSignatories.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+
+		// test valid redaction by owner (no signatories)
+		(success, ) = address(agreementNoSignatories).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (!success) return "Redaction be owner should succeed";
+		if (agreementNoSignatories.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "AgreementNoSignatories legal state should be REDACTED after redaction by owner";
+
+		// test redaction by one of the signatories
+		// signer2.forwardCall(address(agreementNoSignatories), abi.encodeWithSignature(functionSigAgreementRedact));
+	
+		// // AgreementNoSignatories is canceled during formation
+		// signer2.forwardCall(address(agreementNoSignatories), abi.encodeWithSignature(functionSigAgreementCancel));
+		// if (agreementNoSignatories.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "AgreementNoSignatories legal state should be CANCELED after unilateral cancellation in formation";
+
+		// // AgreementWithSignatories is canceled during execution
+		// signer1.forwardCall(address(agreementWithSignatories), abi.encodeWithSignature(functionSigAgreementSign));
+		// signer2.forwardCall(address(agreementWithSignatories), abi.encodeWithSignature(functionSigAgreementSign));
+		// if (agreementWithSignatories.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "Agreemen2 legal state should be EXECUTED after parties signed";
+		// signer1.forwardCall(address(agreementWithSignatories), abi.encodeWithSignature(functionSigAgreementCancel));
+		// if (agreementWithSignatories.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "AgreementWithSignatories legal state should still be EXECUTED after unilateral cancellation";
+		// signer2.forwardCall(address(agreementWithSignatories), abi.encodeWithSignature(functionSigAgreementCancel));
+		// if (agreementWithSignatories.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "AgreementWithSignatories legal state should be CANCELED after bilateral cancellation";
+
+		return SUCCESS;
+	}
+
 }
 
 /**

@@ -182,53 +182,45 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 	 * @return the resulting Agreements.LegalState of the agreement
 	 */
     function redact() external returns (Agreements.LegalState) {
-        ErrorsLib.revertIf(this.getOwner() != msg.sender, ErrorsLib.UNAUTHORIZED(),
+		address agrOwner = this.getOwner();
+		bool authorized = agrOwner == msg.sender;
+		if (!authorized && ERC165Utils.implementsInterface(agrOwner, Governance.ERC165_ID_Organization())) {
+            authorized = Organization(agrOwner).authorizeUser(msg.sender, "");
+		}
+        ErrorsLib.revertIf(!authorized, ErrorsLib.UNAUTHORIZED(),
             "DefaultActiveAgreement.redact()", "Only the agreement owner may request redaction");
-
-        (address actor, address party) = AgreementsAPI.authorizePartyActor(address(this));
-
-        // Attempt to cancel -
-        doCancel(msg.sender, actor, party);
-
-        if (legalState == Agreements.LegalState.CANCELED) {
-            legalState = Agreements.LegalState.REDACTED;
-            emit LogAgreementLegalStateUpdate(EVENT_ID_AGREEMENTS, address(this), uint8(legalState));
-            emitEvent(EVENT_ID_STATE_CHANGED, address(this));
-            // Signal deletion to external systems
-            emit LogAgreementRedaction(EVENT_ID_AGREEMENTS, DELETION, address(this));
+        // Depending on the current state, cancel the agreement before redacting to allow other components to react accordingly,
+		// e.g. the AgreementRegistry shutting down any in-flight processes.
+        if (legalState != Agreements.LegalState.CANCELED &&
+			legalState != Agreements.LegalState.REDACTED &&
+			legalState != Agreements.LegalState.FULFILLED &&
+			legalState != Agreements.LegalState.DEFAULT) {
+            setStateToCanceled();
         }
+
+        legalState = Agreements.LegalState.REDACTED;
+        emit LogAgreementLegalStateUpdate(EVENT_ID_AGREEMENTS, address(this), uint8(legalState));
+        emitEvent(EVENT_ID_STATE_CHANGED, address(this));
+        // Signal deletion to external systems
+        emit LogAgreementRedaction(EVENT_ID_AGREEMENTS, DELETION, address(this));
 
         return legalState;
     }
 
 	/**
-	 * @dev Registers the msg.sender as having canceled the agreement.
+	 * @dev Registers the msg.sender as having canceled the agreement with the expectation the msg.sender is one of the signing parties.
 	 * During formation (legal states DRAFT and FORMULATED), the agreement can be canceled unilaterally by one of the parties to the agreement.
 	 * During execution (legal state EXECUTED), the agreement can only be canceled if all parties agree to do so by invoking this function.
 	 * REVERTS if:
 	 * - the caller could not be authorized (see AgreementsAPI.authorizePartyActor())
 	 */ 
     function cancel() external {
+
         (address actor, address party) = AgreementsAPI.authorizePartyActor(address(this));
-
-        doCancel(msg.sender, actor, party);
-    }
-
-    /**
-     * @dev TODO
-     */
-    function doCancel(address sender, address actor, address party) private {
-        // Allow owner to unilaterally cancel agreement with no parties
-        // (e.g. a pen-and-paper signed legacy agreement)
-        if (parties.length == 0 && this.getOwner() == sender) {
-            setStateToCanceled();
-            return;
-        }
 
         // if the actor is empty at this point, the authorization is regarded as failed
         ErrorsLib.revertIf(actor == address(0), ErrorsLib.UNAUTHORIZED(),
             "DefaultActiveAgreement.doCancel()", "The caller is not authorized to cancel");
-
 
         if (legalState == Agreements.LegalState.DRAFT ||
         legalState == Agreements.LegalState.FORMULATED) {

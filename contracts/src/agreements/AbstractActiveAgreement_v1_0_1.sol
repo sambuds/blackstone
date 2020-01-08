@@ -49,6 +49,7 @@ contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataS
 	 * 
 	 * Allowed legal state changes:
 	 * UNDEFINED -> *ANY*
+	 * *ANY* -> REDACTED
 	 * DRAFT <-> FORMULATED
 	 * FORMULATED -> EXECUTED
 	 * EXECUTED -> FULFILLED | DEFAULT
@@ -62,7 +63,8 @@ contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataS
 		if (legalState == _newState) {
 			return;
 		}
-		if (legalState == Agreements.LegalState.UNDEFINED
+		if (legalState == Agreements.LegalState.UNDEFINED // allowed to switch from UNDEFINED to "anything"
+			|| (_newState == Agreements.LegalState.REDACTED) // allowed to switch from "anything" to REDACTED
 			|| (legalState == Agreements.LegalState.DRAFT &&
 			  (_newState == Agreements.LegalState.FORMULATED || _newState == Agreements.LegalState.CANCELED))
 			|| (legalState == Agreements.LegalState.FORMULATED &&

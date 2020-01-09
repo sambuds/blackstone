@@ -1,6 +1,7 @@
 pragma solidity ^0.5.12;
 
 import "commons-base/ErrorsLib.sol";
+import "commons-standards/ERC165Utils.sol";
 import "commons-management/AbstractVersionedArtifact.sol";
 import "commons-auth/AbstractPermissioned.sol";
 
@@ -179,6 +180,8 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 	/**
 	 * @dev Performs a redaction on this agreement, i.e. marks the agreement as 'obscured' or 'redacted' to external systems and
 	 * represents a request for removal of the agreement.
+	 * REVERTS if:
+	 * - the msg.sender cannot be established as the owner of the agreement (either directly or as a member of an Organization that owns the agreement)
 	 * @return the resulting Agreements.LegalState of the agreement
 	 */
     function redact() external returns (Agreements.LegalState) {

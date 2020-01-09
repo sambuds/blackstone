@@ -233,7 +233,7 @@ jobs:
 - name: DefaultActiveAgreementImplementation
   deploy:
     contract: DefaultActiveAgreement.bin
-    libraries: ErrorsLib:$ErrorsLib, TypeUtilsLib:$TypeUtilsLib, ArrayUtilsLib:$ArrayUtilsLib, MappingsLib:$MappingsLib, DataStorageUtils:$DataStorageUtils, AgreementsAPI:$AgreementsAPI
+    libraries: ErrorsLib:$ErrorsLib, TypeUtilsLib:$TypeUtilsLib, ArrayUtilsLib:$ArrayUtilsLib, MappingsLib:$MappingsLib, DataStorageUtils:$DataStorageUtils, AgreementsAPI:$AgreementsAPI, ERC165Utils:$ERC165Utils
 
 - name: ObjectClassActiveAgreement
   query-contract:

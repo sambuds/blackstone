@@ -182,13 +182,16 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 	 * represents a request for removal of the agreement.
 	 * REVERTS if:
 	 * - the msg.sender cannot be established as the owner of the agreement (either directly or as a member of an Organization that owns the agreement)
+	 * IMPORTANT: There is no scope information held on the owner, so any member of an Organization owner is considered authorized!
+	 * If the agreement belongs to a department in the organization then it's the responsibility of the application layer on top of these contracts
+	 * to correctly authorize the caller before invoking this function!
 	 * @return the resulting Agreements.LegalState of the agreement
 	 */
     function redact() external returns (Agreements.LegalState) {
 		address agrOwner = this.getOwner();
 		bool authorized = agrOwner == msg.sender;
 		if (!authorized && ERC165Utils.implementsInterface(agrOwner, Governance.ERC165_ID_Organization())) {
-            authorized = Organization(agrOwner).authorizeUser(msg.sender, "");
+            authorized = Organization(agrOwner).authorizeUser(msg.sender, ""); //checking against an empty scope! See function docs above.
 		}
         ErrorsLib.revertIf(!authorized, ErrorsLib.UNAUTHORIZED(),
             "DefaultActiveAgreement.redact()", "Only the agreement owner may request redaction");

@@ -212,7 +212,7 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 	 * During formation (legal states DRAFT and FORMULATED), the agreement can be canceled unilaterally by one of the parties to the agreement.
 	 * During execution (legal state EXECUTED), the agreement can only be canceled if all parties agree to do so by invoking this function.
 	 * REVERTS if:
-	 * - the caller could not be authorized (see AgreementsAPI.authorizePartyActor())
+	 * - the caller could not be authorized as a signing party (see AgreementsAPI.authorizePartyActor())
 	 */ 
     function cancel() external {
 

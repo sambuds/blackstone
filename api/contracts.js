@@ -1664,7 +1664,7 @@ class Contracts {
         .factory.getArchetypeData(archAddress)
         .then(this.interceptor)
         .then((data) => {
-          if (!data.raw) return reject(boom.badImplementation('Failed to get archetype processes: no result returned'));
+          if (!data.values) return reject(boom.badImplementation('Failed to get archetype processes: no result returned'));
           formation = data.values.formationProcessDefinition ? data.values.formationProcessDefinition.valueOf() : '';
           execution = data.values.executionProcessDefinition ? data.values.executionProcessDefinition.valueOf() : '';
           log.info(`SUCCESS: Retreived processes for archetype ${archAddress}. Formation: ${formation}, Execution: ${execution}}`);

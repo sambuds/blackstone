@@ -350,18 +350,30 @@ contract ActiveAgreementTest {
 		if (!success) return "Redaction by owner should succeed";
 		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "Agreement legal state should be REDACTED after redaction by owner";
 
+		// Failure: cannot redact again
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (success) return "Redaction of an already redacted agreement should REVERT";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "Agreement should still be REDACTED after second redact call";
+
 		// test redaction failure for non-owner (no processes)
 		agreement = new DefaultActiveAgreement();
 		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, emptyAddressArray, emptyAddressArray);
 		(success, ) = address(signer1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRedact)));
 		if (success) return "Calling redact() from an account other than the owner should REVERT";
 
-		// test redaction by owner with signatories (no processes)
+		// test redaction by owner with signatories in-flight (not finalized, not canceled agreement)
 		agreement = new DefaultActiveAgreement();
 		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
-		if (!success) return "Redaction by owner should succeed even when signatories present";
-		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "Agreement legal state should be REDACTED after redaction by owner with signatories";
+		if (success) return "Redaction by owner of in-flight agreement should REVERT due to signatories";
+		if (agreement.getLegalState() == uint8(Agreements.LegalState.REDACTED)) return "In-flight agreement legal state should NOT be REDACTED after redaction attempt due to signatories present";
+		// now cancel and retry
+		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementCancel));
+		signer2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementCancel));
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "In-flight agreement legal state should be CANCELED after parties cancel";
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (!success) return "Redaction by owner of in-flight agreement should succeed after parties canceled";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "In-flight agreement legal state should be REDACTED after parties cancel";
 
 		// test redaction when owner is an organization
 		agreement = new DefaultActiveAgreement();

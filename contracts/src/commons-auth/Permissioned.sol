@@ -6,6 +6,9 @@ pragma solidity ^0.5.12;
  */
 contract Permissioned {
 
+    // Interface-level constant
+    bytes32 public constant ROLE_ID_OBJECT_ADMIN = keccak256(abi.encodePacked("object.administrator"));
+
     /**
      * @dev Sets the administator permission holder to the specified address. This is a convenience function to provide flexibility around
      * initializing the object administrator, e.g. outside of the constructor.

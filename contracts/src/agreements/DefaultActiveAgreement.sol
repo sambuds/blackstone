@@ -180,14 +180,22 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 	/**
 	 * @dev Performs a redaction on this agreement, i.e. marks the agreement as 'obscured' or 'redacted' to external systems and
 	 * represents a request for removal of the agreement.
+	 * A redaction can only be performed by the owner. If the agreement is not in a final state (DEFAULT, FULFILLED), it must first
+	 * be canceled. If the agreement has parties, the parties must first cancel via the rules of the cancel() function. For agreements
+	 * without parties, aborting any ongoing processing is automatically performed via this function via #setStateToCanceled,
+	 * analogous to the cancel() functions outcome.
 	 * REVERTS if:
+	 * - the legal state is already REDACTED
 	 * - the msg.sender cannot be established as the owner of the agreement (either directly or as a member of an Organization that owns the agreement)
-	 * IMPORTANT: There is no scope information held on the owner, so any member of an Organization owner is considered authorized!
+	 * - the agreement is "in-flight" and has parties who must first cancel the agreement
+	 * WARNING: There is no scope information held on the owner, so any member of an Organization (organizational owner) is considered authorized!
 	 * If the agreement belongs to a department in the organization then it's the responsibility of the application layer on top of these contracts
 	 * to correctly authorize the caller before invoking this function!
 	 * @return the resulting Agreements.LegalState of the agreement
 	 */
     function redact() external returns (Agreements.LegalState) {
+        ErrorsLib.revertIf(legalState == Agreements.LegalState.REDACTED, ErrorsLib.INVALID_INPUT(),
+            "DefaultActiveAgreement.redact()", "The agreement is already in state REDACTED");
 		address agrOwner = this.getOwner();
 		bool authorized = agrOwner == msg.sender;
 		if (!authorized && ERC165Utils.implementsInterface(agrOwner, Governance.ERC165_ID_Organization())) {
@@ -195,14 +203,15 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 		}
         ErrorsLib.revertIf(!authorized, ErrorsLib.UNAUTHORIZED(),
             "DefaultActiveAgreement.redact()", "Only the agreement owner may request redaction");
-        // Depending on the current state, cancel the agreement before redacting to allow other components to react accordingly,
-		// e.g. the AgreementRegistry shutting down any in-flight processes.
-        if (legalState != Agreements.LegalState.CANCELED &&
-			legalState != Agreements.LegalState.REDACTED &&
-			legalState != Agreements.LegalState.FULFILLED &&
-			legalState != Agreements.LegalState.DEFAULT) {
+		bool notFinalState = legalState != Agreements.LegalState.CANCELED && // we already excluded REDACTED at the top!
+							 legalState != Agreements.LegalState.FULFILLED &&
+							 legalState != Agreements.LegalState.DEFAULT;
+		if (notFinalState) {
+			ErrorsLib.revertIf(parties.length > 0, ErrorsLib.INVALID_STATE(),
+				"DefaultActiveAgreement.redact()", "The agreement cannot be redacted. The registered parties must cancel it first");
+			// cancel the agreement before redacting to allow other components to react accordingly, e.g. the AgreementRegistry shutting down any in-flight processes
             setStateToCanceled();
-        }
+		}
 
         legalState = Agreements.LegalState.REDACTED;
         emit LogAgreementLegalStateUpdate(EVENT_ID_AGREEMENTS, address(this), uint8(legalState));

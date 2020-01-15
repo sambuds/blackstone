@@ -686,38 +686,20 @@ class Contracts {
     });
   }
 
-  grantLegalStateControllerPermission(agreementAddress) {
-    return new Promise((resolve, reject) => {
-      log.debug(`REQUEST: Grant legal state controller permission for agreement ${agreementAddress}`);
-      const agreement = Contracts.getContract(BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
-      agreement.ROLE_ID_LEGAL_STATE_CONTROLLER((permIdError, data) => {
-        if (permIdError || !data.raw) {
-          return reject(boomify(permIdError, `Failed to get legal state controller permission id for agreement ${agreementAddress}`));
-        }
-        const permissionId = data.raw[0];
-        return agreement.grantPermission(permissionId, ACCOUNTS_SERVER_KEY)
-          .then(this.interceptor)
-          .then(() => {
-            log.info(`SUCCESS: Granted legal state controller permission for agreement ${agreementAddress}`);
-            return resolve();
-          })
-          .catch(err => reject(boomify(err, `Failed to grant legal state controller permission for agreement ${agreementAddress}`)));
-      });
-    });
-  }
-
-  setLegalState(agreementAddress, legalState) {
-    return new Promise((resolve, reject) => {
+  async setLegalState(agreementAddress, legalState) {
+    try {
       log.debug(`REQUEST: Set legal state of agreement ${agreementAddress} to ${legalState}`);
       const agreement = Contracts.getContract(BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
-      agreement.setLegalState(legalState)
-        .then(this.interceptor)
-        .then(() => {
-          log.info(`SUCCESS: Set legal state of agreement ${agreementAddress} to ${legalState}`);
-          return resolve();
-        })
-        .catch(error => reject(boomify(error, `Failed to set legal state of agreement ${agreementAddress} to ${legalState}`)));
-    });
+      const permissionId = (await agreement.ROLE_ID_LEGAL_STATE_CONTROLLER()).raw[0];
+      const hasPermission = (await agreement.hasPermission(permissionId, ACCOUNTS_SERVER_KEY)).raw[0];
+      if (!hasPermission) await agreement.grantPermission(permissionId, ACCOUNTS_SERVER_KEY);
+      const data = await agreement.setLegalState(legalState);
+      await agreement.revokePermission(permissionId, ACCOUNTS_SERVER_KEY);
+      await this.interceptor(data);
+      log.info(`SUCCESS: Set legal state of agreement ${agreementAddress} to ${legalState}`);
+    } catch (err) {
+      throw boomify(err, `Failed to set legal state of agreement ${agreementAddress} to ${legalState}`);
+    }
   }
 
   initializeObjectAdministrator(agreementAddress) {
@@ -770,19 +752,26 @@ class Contracts {
 
   async updateAgreementFileReference(fileKey, agreementAddress, hoardGrant) {
     log.debug(`REQUEST: Update reference for  ${fileKey} for agreement at ${agreementAddress} with new reference ${hoardGrant}`);
+    let data;
     try {
-      if (fileKey === 'EventLog') {
-        return this.interceptor(appManager.contracts['ActiveAgreementRegistry'].factory
-          .setEventLogReference(agreementAddress, hoardGrant));
+      const agreement = Contracts.getContract(BUNDLES.AGREEMENTS.contracts.ACTIVE_AGREEMENT, agreementAddress);
+      switch (fileKey) {
+        case 'EventLog':
+          data = await agreement.setEventLogReference(hoardGrant);
+          break;
+        case 'SignatureLog':
+          data = await agreement.setSignatureLogReference(hoardGrant);
+          break;
+        case 'PrivateParameters':
+          data = await agreement.setPrivateParametersReference(hoardGrant);
+          break;
+        default:
+          throw boom.badImplementation(`Did not recognize agreement file key: ${fileKey}`);
       }
-      if (fileKey === 'SignatureLog') {
-        return this.interceptor(appManager.contracts['ActiveAgreementRegistry'].factory
-          .setSignatureLogReference(agreementAddress, hoardGrant));
-      }
+      await this.interceptor(data);
     } catch (err) {
       throw boom.badImplementation(`Failed to set new reference ${hoardGrant} for ${fileKey} for agreement at ${agreementAddress}: ${err}`);
     }
-    throw boom.badImplementation(`Did not recognize agreement file key: ${fileKey}`);
   }
 
   createAgreementCollection(author, collectionType, packageId) {

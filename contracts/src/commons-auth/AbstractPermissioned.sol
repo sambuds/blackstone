@@ -18,8 +18,6 @@ contract AbstractPermissioned is Permissioned {
 
     using ArrayUtilsLib for address[];
 
-    bytes32 public constant ROLE_ID_OBJECT_ADMIN = keccak256(abi.encodePacked("object.administrator"));
-
     struct Permission {
         address[] holders;
         bool multiHolder;

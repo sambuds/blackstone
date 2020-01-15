@@ -1,19 +1,20 @@
 pragma solidity ^0.5.12;
 
 import "commons-base/ErrorsLib.sol";
+import "commons-standards/ERC165Utils.sol";
 import "commons-management/AbstractVersionedArtifact.sol";
 import "commons-auth/AbstractPermissioned.sol";
 
 import "agreements/Archetype.sol";
 import "agreements/ActiveAgreement.sol";
-import "agreements/AbstractActiveAgreement_v1_0_2.sol";
+import "agreements/AbstractActiveAgreement_v1_0_1.sol";
 
 /**
  * @title DefaultActiveAgreement
  * @dev Default implementation of the ActiveAgreement interface. This contract represents the latest "version" of the artifact by inheriting from past versions to guarantee the order
  * of storage variable declarations. It also inherits and instantiates AbstractVersionedArtifact.
  */
-contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractActiveAgreement_v1_0_2, AbstractPermissioned, ActiveAgreement {
+contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractActiveAgreement_v1_0_1, AbstractPermissioned, ActiveAgreement {
 
 	/**
 	 * @dev Legacy initialize function that is not supported anymore in this version of DefaultArchetype and will always revert.
@@ -175,5 +176,103 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 	function getOwner() external view returns (address) {
     	return permissions[ROLE_ID_OWNER].holders.length > 0 ? permissions[ROLE_ID_OWNER].holders[0] : address(0);
 	}
+
+	/**
+	 * @dev Performs a redaction on this agreement, i.e. marks the agreement as 'obscured' or 'redacted' to external systems and
+	 * represents a request for removal of the agreement.
+	 * A redaction can only be performed by the owner. If the agreement is not in a final state (DEFAULT, FULFILLED), it must first
+	 * be canceled. If the agreement has parties, the parties must first cancel via the rules of the cancel() function. For agreements
+	 * without parties, aborting any ongoing processing is automatically performed via this function via #setStateToCanceled,
+	 * analogous to the cancel() functions outcome.
+	 * REVERTS if:
+	 * - the legal state is already REDACTED
+	 * - the msg.sender cannot be established as the owner of the agreement (either directly or as a member of an Organization that owns the agreement)
+	 * - the agreement is "in-flight" and has parties who must first cancel the agreement
+	 * WARNING: There is no scope information held on the owner, so any member of an Organization (organizational owner) is considered authorized!
+	 * If the agreement belongs to a department in the organization then it's the responsibility of the application layer on top of these contracts
+	 * to correctly authorize the caller before invoking this function!
+	 * @return the resulting Agreements.LegalState of the agreement
+	 */
+    function redact() external returns (Agreements.LegalState) {
+        ErrorsLib.revertIf(legalState == Agreements.LegalState.REDACTED, ErrorsLib.INVALID_INPUT(),
+            "DefaultActiveAgreement.redact()", "The agreement is already in state REDACTED");
+		address agrOwner = this.getOwner();
+		bool authorized = agrOwner == msg.sender;
+		if (!authorized && ERC165Utils.implementsInterface(agrOwner, Governance.ERC165_ID_Organization())) {
+            authorized = Organization(agrOwner).authorizeUser(msg.sender, ""); //checking against an empty scope! See function docs above.
+		}
+        ErrorsLib.revertIf(!authorized, ErrorsLib.UNAUTHORIZED(),
+            "DefaultActiveAgreement.redact()", "Only the agreement owner may request redaction");
+		bool notFinalState = legalState != Agreements.LegalState.CANCELED && // we already excluded REDACTED at the top!
+							 legalState != Agreements.LegalState.FULFILLED &&
+							 legalState != Agreements.LegalState.DEFAULT;
+		if (notFinalState) {
+			ErrorsLib.revertIf(parties.length > 0, ErrorsLib.INVALID_STATE(),
+				"DefaultActiveAgreement.redact()", "The agreement cannot be redacted. The registered parties must cancel it first");
+			// cancel the agreement before redacting to allow other components to react accordingly, e.g. the AgreementRegistry shutting down any in-flight processes
+            setStateToCanceled();
+		}
+
+        legalState = Agreements.LegalState.REDACTED;
+        emit LogAgreementLegalStateUpdate(EVENT_ID_AGREEMENTS, address(this), uint8(legalState));
+        emitEvent(EVENT_ID_STATE_CHANGED, address(this));
+        // Signal deletion to external systems
+        emit LogAgreementRedaction(EVENT_ID_AGREEMENTS, DELETION, address(this));
+
+        return legalState;
+    }
+
+	/**
+	 * @dev Registers the msg.sender as having canceled the agreement with the expectation the msg.sender is one of the signing parties.
+	 * During formation (legal states DRAFT and FORMULATED), the agreement can be canceled unilaterally by one of the parties to the agreement.
+	 * During execution (legal state EXECUTED), the agreement can only be canceled if all parties agree to do so by invoking this function.
+	 * REVERTS if:
+	 * - the caller could not be authorized as a signing party (see AgreementsAPI.authorizePartyActor())
+	 */ 
+    function cancel() external {
+
+        (address actor, address party) = AgreementsAPI.authorizePartyActor(address(this));
+
+        // if the actor is empty at this point, the authorization is regarded as failed
+        ErrorsLib.revertIf(actor == address(0), ErrorsLib.UNAUTHORIZED(),
+            "DefaultActiveAgreement.doCancel()", "The caller is not authorized to cancel");
+
+        if (legalState == Agreements.LegalState.DRAFT ||
+        legalState == Agreements.LegalState.FORMULATED) {
+            // unilateral cancellation is allowed before execution phase
+			cancellations[party].signee = actor;
+			cancellations[party].timestamp = block.timestamp;
+            setStateToCanceled();
+            // for cancellations we need to inform the registry
+            emit LogActiveAgreementToPartyCancelationsUpdate(EVENT_ID_AGREEMENT_PARTY_MAP, address(this), party, actor, block.timestamp);
+        }
+        else if (legalState == Agreements.LegalState.EXECUTED) {
+            // multilateral cancellation (timestamp != 0 => party has cancelled already)
+            if (cancellations[party].timestamp == 0) {
+                cancellations[party].signee = actor;
+                cancellations[party].timestamp = block.timestamp;
+                emit LogActiveAgreementToPartyCancelationsUpdate(EVENT_ID_AGREEMENT_PARTY_MAP, address(this), party, actor, block.timestamp);
+                for (uint i = 0; i < parties.length; i++) {
+                    if (cancellations[parties[i]].timestamp == 0) {
+                        break;
+                    }
+                    if (i == parties.length - 1) {
+                        // All parties have registered their desire to cancel
+                        setStateToCanceled();
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * @dev Private function to set the legal state of this agreement to Agreements.LegalState.CANCELED
+	 * and emit appropriate (external and internal) events.
+     */
+    function setStateToCanceled() private {
+        legalState = Agreements.LegalState.CANCELED;
+        emit LogAgreementLegalStateUpdate(EVENT_ID_AGREEMENTS, address(this), uint8(legalState));
+        emitEvent(EVENT_ID_STATE_CHANGED, address(this));
+    }
 
 }

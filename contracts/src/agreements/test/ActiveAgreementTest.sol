@@ -19,9 +19,11 @@ contract ActiveAgreementTest {
 	string constant functionSigAgreementInitialize = "initialize(address,address,address,string,bool,address[],address[])";
 	string constant functionSigAgreementSign = "sign()";
 	string constant functionSigAgreementCancel = "cancel()";
+	string constant functionSigAgreementRedact = "redact()";
 	string constant functionSigAgreementSetLegalState = "setLegalState(uint8)";
 	string constant functionSigAgreementTestLegalState = "testLegalState(uint8)";
 	string constant functionSigUpgradeOwnerPermission = "upgradeOwnerPermission(address)";
+    string constant functionSigForwardCall = "forwardCall(address,bytes)";
 
 	address falseAddress = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
 	string dummyFileRef = "{find me}";
@@ -35,7 +37,7 @@ contract ActiveAgreementTest {
 
 	address[] parties;
 	address[] bogusArray = [0xCcD5bA65282C3dafB69b19351C7D5B77b9fDDCA6, 0x5e3621030C9E0aCbb417c8E63f0824A8215a8958, 0x8A8318bdCfFf8c83C4Da727AEEE9483806689cCF, 0x1915FBC9C4A2E610012150D102D1a916C78Aa44f];
-	address[] emptyArray;
+	address[] emptyAddressArray;
 
 	/**
 	 * @dev Covers the setup and proper data retrieval of an agreement
@@ -57,27 +59,27 @@ contract ActiveAgreementTest {
 		parties.push(address(signer2));
 
 		archetype = new DefaultArchetype();
-		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyArray);
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
 
 		agreement = new DefaultActiveAgreement();
 		// test positive creation first to confirm working function signature
-		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, archetype, address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, archetype, address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray));
 		if (!success) return "Creating an agreement with valid parameters should succeed";
 
 		// test failures
-		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, address(0), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, address(0), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray));
 		if (success) return "Creating archetype with empty archetype should revert";
 
-		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, archetype, address(0), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, archetype, address(0), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray));
 		if (success) return "Creating archetype with empty creator should revert";
 
-		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, archetype, address(this), address(0), dummyPrivateParametersFileRef, false, parties, emptyArray));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementInitialize, archetype, address(this), address(0), dummyPrivateParametersFileRef, false, parties, emptyAddressArray));
 		if (success) return "Creating archetype with empty owner should revert";
 
 
 		// function testing
 		agreement = new DefaultActiveAgreement();
-		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 		agreement.setEventLogReference(dummyFileRef);
 		if (keccak256(abi.encodePacked(agreement.getEventLogReference())) != keccak256(abi.encodePacked(dummyFileRef)))
 			return "The EventLog file reference was not set/retrieved correctly";
@@ -123,10 +125,10 @@ contract ActiveAgreementTest {
 		parties.push(address(signer2));
 
 		archetype = new DefaultArchetype();
-		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyArray);
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
 
 		agreement = new LegalStateEnforcedAgreement();
-		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 		agreement.resetLegalState();
 
 		if (agreement.getLegalState() != uint8(Agreements.LegalState.UNDEFINED))
@@ -174,6 +176,14 @@ contract ActiveAgreementTest {
 		if (success) return "DEFAULT -> FORMULATED should not be valid";
 		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementTestLegalState, uint8(Agreements.LegalState.FULFILLED)));
 		if (success) return "DEFAULT -> FULFILLED should not be valid";
+		if (!agreement.testLegalState(Agreements.LegalState.REDACTED)) return "It should be possible to switch to REDACTED from any other legal state";
+
+		// test cancellation
+		agreement.resetLegalState();
+		if (!agreement.testLegalState(Agreements.LegalState.FORMULATED)) return "UNDEFINED -> FORMULATED should be valid (cancellation setup)";
+		if (!agreement.testLegalState(Agreements.LegalState.CANCELED)) return "FORMULATED -> CANCELED should be valid";
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementTestLegalState, uint8(Agreements.LegalState.DRAFT)));
+		if (success) return "CANCELED -> DRAFT should not be valid";
 
 		return SUCCESS;
 	}
@@ -195,7 +205,6 @@ contract ActiveAgreementTest {
 		// set up the parties.
 		// Signer1 is a direct signer
 		// Signer 2 is signing on behalf of an organization (default department)
-		address[] memory emptyAddressArray;
 		Organization org1 = new DefaultOrganization();
 		org1.initialize(emptyAddressArray, EMPTY);
 		if (!org1.addUserToDepartment(address(signer2), EMPTY)) return "Unable to add user account to organization";
@@ -204,9 +213,9 @@ contract ActiveAgreementTest {
 		parties.push(address(org1));
 
 		archetype = new DefaultArchetype();
-		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyArray);
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
 		agreement = new DefaultActiveAgreement();
-		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 
 		// test signing
 		address signee;
@@ -239,7 +248,7 @@ contract ActiveAgreementTest {
 
 		// test external legal state control in combination with signing
 		agreement = new DefaultActiveAgreement();
-		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 		agreement.initializeObjectAdministrator(address(this));
 		agreement.grantPermission(agreement.ROLE_ID_LEGAL_STATE_CONTROLLER(), address(signer1));
 		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
@@ -276,11 +285,11 @@ contract ActiveAgreementTest {
 		parties.push(address(signer2));
 
 		archetype = new DefaultArchetype();
-		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyArray);
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
 		agreement1 = new DefaultActiveAgreement();
-		agreement1.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+		agreement1.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 		agreement2 = new DefaultActiveAgreement();
-		agreement2.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyArray);
+		agreement2.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 
 		// test invalid cancellation and states
 		(success, ) = address(agreement1).call(abi.encodeWithSignature(functionSigAgreementCancel));
@@ -303,6 +312,85 @@ contract ActiveAgreementTest {
 
 		return SUCCESS;
 	}
+
+	/**
+	 * @dev Verifies the conditions and legal state changes when redacting an agreement.
+	 */
+	function testAgreementRedaction() external returns (string memory) {
+
+		// agreeement with no signatories can be redacted by the owner at any stage. If it has running processes, they need to be cancelled. However, running through the cancel function might not be what we want. At a minimum, the authorizePartyActor() can throw if the owner is not a party.
+		// agreement that is final can be redacted by the owner
+		// should the owner always be able to redact at any stage and we'll just have to handle it in the function, i.e. abort processes if necessary? ... if we were able to update the AgreementRegistry, it could spot the redacted state and abort processes and we would not have to use cancel()
+
+		ActiveAgreement agreement;
+		Archetype archetype;
+		bool success;
+
+		// setting up actors
+		signer1 = new DefaultUserAccount();
+		signer1.initialize(address(this), address(0));
+		signer2 = new DefaultUserAccount();
+		signer2.initialize(address(this), address(0));
+		Organization org1 = new DefaultOrganization();
+		org1.initialize(emptyAddressArray, EMPTY);
+		if (!org1.addUserToDepartment(address(signer1), EMPTY)) return "Unable to add user account to organization";
+
+		// set up signatory parties
+		delete parties;
+		parties.push(address(signer1));
+		parties.push(address(signer2));
+
+		archetype = new DefaultArchetype();
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
+	
+		// test valid redaction by owner (no signatories, no processes)
+		agreement = new DefaultActiveAgreement();
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, emptyAddressArray, emptyAddressArray);
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (!success) return "Redaction by owner should succeed";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "Agreement legal state should be REDACTED after redaction by owner";
+
+		// Failure: cannot redact again
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (success) return "Redaction of an already redacted agreement should REVERT";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "Agreement should still be REDACTED after second redact call";
+
+		// test redaction failure for non-owner (no processes)
+		agreement = new DefaultActiveAgreement();
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, emptyAddressArray, emptyAddressArray);
+		(success, ) = address(signer1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRedact)));
+		if (success) return "Calling redact() from an account other than the owner should REVERT";
+
+		// test redaction by owner with signatories in-flight (not finalized, not canceled agreement)
+		agreement = new DefaultActiveAgreement();
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (success) return "Redaction by owner of in-flight agreement should REVERT due to signatories";
+		if (agreement.getLegalState() == uint8(Agreements.LegalState.REDACTED)) return "In-flight agreement legal state should NOT be REDACTED after redaction attempt due to signatories present";
+		// now cancel and retry
+		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementCancel));
+		signer2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementCancel));
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "In-flight agreement legal state should be CANCELED after parties cancel";
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRedact));
+		if (!success) return "Redaction by owner of in-flight agreement should succeed after parties canceled";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "In-flight agreement legal state should be REDACTED after parties cancel";
+
+		// test redaction when owner is an organization
+		agreement = new DefaultActiveAgreement();
+		agreement.initialize(address(archetype), address(this), address(org1), dummyPrivateParametersFileRef, false, emptyAddressArray, emptyAddressArray);
+		uint8 currentLegalState = agreement.getLegalState();
+		// signer2 is NOT part of the organization
+		(success, ) = address(signer2).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRedact)));
+		if (success) return "Redaction by owner organization should REVERT for a non-member of the organization";
+		if (agreement.getLegalState() != currentLegalState) return "Agreement legal state should remain unchanged after redaction failure";
+		// signer1 is part of the organization
+		(success, ) = address(signer1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRedact)));
+		if (!success) return "Redaction by owner organization should succeed for a member of the organization";
+		if (agreement.getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "Agreement legal state should be REDACTED after redaction by owner organization";
+
+		return SUCCESS;
+	}
+
 }
 
 /**

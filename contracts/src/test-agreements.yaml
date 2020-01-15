@@ -162,6 +162,18 @@ jobs:
     relation: eq
     val: success
 
+- name: testAgreementRedaction
+  call:
+    destination: $ActiveAgreementTest
+    bin: ActiveAgreementTest
+    function: testAgreementRedaction
+
+- name: asseveAgreementRedaction
+  assert:
+    key: $testAgreementRedaction
+    relation: eq
+    val: success
+
 
 # ActiveAgreementRegistryTest
 - name: ActiveAgreementRegistryTest

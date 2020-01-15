@@ -3,14 +3,13 @@ pragma solidity ^0.5.12;
 import "commons-auth/Permissioned.sol";
 
 import "agreements/ActiveAgreement_v1_0_1.sol";
-import "agreements/ActiveAgreement_v1_0_2.sol";
 
 /**
  * @title ActiveAgreement Interface
  * @dev API for interaction with an ActiveAgreement. This contract represents the latest "version" of the interface by inheriting from past versions and guaranteeing
  * the existence of past event and function signatures.
  */
-contract ActiveAgreement is ActiveAgreement_v1_0_1, ActiveAgreement_v1_0_2, Permissioned {
+contract ActiveAgreement is ActiveAgreement_v1_0_1, Permissioned {
 
 	// v1.1.0 LogAgreementCreation event with added field 'owner' and modified parameters ordering
 	event LogAgreementCreation_v1_1_0(
@@ -34,8 +33,18 @@ contract ActiveAgreement is ActiveAgreement_v1_0_1, ActiveAgreement_v1_0_2, Perm
 		address owner
 	);
 
+    // Trigger a redaction of an agreement - this is intended to construct a queue of agreements to ultimately
+    // expunge from the history on a re-written chain
+    event LogAgreementRedaction(
+        bytes32 indexed eventId,
+        int __DELETE__,
+        address agreementAddress
+    );
+
  	bytes32 public constant ROLE_ID_OWNER = keccak256(abi.encodePacked("agreement.owner"));
  	bytes32 public constant ROLE_ID_LEGAL_STATE_CONTROLLER = keccak256(abi.encodePacked("agreement.legalStateController"));
+    // This is a placeholder value for the marker field - it could be anything
+    int constant DELETION = 0;
 
 	/**
 	 * @dev Initializes this ActiveAgreement with the provided parameters. This function replaces the
@@ -63,5 +72,12 @@ contract ActiveAgreement is ActiveAgreement_v1_0_1, ActiveAgreement_v1_0_2, Perm
 	 * @return the owner address
 	 */
 	function getOwner() external view returns (address);
+
+	/**
+	 * @dev Performs a redaction on this agreement, i.e. marks the agreement as 'obscured' or 'redacted' to external systems and
+	 * represents a request for removal of the agreement.
+	 * @return the resulting Agreements.LegalState of the agreement
+	 */
+    function redact() external returns (Agreements.LegalState);
 
 }

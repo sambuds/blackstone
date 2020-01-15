@@ -46,6 +46,9 @@ contract ActiveAgreementWorkflowTest {
 
     string constant EMPTY_STRING = "";
     string constant functionSigForwardCall = "forwardCall(address,bytes)";
+    string constant functionSigAgreementCancel = "cancel()";
+    string constant functionSigAgreementRedact = "redact()";
+    string constant functionSigAgreementSign = "sign()";
 
     // test data
     bytes32 activityId1 = "activity1";
@@ -64,6 +67,7 @@ contract ActiveAgreementWorkflowTest {
     bytes32 departmentId1 = "Dep1";
 
     address[] parties;
+    address[] emptyAddressArray;
     address[] approvers;
 
     // tests should overwrite the users and orgs as needed
@@ -430,7 +434,7 @@ contract ActiveAgreementWorkflowTest {
         if (addr != address(userAccount1)) return "userAccount1 should still be the performer of activity1 even after completion failed";
 
         // test successful completion
-        userAccount1.forwardCall(address(agreement), abi.encodeWithSignature("sign()"));
+        userAccount1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
         userAccount1.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(0), bpmService));
         (, , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
         if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "ActivityInstance 1 in Formation Process should be completed";
@@ -439,12 +443,12 @@ contract ActiveAgreementWorkflowTest {
         if (signatureCheckApp.lastAgreement() != address(agreement)) return "The agreement should've been processed by the TestSignatureCheck app.";
 
         // complete the missing signatures and tasks
-        userAccount2.forwardCall(address(agreement), abi.encodeWithSignature("sign()"));
+        userAccount2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
         userAccount2.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(1), bpmService));
         (, , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(1));
         if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "ActivityInstance 2 in Formation Process should be completed";
 
-        userAccount3.forwardCall(address(agreement), abi.encodeWithSignature("sign()"));
+        userAccount3.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
 
         (, , ,addr, ,) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(2));
         if (addr != address(org2)) return "ActivityInstance3 should have org2 as performer";
@@ -465,6 +469,11 @@ contract ActiveAgreementWorkflowTest {
         return SUCCESS;
     }
 
+    /**
+     * @dev Helper function that creates a new ProcessModel with a formation and execution ProcessDefinition
+     * where both processes contain a simple "receive" task that results in the processes halting until
+     * the tasks are completed. 
+     */
     function cancellationProcessModels(bytes32 processName) external returns (ProcessDefinition formationPD, ProcessDefinition executionPD, string memory result) {
         ProcessModel pm;
 
@@ -489,38 +498,55 @@ contract ActiveAgreementWorkflowTest {
         if (!valid) return (formationPD, executionPD, errorMsg.toString());
     }
 
-    function runProcessesBeforeCancellation(address agreement1, address agreement2) internal returns (ProcessInstance[3] memory pis, string memory result) {
-        uint numberOfPIs = bpmService.getNumberOfProcessInstances();
+    /**
+     * @dev Helper function to start and run through the formation and execution processes of the given agreement. It is expected that the process definitions of the archetype contain
+     * a single "wait" activity each for the formation and execution. The boolean parameters control how far the processes should progress.
+     * If the parties array contains any addresses, it is assumed that these are for UserAccount contracts that are owned by this test contract, so that the signatures can be applied to the agreement.
+     * If the agreement is not EXECUTED, but 'completeExecution == true', then this function will attempt to transfe the agreement into Agreements.LegalState.EXECUTED. This is done
+     * either by applying the signatures of the provided signatories or by assuming the ROLE_ID_OBJECT_ADMIN and ROLE_ID_LEGAL_STATE_CONTROLLER roles. If neither of these attempts
+     * successfully transfers the agreement to EXECUTED, then the start of the execution process will be rejected!
+     * (the AgreementsRegistry requires the agreement to be EXECUTED in order to start the execution process!)
+     * The execution process is only completed, if the formation process also is being completed; the parameter combination of (0x01234, false, true) is thus not supported.
+     * @return an array with the created ProcessInstances (0 = formation, 1 = execution)
+     * @return an error message as a result of any failure
+     */
+    function runProcesses(ActiveAgreement agreement, address[] memory signatories, bool completeFormation, bool completeExecution) internal returns (ProcessInstance[2] memory pis, string memory result) {
         // to collect the created PIs
-        (uint error, address addr) = agreementRegistry.startProcessLifecycle(ActiveAgreement(agreement1));
-        if (error != BaseErrors.NO_ERROR()) return (pis, "Error starting the formation process 1 on agreement1");
+        (uint error, address addr) = agreementRegistry.startProcessLifecycle(agreement);
+        if (error != BaseErrors.NO_ERROR()) return (pis, "Error starting the formation process 1 on agreement");
         pis[0] = ProcessInstance(addr);
-        if (agreementRegistry.getTrackedFormationProcess(agreement1) == address(0)) return (pis, "There should be a tracked formation process for agreement1");
-        if (agreementRegistry.getTrackedExecutionProcess(agreement1) != address(0)) return (pis, "There should be NO tracked execution process for agreement1");
-        if (agreementRegistry.getTrackedFormationProcess(agreement1) != address(pis[0])) return (pis, "The tracked formation process should match the started formation PI for agreement1");
-        (error, addr) = agreementRegistry.startProcessLifecycle(ActiveAgreement(agreement2));
-        if (error != BaseErrors.NO_ERROR()) return (pis, "Error starting the formation process 2 on agreement2");
-        pis[1] = ProcessInstance(addr);
-        if (agreementRegistry.getTrackedFormationProcess(agreement2) == address(0)) return (pis, "There should be a tracked formation process for agreement2");
-        if (agreementRegistry.getTrackedExecutionProcess(agreement2) != address(0)) return (pis, "There should be NO tracked execution process for agreement2");
-        if (agreementRegistry.getTrackedFormationProcess(agreement2) != address(pis[1])) return (pis, "The tracked formation process should match the started formation PI for agreement2");
+        
+        if (completeFormation) {
+            // if the agreement is not executed, try to get it there, either by applying provided signatures ...
+            if (agreement.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) {
+                if (agreement.getNumberOfParties() > 0) {
+                    for (uint i=0; i<signatories.length; i++) {
+                        if (signatories[i] != address(0))
+                            UserAccount(signatories[i]).forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
+                    }
+                }
+                // or by attempting to use the LEGAL_STATE_CONTROLLER role
+                else {
+                    if (!agreement.hasPermission(agreement.ROLE_ID_OBJECT_ADMIN(), address(this)))
+                        agreement.initializeObjectAdministrator(address(this));
+                    if (!agreement.hasPermission(agreement.ROLE_ID_LEGAL_STATE_CONTROLLER(), address(this)))
+                        agreement.grantPermission(ActiveAgreement(agreement).ROLE_ID_LEGAL_STATE_CONTROLLER(), address(this));
+                    agreement.setLegalState(Agreements.LegalState.EXECUTED);
+                }
+            }
 
-        // sign agreement2 and move PI2 into execution phase
-        userAccount1.forwardCall(address(agreement2), abi.encodeWithSignature("sign()"));
-        userAccount2.forwardCall(address(agreement2), abi.encodeWithSignature("sign()"));
-        if (ActiveAgreement(agreement2).getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return (pis, "The agreement2 should be in EXECUTED after signing");
-        error = pis[1].completeActivity(pis[1].getActivityInstanceAtIndex(0), bpmService);
-        if (error != BaseErrors.NO_ERROR()) return (pis, "Error completing wait activity in formation process 2");
+            error = pis[0].completeActivity(pis[0].getActivityInstanceAtIndex(0), bpmService);
+            if (error != BaseErrors.NO_ERROR()) return (pis, "Error completing wait activity in formation process");
+            pis[1] = ProcessInstance(agreementRegistry.getTrackedExecutionProcess(address(agreement)));
+            if (address(pis[1]) == address(0)) return (pis, "Unable to find an execution process after completing an activity in the formation process. Either the agreement is not fully signed or the formation process for this agreement has more than one activity!");
 
-        if (bpmService.getNumberOfProcessInstances() != numberOfPIs + 3) return (pis, "There should be 3 additional PIs in the system");
-        numberOfPIs = bpmService.getNumberOfProcessInstances();
-        // the last added PI should be the execution process of agreement2
-        pis[2] = ProcessInstance(bpmService.getProcessInstanceAtIndex(numberOfPIs - 1));
-        if (agreementRegistry.getTrackedExecutionProcess(agreement2) == address(0)) return (pis, "There should now be a tracked execution process for agreement2 after signing");
-        if (agreementRegistry.getTrackedExecutionProcess(agreement2) != address(pis[2])) return (pis, "The tracked execution process for agreement2 should match the last PI");
-        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return (pis, "The Formation PI for agreement1 should be active");
-        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return (pis, "The Formation PI for agreement2 should be completed");
-        if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return (pis, "The Execution PI for agreement2 should be active");
+            if (completeExecution) {
+                if (address(pis[1]) == address(0)) return (pis, "Unable to find an execution process to complete. Was the formation process completed?");
+                error = pis[1].completeActivity(pis[1].getActivityInstanceAtIndex(0), bpmService);
+                if (error != BaseErrors.NO_ERROR()) return (pis, "Error completing wait activity in execution process");
+                if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return (pis, "The execution process is not completed. The execution process might have more than one activity?");
+            }
+        }
     }
 
     /**
@@ -531,7 +557,7 @@ contract ActiveAgreementWorkflowTest {
         address addr;
         ProcessDefinition formationPD;
         ProcessDefinition executionPD;
-        ProcessInstance[3] memory pis;
+        ProcessInstance[2] memory pis;
 
         agreementRegistry = createNewAgreementRegistry();
         userAccount1 = new DefaultUserAccount();
@@ -557,46 +583,52 @@ contract ActiveAgreementWorkflowTest {
         if (addr == address(0)) return "Error creating TestArchetype, address is empty";
 
         //
-        // AGREEMENT
+        // AGREEMENTS
         //
         address agreement1 = agreementRegistry.createAgreement(addr, address(this), address(this), "", false, parties, EMPTY, governingAgreements);
         if (agreement1 == address(0)) return "Unexpected error creating agreement1";
         address agreement2 = agreementRegistry.createAgreement(addr, address(this), address(this), "", false, parties, EMPTY, governingAgreements);
         if (agreement2 == address(0)) return "Unexpected error creating agreement2";
 
-        //
-        // FORMATION / EXECUTION
-        //
-        (pis, result) = runProcessesBeforeCancellation(agreement1, agreement2);
+        // start processes for agreement1
+        (pis, result) = runProcesses(ActiveAgreement(agreement1), parties , false, false);
         if (bytes(result).length != 0) {
             return result;
         }
 
         // cancel the first agreement BEFORE its execution phase (uni-lateral cancellation)
-        userAccount2.forwardCall(address(agreement1), abi.encodeWithSignature("cancel()"));
+        userAccount2.forwardCall(address(agreement1), abi.encodeWithSignature(functionSigAgreementCancel));
         if (ActiveAgreement(agreement1).getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "agreement1 should be CANCELED";
         if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement1 should be aborted after canceling";
 
+        // start processes for agreement2
+        (pis, result) = runProcesses(ActiveAgreement(agreement2), parties, true, false);
+        if (bytes(result).length != 0) {
+            return result;
+        }
+
         // cancel the second agreement AFTER it reaches execution phase (multi-lateral cancellation required)
-        userAccount2.forwardCall(address(agreement2), abi.encodeWithSignature("cancel()"));
-        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 1st cancellation";
-        if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI for agreement2 should still be active after 1st cancellation";
-        userAccount1.forwardCall(address(agreement2), abi.encodeWithSignature("cancel()"));
-        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 2nd cancellation";
-        if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement2 should be aborted after 2nd cancellation";
+        userAccount2.forwardCall(address(agreement2), abi.encodeWithSignature(functionSigAgreementCancel));
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 1st cancellation";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI for agreement2 should still be active after 1st cancellation";
+        userAccount1.forwardCall(address(agreement2), abi.encodeWithSignature(functionSigAgreementCancel));
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 2nd cancellation";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement2 should be aborted after 2nd cancellation";
 
         return SUCCESS;
     }
 
     /**
-     * Tests workflow handling where the agreement gets redacted during formation as well as execution.
+     * Tests workflow handling where the agreement gets redacted during formation, execution, as well as
+     * after the agreement is fulfilled.
      */
     function testRedactedAgreementWorkflow() external returns (string memory result) {
         // re-usable variables for return values
         address addr;
+        bool success;
         ProcessDefinition formationPD;
         ProcessDefinition executionPD;
-        ProcessInstance[3] memory pis;
+        ProcessInstance[2] memory pis;
 
         agreementRegistry = createNewAgreementRegistry();
         userAccount1 = new DefaultUserAccount();
@@ -621,53 +653,75 @@ contract ActiveAgreementWorkflowTest {
         addr = archetypeRegistry.createArchetype(10, false, true, address(this), address(this), address(formationPD), address(executionPD), EMPTY, governingArchetypes);
         if (addr == address(0)) return "Error creating TestArchetype, address is empty";
 
-        //
-        // AGREEMENT
-        //
-        // Ownership relationship here is importnat here: agreement1 is owned by userAccount1, agreement2 by userAccount2
-        address agreement1 = agreementRegistry.createAgreement(addr, address(this), address(userAccount1), "", false, parties, EMPTY, governingAgreements);
-        if (agreement1 == address(0)) return "Unexpected error creating agreement1";
-        address agreement2 = agreementRegistry.createAgreement(addr, address(this), address(userAccount2), "", false, parties, EMPTY, governingAgreements);
-        if (agreement2 == address(0)) return "Unexpected error creating agreement2";
+        address agreement;
 
-        //
-        // FORMATION / EXECUTION
-        //
-        (pis, result) = runProcessesBeforeCancellation(agreement1, agreement2);
+        // Agreement 1: In-flight agreement with parties, owned by userAccount1
+        agreement = agreementRegistry.createAgreement(addr, address(this), address(userAccount1), "", false, parties, EMPTY, governingAgreements);
+        if (agreement == address(0)) return "Unexpected error creating agreement 1";
+        (pis, result) = runProcesses(ActiveAgreement(agreement), parties, false, false);
         if (bytes(result).length != 0) {
             return result;
         }
 
-        // cancel the first agreement BEFORE its execution phase (uni-lateral cancellation)
-        userAccount1.forwardCall(address(agreement1), abi.encodeWithSignature("redact()"));
-        if (ActiveAgreement(agreement1).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreement1 should be REDACTED unilaterally";
-        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement1 should be aborted after canceling";
+        // Redact the first agreement BEFORE its execution phase
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "Before: The Formation PI for agreement 1 should be active";
+        (success, ) = address(userAccount1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRedact)));
+        if (success) return "Attempting to redact an in-flight agreement with parties that have not canceled should REVERT";
+        if (ActiveAgreement(agreement).getLegalState() == uint8(Agreements.LegalState.REDACTED)) return "agreement 1 should NOT be REDACTED after failed redaction due to parties present";
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI for agreement 1 should still be active after failed redaction attempt";
+        userAccount1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementCancel));
+        if (ActiveAgreement(agreement).getLegalState() != uint8(Agreements.LegalState.CANCELED)) return "agreement 1 should now be CANCELED after unilateral cancel by party";
+        userAccount1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementRedact));
+        if (ActiveAgreement(agreement).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreement 1 should now be REDACTED";
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement 1 should be aborted after redaction";
 
-        // cancel the second agreement AFTER it reaches execution phase (multi-lateral cancellation required)
-        // userAccount1 must cancel before redaction can occur (doing it the obtuse way to check we have our low-level call syntax correct
-        (bool success, ) = address(userAccount1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement2), abi.encodeWithSignature("cancel()")));
-        if (!success) return "Forwarding a call to the valid function signature should not revert";
-        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 1st cancellation";
-        if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Formation PI for agreement2 should still be active after 1st cancellation";
+        // Agreement 2: In-flight agreement in execution process with no parties, owned by userAccount2
+        agreement = agreementRegistry.createAgreement(addr, address(this), address(userAccount2), "", false, emptyAddressArray, EMPTY, governingAgreements);
+        if (agreement == address(0)) return "Unexpected error creating agreement 2";
+        (pis, result) = runProcesses(ActiveAgreement(agreement), emptyAddressArray, true, false);
+        if (bytes(result).length != 0) {
+            return result;
+        }
 
+        // Redact the second agreement AFTER it reaches execution phase
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement 2 should be completed before redaction";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.ACTIVE)) return "The Execution PI for agreement 2 should be active before redaction";
+        userAccount2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementRedact));
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement 2 should still be completed after redaction";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Execution PI for agreement 2 should be aborted after redaction";
+        if (ActiveAgreement(agreement).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreement 2 should be REDACTED";
 
-        (success, ) = address(userAccount1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement2), abi.encodeWithSignature("redact()")));
-        if (success) return "Redaction should revert if called by non-owner";
+        // Agreement 3: FULFILLED agreement with parties
+        agreement = agreementRegistry.createAgreement(addr, address(this), address(userAccount2), "", false, parties, EMPTY, governingAgreements);
+        if (agreement == address(0)) return "Unexpected error creating agreement 3";
+        (pis, result) = runProcesses(ActiveAgreement(agreement), parties, true, true);
+        if (bytes(result).length != 0) {
+            return result;
+        }
 
-        // user 2 can now redact since they are the owner
-        userAccount2.forwardCall(address(agreement2), abi.encodeWithSignature("redact()"));
-        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement2 should still be completed after 2nd cancellation";
-        if (pis[2].getState() != uint8(BpmRuntime.ProcessInstanceState.ABORTED)) return "The Formation PI for agreement2 should be aborted after 2nd cancellation";
-        if (ActiveAgreement(agreement2).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreement2 should be REDACTED after second";
+        // Redact the third agreement after processing is completed and the agreement is fulfilled
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement 3 should be completed before redaction";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Execution PI for agreement 3 should be completed before redaction";
+        userAccount2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementRedact));
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement 3 should still be completed after redaction";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Execution PI for agreement 3 should still be completed after redaction";
+        if (ActiveAgreement(agreement).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreement 3 should be REDACTED";
 
-        // agreement with no parties
-        delete parties;
-        address agreementNoParties = agreementRegistry.createAgreement(addr, address(this), address(userAccount1), "", false, parties, EMPTY, governingAgreements);
-        if (agreementNoParties == address(0)) return "Unexpected error creating agreementNoParties";
+        // Agreement 4: FULFILLED agreement with NO parties
+        agreement = agreementRegistry.createAgreement(addr, address(this), address(userAccount2), "", false, emptyAddressArray, EMPTY, governingAgreements);
+        if (agreement == address(0)) return "Unexpected error creating agreement 4";
+        (pis, result) = runProcesses(ActiveAgreement(agreement), emptyAddressArray, true, true);
+        if (bytes(result).length != 0) {
+            return result;
+        }
 
-        // test no parties case
-        userAccount1.forwardCall(address(agreementNoParties), abi.encodeWithSignature("redact()"));
-        if (ActiveAgreement(agreementNoParties).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreementNoParties should be REDACTED unilaterally";
+        // Redact the fourth agreement after processing is completed and the agreement is fulfilled
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement 4 should be completed before redaction";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Execution PI for agreement 4 should be completed before redaction";
+        userAccount2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementRedact));
+        if (pis[0].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Formation PI for agreement 4 should still be completed after redaction";
+        if (pis[1].getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The Execution PI for agreement 4 should still be completed after redaction";
+        if (ActiveAgreement(agreement).getLegalState() != uint8(Agreements.LegalState.REDACTED)) return "agreement 4 should be REDACTED";
 
         return SUCCESS;
     }

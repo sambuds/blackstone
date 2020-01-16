@@ -72,6 +72,12 @@ contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes
 		address governingAgreementAddress
 	);
 
+  event LogAgreementPrivateParametersReference(
+		bytes32 indexed eventId,
+		address agreementAddress,
+		string privateParametersFileReference
+	);
+
 	bytes32 public constant EVENT_ID_AGREEMENTS = "AN://agreements";
 	bytes32 public constant EVENT_ID_AGREEMENT_PARTY_MAP = "AN://agreement-to-party";
 	bytes32 public constant EVENT_ID_GOVERNING_AGREEMENT = "AN://governing-agreements";
@@ -142,6 +148,12 @@ contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes
 	 * @return the reference to an external document containing private parameters
 	 */
 	function getPrivateParametersReference() external view returns (string memory);
+
+  /**
+	 * @dev Updates the file reference for the private parameters of this agreement
+	 * @param _privateParametersFileReference the file reference to the private parameters
+	 */
+	function setPrivateParametersReference(string calldata _privateParametersFileReference) external;
 
 	/**
 	 * @dev Updates the file reference for the event log of this agreement

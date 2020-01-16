@@ -46,6 +46,13 @@ jobs:
     function: lookup
     data: [DataStorageUtils]
 
+- name: ERC165Utils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ERC165Utils]
+
 - name: AgreementsAPI
   query-contract:
     destination: $DOUG
@@ -85,7 +92,7 @@ jobs:
 - name: ActiveAgreementImplementationUpgrade
   deploy:
     contract: DefaultActiveAgreement.bin
-    libraries: ErrorsLib:$ErrorsLib, TypeUtilsLib:$TypeUtilsLib, ArrayUtilsLib:$ArrayUtilsLib, MappingsLib:$MappingsLib, DataStorageUtils:$DataStorageUtils, AgreementsAPI:$AgreementsAPI
+    libraries: ErrorsLib:$ErrorsLib, TypeUtilsLib:$TypeUtilsLib, ArrayUtilsLib:$ArrayUtilsLib, MappingsLib:$MappingsLib, DataStorageUtils:$DataStorageUtils, AgreementsAPI:$AgreementsAPI, ERC165Utils:$ERC165Utils
 
 - name: RegisterActiveAgreementObjectClass
   call:

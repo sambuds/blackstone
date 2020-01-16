@@ -82,7 +82,9 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,4,0), AbstractAct
 		privateFlag = _isPrivate;
 		parties = _parties;
 		governingAgreements = _governingAgreements;
-		legalState = Agreements.LegalState.FORMULATED; //TODO we currently don't support a negotiation phase in the AN, so the agreement's prose contract is already formulated when the agreement is created.
+		legalState = Agreements.LegalState.FORMULATED;  // To support the negotiation phase, this legal state is changed back to DRAFT post-initialization.
+                                                    // TODO- the default starting state should be changed to DRAFT instead for a cleaner flow
+                                                    // instead of going from formulated => draft => formulated
 
 		permissions[ROLE_ID_OWNER].multiHolder = false;
 		permissions[ROLE_ID_OWNER].revocable = false;

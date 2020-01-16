@@ -23,11 +23,13 @@ contract ActiveAgreementTest {
 	string constant functionSigAgreementSetLegalState = "setLegalState(uint8)";
 	string constant functionSigAgreementTestLegalState = "testLegalState(uint8)";
 	string constant functionSigUpgradeOwnerPermission = "upgradeOwnerPermission(address)";
+	string constant functionSigSetPrivateParametersReference = "setPrivateParametersReference(address)";
     string constant functionSigForwardCall = "forwardCall(address,bytes)";
 
 	address falseAddress = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
 	string dummyFileRef = "{find me}";
 	string dummyPrivateParametersFileRef = "{json grant}";
+  string newPrivateParametersFileRef = "{json new grant}";
 	uint maxNumberOfEvents = 5;
 	bytes32 DATA_FIELD_AGREEMENT_PARTIES = "AGREEMENT_PARTIES";
 
@@ -391,6 +393,57 @@ contract ActiveAgreementTest {
 		return SUCCESS;
 	}
 
+  /**
+	 * @dev Verifies the conditions required for setting an agreement's reference to its private parameters file
+	 */
+	function testPrivateParameters() external returns (string memory) {
+
+		// agreeement must be in DRAFT state in order to change the reference to its private parameters file
+
+		ActiveAgreement agreement;
+		Archetype archetype;
+		bool success;
+
+		archetype = new DefaultArchetype();
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
+		agreement = new DefaultActiveAgreement();
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, emptyAddressArray, emptyAddressArray);
+    agreement.initializeObjectAdministrator(address(this));
+		agreement.grantPermission(agreement.ROLE_ID_LEGAL_STATE_CONTROLLER(), address(this));
+
+		// test valid setting of private parameters reference while agreement is DRAFTED
+    address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.DRAFT)));
+    if (agreement.getLegalState() != uint8(Agreements.LegalState.DRAFT)) return "Agreement legal state should be updated after calling set function";
+    agreement.setPrivateParametersReference(newPrivateParametersFileRef);
+
+    // Check that set function reverts in any other legal state
+    // Formulated
+		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.FORMULATED)));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
+		if (success) return "Setting the private parameters file reference while the agreement is FORMULATED should revert";
+    // Executed
+		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.EXECUTED)));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
+		if (success) return "Setting the private parameters file reference while the agreement is EXECUTED should revert";
+    // Fulfulled
+		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.FULFILLED)));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
+		if (success) return "Setting the private parameters file reference while the agreement is FULFILLED should revert";
+    // Canceled
+		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.CANCELED)));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
+		if (success) return "Setting the private parameters file reference while the agreement is CANCELED should revert";
+    // Redacted
+		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.REDACTED)));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
+		if (success) return "Setting the private parameters file reference while the agreement is REDACTED should revert";
+    // Default
+		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.DEFAULT)));
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
+		if (success) return "Setting the private parameters file reference while the agreement is DEFAULT should revert";
+
+    return SUCCESS;
+  }
 }
 
 /**

@@ -17,7 +17,7 @@
   "dependencies": {
     "@grpc/proto-loader": "^0.5.3",
     "@hapi/boom": "~7.4.2",
-    "@monax/burrow": "^0.24.3",
+    "@hyperledger/burrow": "^0.29.6",
     "binstring": "~0.2.1",
     "csvtojson": "~2.0.8",
     "dotenv": "^8.2.0",

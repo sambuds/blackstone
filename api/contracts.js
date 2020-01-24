@@ -17,6 +17,9 @@ const { hexToString, hexFromString } = require('./lib/hex');
 
 const NO_TRANSACTION_RESPONSE_ERR = 'No transaction response raw data received from burrow';
 
+// TODO: [Silas] refactor this into a mapping from blackstone codes to HTTP status codes then just use a single:
+// boom.boomify(`${message}: ${parsedError.message}. ${burrowError.stack}`, {statusCode: statusFromErrorCode(parsedError.code)})
+// Probably easiest to do when introducing typescript where enum gives you reverse lookups for free
 const boomify = (burrowError, message) => {
   const arr = burrowError.message ? burrowError.message.split('::') : [];
   if (arr.length < 3) {
@@ -45,8 +48,10 @@ const boomify = (burrowError, message) => {
     case ERR.OVERWRITE_NOT_ALLOWED:
       error = boom.badRequest(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;
-    case ERR.RUNTIME_ERROR:
     case ERR.INVALID_STATE:
+      error = boom.expectationFailed(`${message}: ${parsedError.message}. ${burrowError.stack}`);
+      break;
+    case ERR.RUNTIME_ERROR:
     case ERR.DEPENDENCY_NOT_FOUND:
       error = boom.badImplementation(`${message}: ${parsedError.message}. ${burrowError.stack}`);
       break;

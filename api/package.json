@@ -15,9 +15,8 @@
   },
   "license": "SEE LICENSE IN LICENSE.md",
   "dependencies": {
-    "@grpc/proto-loader": "^0.5.3",
     "@hapi/boom": "~7.4.2",
-    "@hyperledger/burrow": "^0.29.6",
+    "@hyperledger/burrow": "^0.29.7",
     "binstring": "~0.2.1",
     "csvtojson": "~2.0.8",
     "dotenv": "^8.2.0",

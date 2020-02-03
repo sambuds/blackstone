@@ -59,7 +59,7 @@ library BpmRuntimeLib {
         address processInstanceAddress,
         BpmModel.EventType eventType,
         BpmModel.BoundaryEventBehavior eventBehavior,
-        BpmRuntime.ActivityInstanceState state
+        BpmRuntime.BoundaryEventInstanceState state
     );
 
     event LogActivityInstanceStateUpdate(
@@ -508,7 +508,7 @@ library BpmRuntimeLib {
     }
 
     /**
-     * @dev Executes the given ActivityInstance as intermediate event
+     * @dev Executes the given ActivityInstance as intermediate event TODO natspec!
      * Note that this function assumes there is a corresponding IntermediateEvent definition in the provided ProcessDefinition
      * that defines how this ActivityInstance needs to be processed. It's therefore the responsibility of the calling
      * code to make sure this prerequisite is met.
@@ -567,53 +567,72 @@ library BpmRuntimeLib {
     }
 
     /**
-     * @dev Executes the given ActivityInstance as boundary event
+     * @dev Activates the given BoundaryEventInstance by attempting to resolve any data-bindings.
+     * The function supports different behaviors depending on the BpmModel.EventType of the boundary event.
+     * Currently, only timer-related boundary events are supported for which a future date is either
+     * calculated or injected via an external system (oracle)
      * Note that this function assumes there is a corresponding IntermediateEvent definition in the provided ProcessDefinition
-     * that defines how this ActivityInstance needs to be processed. It's therefore the responsibility of the calling
+     * that defines how this BoundaryEventInstance needs to be processed. It's therefore the responsibility of the calling
      * code to make sure this prerequisite is met.
+     * @param _boundaryInstance a BpmRuntime.BoundaryEventInstance to be activated
+     * @param _rootDataStorage a DataStorage contract to leverage for resolving data required to activate the event instance
+     * @param _processDefinition a ProcessDefinition where the event's configuration can be found
+     * @return the resulting BpmRuntime.BoundaryEventInstanceState to indicate whether the event instance was successfully activated
      */
-    function executeBoundaryEvent(BpmRuntime.BoundaryEventInstance storage _boundaryInstance, DataStorage _rootDataStorage, ProcessDefinition _processDefinition)
+    function activateBoundaryEvent(BpmRuntime.BoundaryEventInstance storage _boundaryInstance, DataStorage _rootDataStorage, ProcessDefinition _processDefinition)
         public
+        returns (BpmRuntime.BoundaryEventInstanceState)
     {
         (BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, ) = _processDefinition.getBoundaryEventGraphDetails(_boundaryInstance.boundaryId);
 
-        (bytes32 dataPath, bytes32 dataStorageId, address dataStorage, uint timestampConstant, string memory durationConstant) = _processDefinition.getTimerEventDetails(_boundaryInstance.boundaryId); 
+        // TODO .getTimerEventDetails() either rename to something more generic or invoke later after we've established that it's a timer event
+        (bytes32 dataPath, bytes32 dataStorageId, address dataStorage, uint timestampConstant, string memory durationConstant) = _processDefinition.getTimerEventDetails(_boundaryInstance.boundaryId);
 
         address dataStorageAddress = DataStorageUtils.resolveDataStorageAddress(dataStorageId, dataStorage, _rootDataStorage);
 
-        string memory timerDuration;
-        uint target;
-
         if (eventType == BpmModel.EventType.TIMER_TIMESTAMP) {
+            uint timerTimestamp;
             if (timestampConstant != 0) {
-                target = timestampConstant;
+                timerTimestamp = timestampConstant;
             } else {
-                target = DataStorage(dataStorageAddress).getDataValueAsUint(dataPath);
+                timerTimestamp = DataStorage(dataStorageAddress).getDataValueAsUint(dataPath);
             }
 
-            _boundaryInstance.timerTarget = target;
-        } else {
-            ErrorsLib.revertIf(eventType != BpmModel.EventType.TIMER_DURATION,
-                ErrorsLib.INVALID_PARAMETER_STATE(), "BpmRuntimeLib.executeEvent", "The EventType for the intermediate event has an invalid value");
+            _boundaryInstance.timerTarget = timerTimestamp;
 
+            emit LogTimerEventCreation(
+                EVENT_ID_TIMER_EVENTS,
+                _boundaryInstance.boundaryId,
+                _boundaryInstance.id,
+                uint8(eventType),
+                uint8(eventBehavior),
+                timerTimestamp,
+                ""
+            );
+        }
+        else if (eventType == BpmModel.EventType.TIMER_DURATION) {
+            string memory timerDuration;
             if (bytes(durationConstant).length > 0) {
                 timerDuration = durationConstant;
             } else {
                 timerDuration = DataStorage(dataStorageAddress).getDataValueAsString(dataPath);
             }
+
+            emit LogTimerEventCreation(
+                EVENT_ID_TIMER_EVENTS,
+                _boundaryInstance.boundaryId,
+                _boundaryInstance.id,
+                uint8(eventType),
+                uint8(eventBehavior),
+                0,
+                timerDuration
+            );
+        }
+        else {
+            revert(ErrorsLib.format(ErrorsLib.INVALID_PARAMETER_STATE(), "BpmRuntimeLib.activateBoundaryEvent", "Unsupported EventType for the boundary event"));
         }
 
-        // Emit the event for lair
-        // This should say that it is a boundary event
-        emit LogTimerEventCreation(
-            EVENT_ID_TIMER_EVENTS,
-            _boundaryInstance.boundaryId,
-            _boundaryInstance.id,
-            uint8(eventType),
-            uint8(eventBehavior),
-            target,
-            timerDuration
-        );
+        return _boundaryInstance.state;
     }
 
     /**
@@ -673,7 +692,7 @@ library BpmRuntimeLib {
                     ( , , bytes32[] memory boundaryEvents) = _processInstance.processDefinition.getActivityGraphDetails(activityId);
 
                     bytes32 aiId; // the unique AI ID
-                    for (uint j=0; j<_processInstance.graph.activities[activityId].instancesTotal; j++) {
+                    for (uint j = 0; j < _processInstance.graph.activities[activityId].instancesTotal; j++) {
                         aiId = createActivityInstance(_processInstance, activityId, j);
                         _service.getBpmServiceDb().addActivityInstance(aiId);
                         //TODO error from executeActivity() function is ignored as we want to continue creating activities. Even if one failed, it should be in INTERRUPTED state or otherwise recoverable
@@ -687,10 +706,7 @@ library BpmRuntimeLib {
                         // create boundary events
                         for (uint k = 0; k < boundaryEvents.length; k++) {
                             bytes32 boundaryId = boundaryEvents[k];
-
-                            bytes32 biId = createBoundaryEventInstance(_processInstance, aiId, boundaryId, k);
-
-                            executeBoundaryEvent(_processInstance.boundaryEvents.rows[biId].value, DataStorage(_processInstance.addr), _processInstance.processDefinition);                            
+                            createBoundaryEventInstance(_processInstance, aiId, boundaryId, k);
                         }
                     }
                 }
@@ -976,6 +992,12 @@ library BpmRuntimeLib {
         );
     }
 
+    /**
+     * @dev Creates a new BpmRuntime.IntermediateEventInstance with the specified parameters and adds it to the given ProcessInstance
+     * @param _processInstance the ProcessInstance to which the ActivityInstance is added
+     * @param _eventId the ID of the event as defined in the ProcessDefinition
+     * @return the unique global ID of the created IntermediateEventInstance
+     */
     function createIntermediateEventInstance(BpmRuntime.ProcessInstance storage _processInstance, bytes32 _eventId) public returns (bytes32 eiId) {
         eiId = keccak256(abi.encodePacked(_processInstance.addr, _eventId));
         uint created = block.timestamp;
@@ -1001,17 +1023,32 @@ library BpmRuntimeLib {
         );
     }
 
+    /**
+     * @dev Creates a new BpmRuntime.BoundaryEventInstance, based on the provided activity ID in the given ProcessInstance.
+     * An attempt is made to activate the event, i.e. bind any configured runtime data needed to allow a triggering of the event.
+     * If the event could not be activated automatically, it can still be done later via the #activateBoundaryEvent(...) function.
+     * @param _processInstance A ProcessInstance struct providing the runtime context for the new boundary event
+     * @param _aiId the ID of an ActivityInstance to which the boundary event will be attached
+     * @param _boundaryId the ID of the boundary event definition to look up in the ProcessDefinition of the ProcessInstance
+     * @param _index an additional index to affect the boundary event ID creation in case multiple event instances are being added to the same ActivityInstance
+     * @return the unique ID of the created BoundaryEventInstance
+     */
     function createBoundaryEventInstance(BpmRuntime.ProcessInstance storage _processInstance, bytes32 _aiId, bytes32 _boundaryId, uint _index) public returns (bytes32 biId) {
         biId = keccak256(abi.encodePacked(_processInstance.addr, _aiId, _boundaryId, _index));
 
         BpmRuntime.BoundaryEventInstance memory bei = BpmRuntime.BoundaryEventInstance({id: biId,
                                                                                         boundaryId: _boundaryId,
                                                                                         activityInstanceId: _aiId,
-                                                                                        state: BpmRuntime.EventBoundaryInstanceState.CREATED,
+                                                                                        state: BpmRuntime.BoundaryEventInstanceState.INACTIVE,
                                                                                         timerTarget: 0 });
         insertOrUpdate(_processInstance.boundaryEvents, bei);
 
         (BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, ) = _processInstance.processDefinition.getBoundaryEventGraphDetails(_boundaryId);
+
+        // try to activate the boundary event and transmit the result via the Log event
+        // If the boundary event could not be activated, e.g. due to missing data, an external system can activate (bind the data) it later
+
+        BpmRuntime.BoundaryEventInstanceState beiState = activateBoundaryEvent(_processInstance.boundaryEvents.rows[biId].value, DataStorage(_processInstance.addr), _processInstance.processDefinition);
 
         emit LogBoundaryEventInstanceCreation(
              EVENT_ID_BOUNDARY_EVENTS,
@@ -1019,7 +1056,7 @@ library BpmRuntimeLib {
              _processInstance.addr,
              eventType,
             eventBehavior,
-            BpmRuntime.ActivityInstanceState.CREATED
+            beiState
         );
     }
 

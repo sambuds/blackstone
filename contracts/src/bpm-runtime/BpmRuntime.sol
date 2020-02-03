@@ -11,7 +11,7 @@ library BpmRuntime {
 	
 	enum ProcessInstanceState {CREATED,ABORTED,ACTIVE,COMPLETED}
 	enum ActivityInstanceState {CREATED,ABORTED,COMPLETED,INTERRUPTED,SUSPENDED,APPLICATION}
-    enum EventBoundaryInstanceState {CREATED,ARMED,FIRED,COMPLETED}
+    enum BoundaryEventInstanceState {ACTIVE,INACTIVE}
     enum TransitionType {NONE,XOR,OR,AND}
 	
 	struct ProcessInstance {
@@ -74,7 +74,7 @@ library BpmRuntime {
         bytes32 id;
         bytes32 boundaryId;
         bytes32 activityInstanceId;
-        EventBoundaryInstanceState state;
+        BoundaryEventInstanceState state;
         uint timerTarget;
     }
 

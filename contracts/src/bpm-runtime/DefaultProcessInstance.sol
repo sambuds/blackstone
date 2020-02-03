@@ -157,27 +157,33 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
         notifyProcessStateChange();
     }
 
-    // both the following functions rely on an understanding of how to handle timer escalations
+    /**
+     * @dev Triggers the boundary event with the specified ID
+     * @param _boundaryInstanceId the ID of a BoundaryEventInstance in this ProcessInstance
+     */
     function triggerBoundaryEvent(bytes32 _boundaryInstanceId) external {
         ErrorsLib.revertIf(!self.boundaryEvents.rows[_boundaryInstanceId].exists,
-                ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessInstance.triggerIntermediateEvent", "The specified target event instance ID does not exist");
+                ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessInstance.triggerBoundaryEvent", "The specified target event instance ID does not exist");
 
         BpmRuntime.BoundaryEventInstance storage instance = self.boundaryEvents.rows[_boundaryInstanceId].value;
 
         ErrorsLib.revertIf(instance.timerTarget == 0,
-                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "The specified target event instance ID does not have timer set");
+                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerBoundaryEvent", "The specified target event instance ID does not have timer set");
 
-        ErrorsLib.revertIf(instance.state != BpmRuntime.EventBoundaryInstanceState.ARMED,
-                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "intermediate event has already fired");
+        ErrorsLib.revertIf(instance.state != BpmRuntime.BoundaryEventInstanceState.INACTIVE,
+                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerBoundaryEvent", "BoundaryEventInstance is not active (bound)");
 
         ErrorsLib.revertIf(instance.timerTarget > block.timestamp,
-                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "Attempt to fire intermediate event before timer expired");
+                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerBoundaryEvent", "Attempt to fire boundary event before timer expired");
 
-        instance.state = BpmRuntime.EventBoundaryInstanceState.COMPLETED;
-
-        // FIME: execute actions!
+        // FIME: execute actions and deactivate the boundary event!
     }
 
+    /**
+     * @dev Triggers the intermediate event with the specified ID
+     * @param _eventInstanceId the ID of a IntermediateEventInstance in this ProcessInstance
+     * @param _service the address of the BpmService where this ProcessInstance is registered
+     */
     function triggerIntermediateEvent(bytes32 _eventInstanceId, BpmService _service) external {
         ErrorsLib.revertIf(!self.intermediateEvents.rows[_eventInstanceId].exists,
                 ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessInstance.triggerIntermediateEvent", "The specified target event instance ID does not exist");

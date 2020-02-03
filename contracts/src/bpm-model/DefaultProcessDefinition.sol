@@ -237,7 +237,7 @@ contract DefaultProcessDefinition is AbstractVersionedArtifact(1,0,0), AbstractD
 	}
 
 	/**
-	 * @dev Addes a boundary event to the specified activity using the provided ID, parameters, conditional (DataStorage-based)
+	 * @dev Adds a boundary event to the specified activity using the provided ID, parameters, conditional (DataStorage-based)
 	 * data or constant uint value. If a constant value is provided, the conditional data will be ignored! 
 	 * REVERTS if:
 	 * - the activity does not exist

@@ -868,7 +868,7 @@ contract BpmServiceTest {
 	}
 
 	/**
-	 * @dev Tests a conditional looping implementation (see also loop graph test)
+	 * @dev Tests an intermediate wait event
 	 */
 	function testIntermediateEventHandling() external returns (string memory) {
 
@@ -894,11 +894,6 @@ contract BpmServiceTest {
 		ProcessInstance pi = service.createDefaultProcessInstance(address(pd), address(this), EMPTY);
 
 		pi.initRuntime();
-		if (pi.getState() != uint(BpmRuntime.ProcessInstanceState.ACTIVE)) return "PI should be ACTIVE after runtime initiation";
-		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigInitRuntime));
-		if (success)
-			return "Attempting to initiate an ACTIVE PI again should revert";
-		// TODO test more error conditions around pi.initRuntime(), e.g. invalid PD, etc.
 
 		service.addProcessInstance(pi);
 		error = pi.execute(service);
@@ -906,6 +901,7 @@ contract BpmServiceTest {
 
 		// intermediate event is waiting for duration
 		bytes32 eventId = pi.getIntermediateInstanceAtIndex(0);
+		if (eventId.isEmpty()) return "Expected intermediateEventInstance for test not found";
 		pi.setTimerEventTarget(eventId, block.timestamp);
 		pi.triggerIntermediateEvent(eventId, service);
 

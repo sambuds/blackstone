@@ -1,8 +1,24 @@
 name: test
-on: [push, pull_request]
+on:
+  pull_request:
+  push:
+    branches:
+    - master
+
 jobs:
-  test:
+  mocha:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - run: make docker_test 
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '13.x'
+    - uses: actions/checkout@v2
+    - run: make docker_run_chain
+    - run: npm install
+    - run: npm test
+
+  solidity:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: make docker_test_chain

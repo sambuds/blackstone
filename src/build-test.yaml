@@ -1,0 +1,44 @@
+jobs:
+- name: test-agreements
+  meta:
+    file: build-test-agreements.yaml
+
+- name: test-bpm-model
+  meta:
+    file: build-test-bpm-model.yaml
+
+- name: test-bpm-runtime
+  meta:
+    file: build-test-bpm-runtime.yaml
+
+- name: test-commons-auth
+  meta:
+    file: build-test-commons-auth.yaml
+
+- name: test-commons-base
+  meta:
+    file: build-test-commons-base.yaml
+
+- name: test-commons-collections
+  meta:
+    file: build-test-commons-collections.yaml
+
+- name: test-commons-events
+  meta:
+    file: build-test-commons-events.yaml
+
+- name: test-commons-management
+  meta:
+    file: build-test-commons-management.yaml
+
+- name: test-commons-standards
+  meta:
+    file: build-test-commons-standards.yaml
+
+- name: test-commons-utils
+  meta:
+    file: build-test-commons-utils.yaml
+
+- name: test-documents-commons
+  meta:
+    file: build-test-documents-commons.yaml

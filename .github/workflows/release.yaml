@@ -1,0 +1,26 @@
+name: release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: npm
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - uses: actions/setup-node@v1
+      with:
+        node-version: '13.x'
+    - name: publish
+      env:
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: |
+        git config --global user.email "${GITHUB_ACTOR}"
+        git config --global user.name "${GITHUB_ACTOR}"
+        npm install
+        npm run build
+        npm version from-git
+        npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+        npm publish --access public .

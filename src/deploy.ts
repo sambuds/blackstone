@@ -47,6 +47,8 @@ import { TotalCounterCheck } from './active-agreements/TotalCounterCheck';
 import { SetToNameRegistry } from './lib/utils';
 import { Contracts } from './lib/constants';
 import { CallTx } from '@hyperledger/burrow/proto/payload_pb';
+import { DeployDeadline, DeployWait } from './bpm-oracles/deploy';
+import { DeployNumbers } from './commons-math/deploy';
 
 function assert(left: string, right: string) {
     if (left != right) throw new Error(`Expected to match: ${left} != ${right}`);
@@ -370,5 +372,9 @@ export async function Deploy(client: Client) {
         appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("totalIn"), 8, 0),
         appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("numberOut"), 8, 1),
         appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("completedOut"), 1, 1),
+
+        DeployDeadline(client, doug, bpmService, applicationRegistry, errorsLib),
+        DeployWait(client, doug, bpmService, applicationRegistry, errorsLib),
+        DeployNumbers(client, applicationRegistry),
     ]);
 }

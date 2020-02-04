@@ -27,6 +27,9 @@ const contracts = [
     'bpm-model/DefaultProcessModel.sol',
     'bpm-model/DefaultProcessDefinition.sol',
 
+    'bpm-oracles/DeadlineOracle.sol',
+    'bpm-oracles/WaitOracle.sol',
+
     'bpm-runtime/DefaultApplicationRegistry.sol',
     'bpm-runtime/ApplicationRegistryDb.sol',
     'bpm-runtime/BpmRuntimeLib.sol',
@@ -61,6 +64,20 @@ const contracts = [
     'commons-management/OwnedDelegateUnstructuredProxy.sol',
     'commons-management/DefaultDoug.sol',
     'commons-management/DOUG.sol',
+
+    'commons-math/Addition.sol',
+    'commons-math/Decrement.sol',
+    'commons-math/Division.sol',
+    'commons-math/GreaterThan.sol',
+    'commons-math/GreaterThanEqual.sol',
+    'commons-math/Increment.sol',
+    'commons-math/IsEqual.sol',
+    'commons-math/IsNotEqual.sol',
+    'commons-math/LessThan.sol',
+    'commons-math/LessThanEqual.sol',
+    'commons-math/MakeZero.sol',
+    'commons-math/Multiplication.sol',
+    'commons-math/Subtraction.sol',
 
     'commons-standards/ERC165Utils.sol',
     'commons-standards/IsoCountries100.sol',

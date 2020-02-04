@@ -1,0 +1,540 @@
+jobs:
+
+#####
+# Retrieve DOUG
+#####
+- name: DOUG
+  query-name:
+    name: DOUG
+    field: data
+
+#####
+# Retrieve Library Addresses
+#####
+- name: ErrorsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ErrorsLib]
+
+- name: TypeUtils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [TypeUtils]
+
+- name: ArrayUtils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ArrayUtils]
+
+- name: MappingsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [MappingsLib]
+
+- name: BpmRuntimeLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [BpmRuntimeLib]
+
+- name: DataStorageUtils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [DataStorageUtils]
+
+- name: BpmService
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [BpmService]
+
+- name: ApplicationRegistry
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ApplicationRegistry]
+
+#####
+# Applications
+#
+# ApplicationTypes Enum: {0=EVENT, 1=SERVICE, 2=WEB}
+#####
+
+# Addition
+- name: AdditionBuild
+  build:
+    contract: numbers-and-math/Addition.sol
+
+- name: Addition
+  deploy:
+    contract: Addition.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerAddition
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Addition", 1, $Addition, "", ""]
+
+- name: addAdditionNumberFirstAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Addition", "numberInOne", 8, 0]
+
+- name: addAdditionNumberSecondAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Addition", "numberInTwo", 8, 0]
+
+- name: addAdditionNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Addition", "numberOut", 8, 1]
+
+# Subtraction
+- name: SubtractionBuild
+  build:
+    contract: numbers-and-math/Subtraction.sol
+
+- name: Subtraction
+  deploy:
+    contract: Subtraction.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerSubtraction
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Subtraction", 1, $Subtraction, "", ""]
+
+- name: addSubtractionNumberFirstAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Subtraction", "numberInOne", 8, 0]
+
+- name: addSubtractionNumberSecondAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Subtraction", "numberInTwo", 8, 0]
+
+- name: addSubtractionNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Subtraction", "numberOut", 8, 1]
+
+# Multiplication
+- name: MultiplicationBuild
+  build:
+    contract: numbers-and-math/Multiplication.sol
+
+- name: Multiplication
+  deploy:
+    contract: Multiplication.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerMultiplication
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Multiplication", 1, $Multiplication, "", ""]
+
+- name: addMultiplicationNumberFirstAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Multiplication", "numberInOne", 8, 0]
+
+- name: addMultiplicationNumberSecondAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Multiplication", "numberInTwo", 8, 0]
+
+- name: addMultiplicationNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Multiplication", "numberOut", 8, 1]
+
+# Division
+- name: DivisionBuild
+  build:
+    contract: numbers-and-math/Division.sol
+
+- name: Division
+  deploy:
+    contract: Division.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerDivision
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Division", 1, $Division, "", ""]
+
+- name: addDivisionNumberFirstAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Division", "numberInOne", 8, 0]
+
+- name: addDivisionNumberSecondAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Division", "numberInTwo", 8, 0]
+
+- name: addDivisionNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Division", "numberOut", 8, 1]
+
+# Zeroize
+- name: MakeZeroBuild
+  build:
+    contract: numbers-and-math/MakeZero.sol
+
+- name: MakeZero
+  deploy:
+    contract: MakeZero.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerMakeZero
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Zeroize", 1, $MakeZero, "", ""]
+
+- name: addMakeZeroNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Zeroize", "numberOut", 8, 1]
+
+# Increment
+- name: IncrementBuild
+  build:
+    contract: numbers-and-math/Increment.sol
+
+- name: Increment
+  deploy:
+    contract: Increment.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerIncrement
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Increment", 1, $Increment, "", ""]
+
+- name: addIncrementNumberInAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Increment", "numberIn", 8, 0]
+
+- name: addIncrementNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Increment", "numberOut", 8, 1]
+
+# Decrement
+- name: DecrementBuild
+  build:
+    contract: numbers-and-math/Decrement.sol
+
+- name: Decrement
+  deploy:
+    contract: Decrement.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerDecrement
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - Decrement", 1, $Decrement, "", ""]
+
+- name: addDecrementNumberInAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Decrement", "numberIn", 8, 0]
+
+- name: addDecrementNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - Decrement", "numberOut", 8, 1]
+
+# IsEqual
+- name: IsEqualBuild
+  build:
+    contract: numbers-and-math/IsEqual.sol
+
+- name: IsEqual
+  deploy:
+    contract: IsEqual.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerIsEqual
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - IsEqual", 1, $IsEqual, "", ""]
+
+- name: addIsEqualNumberInOneAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - IsEqual", "numberInOne", 8, 0]
+
+- name: addIsEqualNumberInTwoAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - IsEqual", "numberInTwo", 8, 0]
+
+- name: addIsEqualNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - IsEqual", "result", 1, 1]
+
+# IsNotEqual
+- name: IsNotEqualBuild
+  build:
+    contract: numbers-and-math/IsNotEqual.sol
+
+- name: IsNotEqual
+  deploy:
+    contract: IsNotEqual.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerIsNotEqual
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - IsNotEqual", 1, $IsNotEqual, "", ""]
+
+- name: addIsNotEqualNumberInOneAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - IsNotEqual", "numberInOne", 8, 0]
+
+- name: addIsNotEqualNumberInTwoAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - IsNotEqual", "numberInTwo", 8, 0]
+
+- name: addIsNotEqualNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - IsNotEqual", "result", 1, 1]
+
+# GreaterThan
+- name: GreaterThanBuild
+  build:
+    contract: numbers-and-math/GreaterThan.sol
+
+- name: GreaterThan
+  deploy:
+    contract: GreaterThan.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerGreaterThan
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - GreaterThan", 1, $GreaterThan, "", ""]
+
+- name: addGreaterThanNumberInOneAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - GreaterThan", "numberInOne", 8, 0]
+
+- name: addGreaterThanNumberInTwoAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - GreaterThan", "numberInTwo", 8, 0]
+
+- name: addGreaterThanNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - GreaterThan", "result", 1, 1]
+
+# GreaterThanEqual
+- name: GreaterThanEqualBuild
+  build:
+    contract: numbers-and-math/GreaterThanEqual.sol
+
+- name: GreaterThanEqual
+  deploy:
+    contract: GreaterThanEqual.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerGreaterThanEqual
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - GreaterThanEqual", 1, $GreaterThanEqual, "", ""]
+
+- name: addGreaterThanEqualNumberInOneAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - GreaterThanEqual", "numberInOne", 8, 0]
+
+- name: addGreaterThanEqualNumberInTwoAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - GreaterThanEqual", "numberInTwo", 8, 0]
+
+- name: addGreaterThanEqualNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - GreaterThanEqual", "result", 1, 1]
+
+# LessThan
+- name: LessThanBuild
+  build:
+    contract: numbers-and-math/LessThan.sol
+
+- name: LessThan
+  deploy:
+    contract: LessThan.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerLessThan
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - LessThan", 1, $LessThan, "", ""]
+
+- name: addLessThanNumberInOneAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - LessThan", "numberInOne", 8, 0]
+
+- name: addLessThanNumberInTwoAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - LessThan", "numberInTwo", 8, 0]
+
+- name: addLessThanNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - LessThan", "result", 1, 1]
+
+# LessThanEqual
+- name: LessThanEqualBuild
+  build:
+    contract: numbers-and-math/LessThanEqual.sol
+
+- name: LessThanEqual
+  deploy:
+    contract: LessThanEqual.bin
+    libraries: ErrorsLib:$ErrorsLib
+
+- name: registerLessThanEqual
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Numbers - LessThanEqual", 1, $LessThanEqual, "", ""]
+
+- name: addLessThanEqualNumberInOneAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - LessThanEqual", "numberInOne", 8, 0]
+
+- name: addLessThanEqualNumberInTwoAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - LessThanEqual", "numberInTwo", 8, 0]
+
+- name: addLessThanEqualNumberOutAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Numbers - LessThanEqual", "result", 1, 1]

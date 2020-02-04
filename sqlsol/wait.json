@@ -1,0 +1,49 @@
+[
+  {
+    "TableName": "WaitOracle",
+    "Filter": "Log1Text = 'AN://oracles/monax/time/wait'",
+    "FieldMappings": [
+      {
+        "Field": "uuid",
+        "ColumnName": "uuid",
+        "Type": "bytes32",
+        "Primary": true
+      },
+      {
+        "Field": "oracle",
+        "ColumnName": "oracle",
+        "Type": "address"
+      },
+      {
+        "Field": "bpmService",
+        "ColumnName": "bpmService",
+        "Type": "address"
+      },
+      {
+        "Field": "piAddress",
+        "ColumnName": "piAddress",
+        "Type": "address"
+      },
+      {
+        "Field": "performer",
+        "ColumnName": "performer",
+        "Type": "address"
+      },
+      {
+        "Field": "currentTime",
+        "ColumnName": "currentTime",
+        "Type": "int64"
+      },
+      {
+        "Field": "duration",
+        "ColumnName": "duration",
+        "Type": "string"
+      },
+      {
+        "Field": "completed",
+        "ColumnName": "completed",
+        "Type": "bool"
+      }
+    ]
+  }
+]

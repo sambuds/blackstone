@@ -227,12 +227,12 @@ contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataS
 
   /**
 	 * @dev Updates the file reference for the private parameters of this agreement.
-   * Reverts unless the agreement is in draft state.
+   * Reverts unless the agreement is in draft or formulated state.
 	 * @param _privateParametersFileReference the file reference to the private parameters
 	 */
 	function setPrivateParametersReference(string calldata _privateParametersFileReference) external {
-    ErrorsLib.revertIf(legalState != Agreements.LegalState.DRAFT,
-			ErrorsLib.INVALID_PARAMETER_STATE(), "DefaultActiveAgreement.setPrivateParametersReference", "Agreement must be in DRAFT state");
+    ErrorsLib.revertIf(legalState != Agreements.LegalState.DRAFT && legalState != Agreements.LegalState.FORMULATED,
+			ErrorsLib.INVALID_PARAMETER_STATE(), "DefaultActiveAgreement.setPrivateParametersReference", "Agreement must be in DRAFT or FORMULATED state");
     fileReferences.insertOrUpdate(fileKeyPrivateParameters, _privateParametersFileReference);
     emit LogAgreementPrivateParametersReference(EVENT_ID_AGREEMENTS, address(this), _privateParametersFileReference);
 	}

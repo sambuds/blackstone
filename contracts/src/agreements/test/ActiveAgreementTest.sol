@@ -398,7 +398,7 @@ contract ActiveAgreementTest {
 	 */
 	function testPrivateParameters() external returns (string memory) {
 
-		// agreeement must be in DRAFT state in order to change the reference to its private parameters file
+		// agreeement must be in DRAFT or FORMULATED state in order to change the reference to its private parameters file
 
 		ActiveAgreement agreement;
 		Archetype archetype;
@@ -416,11 +416,11 @@ contract ActiveAgreementTest {
     if (agreement.getLegalState() != uint8(Agreements.LegalState.DRAFT)) return "Agreement legal state should be updated after calling set function";
     agreement.setPrivateParametersReference(newPrivateParametersFileRef);
 
+		// test valid setting of private parameters reference while agreement is FORMULATED
+    address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.FORMULATED)));
+    agreement.setPrivateParametersReference(newPrivateParametersFileRef);
+
     // Check that set function reverts in any other legal state
-    // Formulated
-		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.FORMULATED)));
-		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));
-		if (success) return "Setting the private parameters file reference while the agreement is FORMULATED should revert";
     // Executed
 		address(this).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.EXECUTED)));
 		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigSetPrivateParametersReference, dummyPrivateParametersFileRef));

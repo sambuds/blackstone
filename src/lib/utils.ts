@@ -2,6 +2,7 @@ import { UserAccount } from "../commons-auth/UserAccount";
 import { Client } from "./client";
 import { Keccak } from 'sha3';
 import * as grpc from 'grpc';
+import { HexString } from "./types";
 
 const trimBufferPadding = (buf: Buffer) => {
     let lo = 0;
@@ -15,12 +16,20 @@ const trimBufferPadding = (buf: Buffer) => {
     return buf.slice(lo, hi);
 };
 
-export function HexFromString(str: string) {
+export function BytesFromString(str: string) {
     return Buffer.from(str, 'utf8');
-} 
+}
 
-export function HexToString(hex: Buffer) {
-    return trimBufferPadding(Buffer.from(hex.toString(), 'hex')).toString('utf8');
+export function BytesToString(data: Buffer) {
+    return trimBufferPadding(data).toString('utf8');
+}
+
+export function DecodeHex(str: string) {
+    return Buffer.from(str, 'hex');
+}
+
+export function EncodeHex(data: Buffer) {
+    return data.toString('hex');
 }
 
 /**
@@ -28,10 +37,10 @@ export function HexToString(hex: Buffer) {
  * The 'payload' parameter must be the output of calling the 'encode(...)' function on a contract's function. E.g. <contract>.<function>.encode(param1, param2)
  * 'shouldWaitForVent' is a boolean parameter which indicates whether this.callOnBehalfOf should to wait for vent db to catch up to the block height in the forwardCall response, before resolving the promise.
  */
-export async function CallOnBehalfOf(client: Client, userAddress: string, targetAddress: string, payload: string): Promise<string> {
+export async function CallOnBehalfOf(client: Client, userAddress: string, targetAddress: string, payload: string): Promise<HexString> {
     const actingUser = new UserAccount.Contract(client, userAddress)
-    return actingUser.forwardCall(targetAddress, Buffer.from(payload, 'hex'))
-        .then(data => HexToString(data.returnData));
+    return actingUser.forwardCall(targetAddress, DecodeHex(payload))
+        .then(data => EncodeHex(trimBufferPadding(data.returnData)));
 }
 
 export async function GetFromNameRegistry(client: Client, name: string) {

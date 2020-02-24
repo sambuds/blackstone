@@ -1,4 +1,4 @@
-import { Contracts, Load } from '../lib/contracts';
+import { Contracts } from '../lib/contracts';
 import { Archetype, Agreement, Model } from '../lib/types';
 import rid = require('random-id');
 import * as chai from 'chai';
@@ -100,7 +100,7 @@ describe('CONTRACTS', () => {
     owner: '',
     formationProcess: '',
     executionProcess: '',
-    packageId: Buffer.from(''),
+    packageId: '',
     governingArchetypes: [],
   };
   const agreement: Agreement = {
@@ -109,13 +109,13 @@ describe('CONTRACTS', () => {
     owner: '',
     privateParametersFileReference: '',
     parties: [],
-    collectionId: Buffer.from(''),
+    collectionId: '',
     governingAgreements: [],
   };
 
   it('Should create a user', async () => {
     const res = await contracts.createUser({
-      username: Buffer.from(SHA3(rid(16, 'aA0')))
+      username: SHA3(rid(16, 'aA0'))
     });
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
     pAccount.address = res;
@@ -269,7 +269,7 @@ describe('CONTRACTS', () => {
   }).timeout(10000);
 
   it('Should fail to create archetype with fake package id', async () => {
-    archetype.packageId = Buffer.from('abc123');
+    archetype.packageId = 'abc123';
     await assert.isRejected(contracts.createArchetype(archetype));
   }).timeout(10000);
 
@@ -284,7 +284,7 @@ describe('CONTRACTS', () => {
   // }).timeout(10000);
 
   it('Should create an archetype', async () => {
-    archetype.packageId = Buffer.from('');
+    archetype.packageId = '';
     const res = await contracts.createArchetype(archetype);
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
     archAddress = res;

@@ -3,9 +3,12 @@ import { Burrow } from '@hyperledger/burrow'
 import * as convert from '@hyperledger/burrow/dist/lib/utils/convert';
 import * as coder from 'ethereumjs-abi';
 import { Readable } from 'stream';
+import { TxExecution } from '@hyperledger/burrow/proto/exec_pb';
+
+export type Interceptor = (result: TxExecution) => Promise<TxExecution>;
 
 export class Client extends Burrow {
-    interceptor: <T>(result: T) => Promise<T>;
+    interceptor: Interceptor;
     
     constructor(url: string, account: string) {
         super(url, account);

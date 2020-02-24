@@ -1,4 +1,4 @@
-import { Contracts, Load } from '../lib/contracts';
+import { Contracts } from '../lib/contracts';
 import { Archetype, Agreement, Parameter, ParameterType, Model, DataType, ActivityInstanceState, LegalState } from '../lib/types';
 import rid = require('random-id');
 import * as chai from 'chai';
@@ -50,7 +50,7 @@ describe('FORMATION - EXECUTION with 1 User Task each', () => {
     owner: '',
     formationProcess: '',
     executionProcess: '',
-    packageId: Buffer.from(''),
+    packageId: '',
     governingArchetypes: [],
   };
 
@@ -72,7 +72,7 @@ describe('FORMATION - EXECUTION with 1 User Task each', () => {
     owner: '',
     privateParametersFileReference: '',
     parties: [],
-    collectionId: Buffer.from(''),
+    collectionId: '',
     governingAgreements: [],
   };
 
@@ -96,10 +96,10 @@ describe('FORMATION - EXECUTION with 1 User Task each', () => {
 
   it('Should create a buyer and a seller', async () => {
     let resBuyer = await contracts.createUser({
-      username: Buffer.from(SHA3(buyer.username))
+      username: SHA3(buyer.username)
     });
     let resSeller = await contracts.createUser({
-      username: Buffer.from(SHA3(seller.username))
+      username: SHA3(seller.username)
     });
     expect(resBuyer).to.match(/[0-9A-Fa-f]{40}/);
     expect(resSeller).to.match(/[0-9A-Fa-f]{40}/);
@@ -211,7 +211,7 @@ describe('FORMATION - EXECUTION with 1 User Task each', () => {
     agreement.address = await contracts.createAgreement({
       owner: buyer.address,
       privateParametersFileReference: '',
-      collectionId: Buffer.from(''),
+      collectionId: '',
       archetype: agreement.archetype,
       creator: agreement.creator,
       isPrivate: agreement.isPrivate,

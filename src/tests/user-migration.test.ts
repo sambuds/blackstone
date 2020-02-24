@@ -1,4 +1,4 @@
-import { Contracts, Load } from '../lib/contracts';
+import { Contracts } from '../lib/contracts';
 import { SHA3 } from '../lib/utils';
 import rid = require('random-id');
 import nanoid = require('nanoid');
@@ -19,14 +19,14 @@ before(function (done) {
 describe('USER MIGRATION', () => {
   const user = {
     userid: `monax_test|${nanoid()}`,
-    useridHash: Buffer.from(''),
+    useridHash: '',
     username: `${rid(5, 'aA0')}`,
-    usernameHash: Buffer.from(''),
+    usernameHash: '',
     address: '',
   };
 
   it('Should create a user account', async () => {
-    user.usernameHash = Buffer.from(SHA3(user.username));
+    user.usernameHash = SHA3(user.username);
     const address = await contracts.createUser({
       username: user.usernameHash,
     });
@@ -35,7 +35,7 @@ describe('USER MIGRATION', () => {
   }).timeout(10000);
 
   it('Should migrate user account from username to userid', async () => {
-    user.useridHash = Buffer.from(SHA3(user.userid));
+    user.useridHash = SHA3(user.userid);
     await contracts.migrateUserAccountInEcosystem(user.address, user.usernameHash, user.useridHash);
     const address = await contracts.getUserByUserId(user.useridHash);
     expect(user.address).to.equal(address);

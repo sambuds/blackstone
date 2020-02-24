@@ -1,7 +1,16 @@
-import { Client, Notification } from 'pg';
+import { Client as PGClient, Notification } from 'pg';
 import { EventEmitter } from 'events';
 import { TxExecution, TxHeader } from '@hyperledger/burrow/proto/exec_pb';
 import { Logger } from 'log4js';
+import { Contracts } from './contracts';
+
+import { getLogger } from 'log4js';
+const logger = getLogger();
+
+export type Watcher = {
+  update(result: TxExecution): TxExecution;
+  wait(): Promise<TxExecution>;
+}
 
 function heightFromResult(result: TxExecution) {
   if (!result) return undefined;
@@ -14,7 +23,7 @@ export class VentListener {
   maxWaitTime: number;
   high_water: number;
   emitter: EventEmitter;
-  client: Client;
+  client: PGClient;
   log: Logger;
 
   constructor(connection: string, maxWaitTime: number) {
@@ -22,29 +31,27 @@ export class VentListener {
     this.maxWaitTime = maxWaitTime || 3000;
     this.high_water = 0;
     this.emitter = new EventEmitter();
+    this.log = logger;
   }
 
-  NewWaiter(): {
-    (result: TxExecution): TxExecution;
-    wait(vent: VentListener, result: TxExecution): Promise<TxExecution>;
-  } {
+  NewWatcher(): Watcher {
     const capture = new TxExecution();
     const header = new TxHeader();
     header.setHeight(0);
     capture.setHeader(header);
 
-    const max = (result: TxExecution) => {
-      const height = heightFromResult(result);
-      if (height !== undefined) {
-        if (height > capture.getHeader().getHeight()) {     
-          capture.getHeader().setHeight(0);
+    return {
+      update: (result: TxExecution) => {
+        const height = heightFromResult(result);
+        if (height !== undefined) {
+          if (height > capture.getHeader().getHeight()) {     
+            capture.getHeader().setHeight(height);
+          }
         }
-      }
-      return result;
-    }
-    
-    max.wait = WaitForVent.bind(this, capture);
-    return max;
+        return result;
+      },
+      wait: async () => WaitForVent(this)(capture),
+    };
   }
 
   private handleHeight(msg: Notification) {
@@ -62,7 +69,7 @@ export class VentListener {
   }
 
   async listen() {
-    this.client = new Client({ connectionString: this.connection });
+    this.client = new PGClient({ connectionString: this.connection });
     await this.client.connect();
     this.client.on('error', (err) => {
       this.log.error(`Encountered VentHelper pg client error: ${err.stack}`);
@@ -77,42 +84,76 @@ export class VentListener {
   }
 }
 
-function WaitForVent(vent: VentListener, result: TxExecution): Promise<TxExecution> {
-  return new Promise<TxExecution>((resolve, reject) => {
-    const target = heightFromResult(result);
-    if (target === undefined) {
-      return reject(new Error(`waitForVent passed a value that does not look like a Burrow result: '${JSON.stringify(result)}'`));
-    }
-
-    if (vent.high_water >= target) {
-      vent.log.debug(`Target height [ ${target} ] already surpassed, resolving result promise`);
-      return resolve(result);
-    }
-
-    // otherwise we need to wait for vent -> return a promise
-    let resolved = false;
-    vent.log.debug(`Created result promise for target height [ ${target} ]`);
-
-    const registerHeight = (height: number) => {
-      // If the height has been reached, remove event listener and resolve promise
-      if (!resolved && height >= target) {
-        vent.log.debug(`Resolving result promise for target height [ ${target} ]`);
-        vent.emitter.removeListener('height', registerHeight);
-        resolved = true;
-        resolve(result);
+export function WaitForVent(vent: VentListener) {
+  return async (result: TxExecution): Promise<TxExecution> => {
+    return new Promise<TxExecution>((resolve, reject) => {
+      const target = heightFromResult(result);
+      if (target === undefined) {
+        return reject(new Error(`WaitForVent passed a value that does not look like a Burrow result: '${JSON.stringify(result)}'`));
       }
+
+      if (vent.high_water >= target) {
+        vent.log.debug(`Target height [ ${target} ] already surpassed, resolving result promise`);
+        return resolve(result);
+      }
+
+      // otherwise we need to wait for vent -> return a promise
+      let resolved = false;
+      vent.log.debug(`Created result promise for target height [ ${target} ]`);
+
+      const registerHeight = (height: number) => {
+        // If the height has been reached, remove event listener and resolve promise
+        if (!resolved && height >= target) {
+          vent.log.debug(`Resolving result promise for target height [ ${target} ]`);
+          vent.emitter.removeListener('height', registerHeight);
+          resolved = true;
+          resolve(result);
+        }
+      };
+
+      vent.log.debug(`Current high_water in promise: ${vent.high_water}`);
+      vent.emitter.on('height', registerHeight);
+
+      setTimeout(() => {
+        if (!resolved) {
+          vent.log.warn(`>>>>>>> WARNING <<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${vent.maxWaitTime}ms, resolving promise anyway`);
+          registerHeight(target);
+        }
+      }, vent.maxWaitTime);
+
+      return null;
+    });
+  };
+}
+
+export class Synched extends Contracts {
+  vent: VentListener;
+  watch: Watcher;
+
+  constructor(contracts: Contracts, vent: VentListener) {
+    super(contracts.client, contracts.manager, contracts.ecosystem);
+
+    this.vent = vent;
+    this.watch = this.vent.NewWatcher();
+
+    this.client.interceptor = async (data) => {
+      this.watch.update(data);
+      return data;
     };
+  }
 
-    vent.log.debug(`Current high_water in promise: ${vent.high_water}`);
-    vent.emitter.on('height', registerHeight);
+  async do<T>(func: (contracts: this) => Promise<T>): Promise<T> {
+    const result = await func(this);
+    await this.sync();
+    return result;
+  }
 
-    setTimeout(() => {
-      if (!resolved) {
-        vent.log.warn(`>>>>>>> WARNING <<<<<<< ${new Date()}: Target height [ ${target} ] notification not received after ${vent.maxWaitTime}ms, resolving promise anyway`);
-        registerHeight(target);
-      }
-    }, vent.maxWaitTime);
+  async sync() {
+    return this.watch.wait();
+  }
+}
 
-    return null;
-  });
+export async function NewSynched(contracts: Contracts, vent: VentListener) {
+  await vent.listen();
+  return new Synched(contracts, vent);
 }

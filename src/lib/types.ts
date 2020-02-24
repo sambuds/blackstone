@@ -1,11 +1,11 @@
 export type Agreement = {
-    archetype: string,
+    archetype?: string,
     creator: string
     owner: string
     privateParametersFileReference: string
     isPrivate?: boolean
     parties: string[]
-    collectionId: Buffer
+    collectionId: string
     governingAgreements: string[]
     address?: string
 };
@@ -18,7 +18,7 @@ export type Archetype = {
     owner: string
     formationProcess: string
     executionProcess: string
-    packageId: Buffer
+    packageId: string
     governingArchetypes: string[]
     address?: string
 };
@@ -98,3 +98,5 @@ export enum CollectionType {
     PACKAGE,
     PROJECT
 };
+
+export type HexString = string;

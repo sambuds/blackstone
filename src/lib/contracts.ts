@@ -529,31 +529,37 @@ export class Contracts {
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
                     BytesFromString(dataStorageId), dataStorage, operator, Boolean(value)
                 );
+                break
             case DataType.STRING:
-                    await processDefinition.createTransitionConditionForString(
+                await processDefinition.createTransitionConditionForString(
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
                     BytesFromString(dataStorageId), dataStorage, operator, value
                 );
+                break
             case DataType.BYTES32:
-                    await processDefinition.createTransitionConditionForBytes32(
+                await processDefinition.createTransitionConditionForBytes32(
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
                     BytesFromString(dataStorageId), dataStorage, operator, BytesFromString(value)
                 );
+                break
             case DataType.UINT:
-                    await processDefinition.createTransitionConditionForUint(
+                await processDefinition.createTransitionConditionForUint(
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
                     BytesFromString(dataStorageId), dataStorage, operator, parseInt(value, 10)
                 );
+                break;
             case DataType.INT:
-                    await processDefinition.createTransitionConditionForInt(
+                await processDefinition.createTransitionConditionForInt(
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
                     BytesFromString(dataStorageId), dataStorage, operator, parseInt(value, 10)
                 );
+                break
             case DataType.ADDRESS:
-                    await processDefinition.createTransitionConditionForAddress(
+                await processDefinition.createTransitionConditionForAddress(
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
                     BytesFromString(dataStorageId), dataStorage, operator, value
                 );
+                break
         }
     }
 

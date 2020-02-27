@@ -1,6 +1,6 @@
 {
-  "name": "blackstone",
-  "version": "0.5.1",
+  "name": "@monax/blackstone",
+  "version": "0.6.0-rc3",
   "description": "REST API for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

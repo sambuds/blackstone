@@ -925,6 +925,68 @@ contract BpmServiceTest {
 	}
 
 	/**
+	 * @dev Tests boundary events.
+	 * Timer boundary events with chain-based data binding as well as external data binding
+	 * Also covers timer escalation behavior leading to activity/process abort.
+	 */
+	function testBoundaryEventHandling() external returns (string memory) {
+
+		// Graph: activity1 ->  intermediateEvent1
+		(error, addr) = processModelRepository.createProcessModel("testModelBoundaryEvents", [1,0,0], modelAuthor, false, dummyModelFileReference);
+		if (addr == address(0)) return "Unable to create a ProcessModel";
+		ProcessModel pm = ProcessModel(addr);
+
+		addr = pm.createProcessDefinition("TestProcessDefinition", address(artifactsRegistry));
+		ProcessDefinition pd = ProcessDefinition(addr);
+
+		pd.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createActivityDefinition(activityId2, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createActivityDefinition(activityId3, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createTransition(activityId1, activityId2);
+		pd.createTransition(activityId2, activityId3);
+		// boundary event with a 10 sec. constant timer set to blocktime + 10 sec.
+		pd.addBoundaryEvent(activityId1, "deadline1", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "", "", address(0), block.timestamp+10000, "");
+		// boundary event with escalation timer set in conditional data
+		pd.addBoundaryEvent(activityId2, "deadline2", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "deadline", "", address(0), 0, "");
+
+		// Validate to set the start activity and enable runtime configuration
+		pd.validate();
+
+		TestBpmService service = createNewTestBpmService();
+
+		ProcessInstance pi = service.createDefaultProcessInstance(address(pd), address(this), EMPTY);
+		pi.setDataValueAsUint("deadline", block.timestamp+5000);
+
+		pi.initRuntime();
+
+		service.addProcessInstance(pi);
+		error = pi.execute(service);
+		if (error != BaseErrors.NO_ERROR()) return "Unexpected error executing the PI";
+
+		// Automatic activation 1. The boundary event on activity 1 should be activated and data autmatically bound from constant
+		// test AI state and event state. test revert from trying to triggering it right away.
+		// complete AI and verify event is no longer activated
+
+
+		// Automatic activation 2. The boundary event on activity 2 should be activated and data autmatically bound from conditional data
+
+
+
+
+		// External binding: make an event with a string target date in the PI. Test state and event activation
+
+		// Activation with and without target functions
+		// Activation of different types (interrupting, non-interrupting) 
+
+
+		return SUCCESS;
+	}
+
+	// TODO make two more functions
+	// 1. create a PI with AIs and events in order to test triggering an activity with a future block timestamp (return event IDs!)
+	// 2. Second test function to test external activation and triggering
+
+	/**
 	 * @dev Tests a straight-through process with XOR and AND gateways
 	 */
 	function testGatewayRouting() external returns (string memory) {

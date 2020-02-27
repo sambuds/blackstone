@@ -570,10 +570,13 @@ library BpmRuntimeLib {
      * @dev Activates the given BoundaryEventInstance by attempting to resolve any data-bindings.
      * The function supports different behaviors depending on the BpmModel.EventType of the boundary event.
      * Currently, only timer-related boundary events are supported for which a future date is either
-     * calculated or injected via an external system (oracle)
-     * Note that this function assumes there is a corresponding IntermediateEvent definition in the provided ProcessDefinition
+     * calculated or injected via an external system.
+     * Note that this function assumes there is a corresponding BoundarEvent definition in the provided ProcessDefinition
      * that defines how this BoundaryEventInstance needs to be processed. It's therefore the responsibility of the calling
      * code to make sure this prerequisite is met.
+     * REVERTS if:
+     * - the BoundaryEvent cannot be found in the given ProcessDefinition
+     * - the BoundaryEvent definition is of an unsupported type
      * @param _boundaryInstance a BpmRuntime.BoundaryEventInstance to be activated
      * @param _rootDataStorage a DataStorage contract to leverage for resolving data required to activate the event instance
      * @param _processDefinition a ProcessDefinition where the event's configuration can be found
@@ -585,12 +588,11 @@ library BpmRuntimeLib {
     {
         (BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, ) = _processDefinition.getBoundaryEventGraphDetails(_boundaryInstance.boundaryId);
 
-        // TODO .getTimerEventDetails() either rename to something more generic or invoke later after we've established that it's a timer event
-        (bytes32 dataPath, bytes32 dataStorageId, address dataStorage, uint timestampConstant, string memory durationConstant) = _processDefinition.getTimerEventDetails(_boundaryInstance.boundaryId);
-
-        address dataStorageAddress = DataStorageUtils.resolveDataStorageAddress(dataStorageId, dataStorage, _rootDataStorage);
+        address dataStorageAddress;
 
         if (eventType == BpmModel.EventType.TIMER_TIMESTAMP) {
+            (bytes32 dataPath, bytes32 dataStorageId, address dataStorage, uint timestampConstant, ) = _processDefinition.getTimerEventDetails(_boundaryInstance.boundaryId);
+            dataStorageAddress = DataStorageUtils.resolveDataStorageAddress(dataStorageId, dataStorage, _rootDataStorage);
             uint timerTimestamp;
             if (timestampConstant != 0) {
                 timerTimestamp = timestampConstant;
@@ -611,6 +613,8 @@ library BpmRuntimeLib {
             );
         }
         else if (eventType == BpmModel.EventType.TIMER_DURATION) {
+            (bytes32 dataPath, bytes32 dataStorageId, address dataStorage, , string memory durationConstant) = _processDefinition.getTimerEventDetails(_boundaryInstance.boundaryId);
+            dataStorageAddress = DataStorageUtils.resolveDataStorageAddress(dataStorageId, dataStorage, _rootDataStorage);
             string memory timerDuration;
             if (bytes(durationConstant).length > 0) {
                 timerDuration = durationConstant;
@@ -904,7 +908,7 @@ library BpmRuntimeLib {
             return (dataStorage, dataPath);
         }
         else if (dataStorageId != "") {
-            // retrieve the target by looking for the dataStorageId in the context of this ProcessInstance's dataStorage
+            // retrieve the target by looking for the dataStorageId in the context of this ProcessInstance's dataStorage 
             dataStorage = DataStorage(_processInstance.addr).getDataValueAsAddress(dataStorageId);
         }
         else {

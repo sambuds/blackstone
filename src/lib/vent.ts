@@ -28,7 +28,7 @@ export class VentListener {
     this.maxWaitTime = maxWaitTime || 3000;
     this.high_water = 0;
     this.emitter = new EventEmitter();
-    this.log = getLogger();
+    this.log = getLogger('vent-listener');
   }
 
   NewWatcher(): Watcher {

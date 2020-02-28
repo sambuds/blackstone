@@ -1,14 +1,17 @@
 {
   "name": "@monax/blackstone",
-  "version": "0.6.0-rc4",
-  "description": "REST API for the Agreements Network",
+  "version": "0.6.0-rc5",
+  "description": "Contract Suite for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "mocha": {
     "bail": false
   },
   "scripts": {
-    "build": "pushd src && ts-node build.ts && popd && rm -rf dist && tsc --build",
+    "build:solidity": "pushd src && ts-node build.ts && popd",
+    "build:compile": "rm -rf dist && tsc --build",
+    "build:static": "rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src/ dist/",
+    "build": "npm run build:solidity && npm run build:compile && npm run build:static",
     "test": "mocha -r ts-node/register --file 'src/tests/before.ts' 'src/tests/*.test.ts'"
   },
   "license": "SEE LICENSE IN LICENSE.md",

@@ -106,7 +106,7 @@ function main() {
                 links: solts.TokenizeLinks(comp.evm.bytecode.linkReferences), 
             })
         }
-        const target = filename.replace(/\.[^/.]+$/, '.ts');
+        const target = filename.replace(/\.[^/.]+$/, '.abi.ts');
         fs.writeFileSync(target, solts.Print(...solts.NewFile(compiled)));
     }
 }

@@ -1,13 +1,13 @@
 import { Client } from './client';
 import { CallTx } from '@hyperledger/burrow/proto/payload_pb';
-import { DOUG } from '../commons-management/DOUG';
-import { EcosystemRegistry } from '../commons-auth/EcosystemRegistry';
-import { ParticipantsManager } from '../commons-auth/ParticipantsManager';
-import { ArchetypeRegistry } from '../agreements/ArchetypeRegistry';
-import { ActiveAgreementRegistry } from '../agreements/ActiveAgreementRegistry';
-import { ProcessModelRepository } from '../bpm-model/ProcessModelRepository';
-import { ApplicationRegistry } from '../bpm-runtime/ApplicationRegistry';
-import { BpmService } from '../bpm-runtime/BpmService';
+import { DOUG } from '../commons-management/DOUG.abi';
+import { EcosystemRegistry } from '../commons-auth/EcosystemRegistry.abi';
+import { ParticipantsManager } from '../commons-auth/ParticipantsManager.abi';
+import { ArchetypeRegistry } from '../agreements/ArchetypeRegistry.abi';
+import { ActiveAgreementRegistry } from '../agreements/ActiveAgreementRegistry.abi';
+import { ProcessModelRepository } from '../bpm-model/ProcessModelRepository.abi';
+import { ApplicationRegistry } from '../bpm-runtime/ApplicationRegistry.abi';
+import { BpmService } from '../bpm-runtime/BpmService.abi';
 import { GetFromNameRegistry } from './utils';
 import { Contracts } from './constants';
 

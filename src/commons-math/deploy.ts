@@ -1,19 +1,19 @@
 import { Client } from "../lib/client";
-import { Addition } from "./Addition";
+import { Addition } from "./Addition.abi";
 import { CallTx } from "@hyperledger/burrow/proto/payload_pb";
-import { DefaultApplicationRegistry } from "../bpm-runtime/DefaultApplicationRegistry";
-import { Subtraction } from "./Subtraction";
-import { Multiplication } from "./Multiplication";
-import { Division } from "./Division";
-import { MakeZero } from "./MakeZero";
-import { Increment } from "./Increment";
-import { Decrement } from "./Decrement";
-import { IsEqual } from "./IsEqual";
-import { IsNotEqual } from "./IsNotEqual";
-import { GreaterThan } from "./GreaterThan";
-import { GreaterThanEqual } from "./GreaterThanEqual";
-import { LessThan } from "./LessThan";
-import { LessThanEqual } from "./LessThanEqual";
+import { DefaultApplicationRegistry } from "../bpm-runtime/DefaultApplicationRegistry.abi";
+import { Subtraction } from "./Subtraction.abi";
+import { Multiplication } from "./Multiplication.abi";
+import { Division } from "./Division.abi";
+import { MakeZero } from "./MakeZero.abi";
+import { Increment } from "./Increment.abi";
+import { Decrement } from "./Decrement.abi";
+import { IsEqual } from "./IsEqual.abi";
+import { IsNotEqual } from "./IsNotEqual.abi";
+import { GreaterThan } from "./GreaterThan.abi";
+import { GreaterThanEqual } from "./GreaterThanEqual.abi";
+import { LessThan } from "./LessThan.abi";
+import { LessThanEqual } from "./LessThanEqual.abi";
 
 async function addApplication(
     registry: Promise<DefaultApplicationRegistry.Contract<CallTx>>,

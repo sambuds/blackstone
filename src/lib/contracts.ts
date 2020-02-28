@@ -2,15 +2,15 @@ import { Client } from './client';
 import { Manager, NewManager } from './manager';
 import { GetFromNameRegistry, SetToNameRegistry, DecodeHex } from './utils';
 import { BytesFromString, BytesToString, CallOnBehalfOf } from './utils'
-import { ActiveAgreement } from '../agreements/ActiveAgreement';
-import { Archetype } from '../agreements/Archetype';
-import { ProcessModel } from '../bpm-model/ProcessModel';
-import { ProcessDefinition } from '../bpm-model/ProcessDefinition';
-import { ProcessInstance }from '../bpm-runtime/ProcessInstance';
+import { ActiveAgreement } from '../agreements/ActiveAgreement.abi';
+import { Archetype } from '../agreements/Archetype.abi';
+import { ProcessModel } from '../bpm-model/ProcessModel.abi';
+import { ProcessDefinition } from '../bpm-model/ProcessDefinition.abi';
+import { ProcessInstance }from '../bpm-runtime/ProcessInstance.abi';
 import { Direction, ErrorCode } from './constants';
 import { CallTx } from '@hyperledger/burrow/proto/payload_pb';
-import { Ecosystem_v1_0_1 as Ecosystem } from '../commons-auth/Ecosystem_v1_0_1';
-import { Organization } from '../commons-auth/Organization';
+import { Ecosystem_v1_0_1 as Ecosystem } from '../commons-auth/Ecosystem_v1_0_1.abi';
+import { Organization } from '../commons-auth/Organization.abi';
 import {
     Agreement as agreement,
     Archetype as archetype,

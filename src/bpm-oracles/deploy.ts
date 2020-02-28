@@ -1,10 +1,10 @@
 import { Client } from "../lib/client";
-import { DOUG } from "../commons-management/DOUG";
+import { DOUG } from "../commons-management/DOUG.abi";
 import { CallTx } from "@hyperledger/burrow/proto/payload_pb";
-import { DeadlineOracle } from "./DeadlineOracle";
-import { DefaultBpmService } from "../bpm-runtime/DefaultBpmService";
-import { DefaultApplicationRegistry } from "../bpm-runtime/DefaultApplicationRegistry";
-import { WaitOracle } from "./WaitOracle";
+import { DeadlineOracle } from "./DeadlineOracle.abi";
+import { DefaultBpmService } from "../bpm-runtime/DefaultBpmService.abi";
+import { DefaultApplicationRegistry } from "../bpm-runtime/DefaultApplicationRegistry.abi";
+import { WaitOracle } from "./WaitOracle.abi";
 
 export async function DeployDeadline(
     client: Client,

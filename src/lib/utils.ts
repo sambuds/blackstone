@@ -1,4 +1,4 @@
-import { UserAccount } from "../commons-auth/UserAccount";
+import { UserAccount } from "../commons-auth/UserAccount.abi";
 import { Client } from "./client";
 import { Keccak } from 'sha3';
 import * as grpc from 'grpc';

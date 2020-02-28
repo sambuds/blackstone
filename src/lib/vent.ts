@@ -1,11 +1,8 @@
 import { Client as PGClient, Notification } from 'pg';
 import { EventEmitter } from 'events';
 import { TxExecution, TxHeader } from '@hyperledger/burrow/proto/exec_pb';
-import { Logger } from 'log4js';
+import { Logger, getLogger } from 'log4js';
 import { Contracts } from './contracts';
-
-import { getLogger } from 'log4js';
-const logger = getLogger();
 
 export type Watcher = {
   update(result: TxExecution): TxExecution;
@@ -31,7 +28,7 @@ export class VentListener {
     this.maxWaitTime = maxWaitTime || 3000;
     this.high_water = 0;
     this.emitter = new EventEmitter();
-    this.log = logger;
+    this.log = getLogger();
   }
 
   NewWatcher(): Watcher {

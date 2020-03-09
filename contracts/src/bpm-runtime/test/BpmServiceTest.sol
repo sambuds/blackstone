@@ -30,6 +30,7 @@ contract BpmServiceTest {
 
 	using TypeUtilsLib for bytes32;
 	using TypeUtilsLib for bytes;
+	using TypeUtilsLib for uint;
 	using ArrayUtilsLib for bytes32[];
 	using BpmRuntimeLib for BpmRuntime.ProcessGraph;
 	using BpmRuntimeLib for BpmRuntime.ActivityNode;
@@ -51,6 +52,9 @@ contract BpmServiceTest {
 	string constant functionSigGetActivityInDataAsBool = "getActivityInDataAsBool(bytes32,bytes32)";
 	string constant functionSigSetActivityOutDataAsUint = "setActivityOutDataAsUint(bytes32,bytes32,uint256)";
 	string constant functionSigCompleteActivityWithUintData = "completeActivityWithUintData(bytes32,address,bytes32,uint256)";
+	string constant functionSigTriggerIntermediateEvent = "triggerIntermediateEvent(bytes32)";
+	string constant functionSigTriggerBoundaryEvent = "triggerBoundaryEvent(bytes32)";
+	string constant functionSigSetTimerEventTarget = "setTimerEventTarget(bytes32,uint256)";
 
 	// re-usable variables for return values
 	uint error;
@@ -900,7 +904,7 @@ contract BpmServiceTest {
 		if (error != BaseErrors.NO_ERROR()) return "Unexpected error executing the PI";
 
 		// intermediate event is waiting for duration
-		bytes32 eventId = pi.getIntermediateInstanceAtIndex(0);
+		bytes32 eventId = pi.getIntermediaEventIdAtIndex(0);
 		if (eventId.isEmpty()) return "Expected intermediateEventInstance for test not found";
 		pi.setTimerEventTarget(eventId, block.timestamp);
 		pi.triggerIntermediateEvent(eventId, service);
@@ -931,6 +935,8 @@ contract BpmServiceTest {
 	 */
 	function testBoundaryEventHandling() external returns (string memory) {
 
+		uint activityTimerTarget = block.timestamp+2000;
+		
 		// Graph: activity1 ->  intermediateEvent1
 		(error, addr) = processModelRepository.createProcessModel("testModelBoundaryEvents", [1,0,0], modelAuthor, false, dummyModelFileReference);
 		if (addr == address(0)) return "Unable to create a ProcessModel";
@@ -944,10 +950,12 @@ contract BpmServiceTest {
 		pd.createActivityDefinition(activityId3, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		pd.createTransition(activityId1, activityId2);
 		pd.createTransition(activityId2, activityId3);
-		// boundary event with a 10 sec. constant timer set to blocktime + 10 sec.
-		pd.addBoundaryEvent(activityId1, "deadline1", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "", "", address(0), block.timestamp+10000, "");
-		// boundary event with escalation timer set in conditional data
-		pd.addBoundaryEvent(activityId2, "deadline2", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "deadline", "", address(0), 0, "");
+		// boundary event 1 with duration timer constant
+		pd.addBoundaryEvent(activityId1, "deadline", BpmModel.EventType.TIMER_DURATION, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "", "", address(0), 0, "10 seconds");
+		// boundary event 2 with a 10 sec. constant timer set to blocktime + 10 sec.
+		pd.addBoundaryEvent(activityId2, "deadline", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "", "", address(0), activityTimerTarget, "");
+		// boundary event 3 with timer from process variable
+		pd.addBoundaryEvent(activityId3, "deadline", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "deadlineVariable", "", address(0), 0, "");
 
 		// Validate to set the start activity and enable runtime configuration
 		pd.validate();
@@ -955,7 +963,6 @@ contract BpmServiceTest {
 		TestBpmService service = createNewTestBpmService();
 
 		ProcessInstance pi = service.createDefaultProcessInstance(address(pd), address(this), EMPTY);
-		pi.setDataValueAsUint("deadline", block.timestamp+5000);
 
 		pi.initRuntime();
 
@@ -963,9 +970,49 @@ contract BpmServiceTest {
 		error = pi.execute(service);
 		if (error != BaseErrors.NO_ERROR()) return "Unexpected error executing the PI";
 
-		// Automatic activation 1. The boundary event on activity 1 should be activated and data autmatically bound from constant
+		// Activity 1: External activation. The boundary event on activity 1 should be inactive and data needs to be injected externally
 		// test AI state and event state. test revert from trying to triggering it right away.
-		// complete AI and verify event is no longer activated
+		uint8 state;
+		bytes32 eventInstanceId;
+		bytes32 aiId;
+		uint timerResolution;
+		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
+		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "Activity1 should be suspended";
+		eventInstanceId = pi.getBoundaryEventIdAtIndex(0);
+		if (eventInstanceId.isEmpty()) return "There should be an event instance at index 0 for Activity1's boundary event";
+		(aiId , state, timerResolution) = pi.getBoundaryEventDetails(eventInstanceId);
+		if (aiId != pi.getActivityInstanceAtIndex(0)) return "The ActivityInstanceId to which boundary event instance 1 is bound should be Activity1";
+		if (state != uint8(BpmRuntime.BoundaryEventInstanceState.INACTIVE)) return "Activity1's deadline boundary event should be inactive";
+		if (timerResolution > 0) return "Activity1's deadline boundary should be empty due to it being a duration.";
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigTriggerBoundaryEvent, eventInstanceId));
+		if (success) return "It should not be possible to trigger an inactive boundary event instance";
+		activityTimerTarget = block.timestamp+7000;
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigSetTimerEventTarget, eventInstanceId, activityTimerTarget));
+		if (!success) return "Setting the timer target on a duration boundary event instance for the first time should succeed";
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigSetTimerEventTarget, eventInstanceId, uint256(73737373)));
+		if (success) return "Attempt to overwrite an already set timer target of a boundary event should REVERT";
+		( , state, timerResolution) = pi.getBoundaryEventDetails(eventInstanceId);
+		if (state != uint8(BpmRuntime.BoundaryEventInstanceState.ACTIVE)) return "Activity1's deadline boundary event should now be active";
+		if (timerResolution != activityTimerTarget) return "Activity1's deadline target should be set correctly as a uint now";
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigTriggerBoundaryEvent, eventInstanceId));
+		if (success) return "It should should still not be possible to trigger Activity1's deadline event since the target is in the future";
+		// complete AI and verify event instance no longer exists
+		pi.completeActivity(aiId, service);
+		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity1 should be completed";
+		if (pi.getNumberOfBoundaryEventInstances() != 1) return "There should still only be one boundary event instance in the process after completion of Activity1";
+		eventInstanceId = pi.getBoundaryEventIdAtIndex(0);
+		(aiId , state, timerResolution) = pi.getBoundaryEventDetails(eventInstanceId);
+		if (aiId != pi.getActivityInstanceAtIndex(1)) return "The only existing boundary event instance should belong to Activity2";
+		
+		// Activity 2: Automatic activation. The boundary event should already be active based on a constant deadline value
+		
+
+
+		// boundary event 3 should not be active as long as the process variable is empty
+		pi.setDataValueAsUint("deadlineVariable", block.timestamp+5000);
+
+		
 
 
 		// Automatic activation 2. The boundary event on activity 2 should be activated and data autmatically bound from conditional data

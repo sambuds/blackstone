@@ -243,49 +243,52 @@ contract DefaultProcessDefinition is AbstractVersionedArtifact(1,0,0), AbstractD
 	 * - the activity does not exist
 	 * - the event ID already exists as a model element
 	 * @param _activityId the activity for which the boundary event is added
-	 * @param _id the ID under which to register the element
-	 * @param _eventType a BpmModel.EventType.
+	 * @param _id an ID unique within the context of the activity, e.g. a name like "deadline"
+	 * @param _eventType a BpmModel.EventType
 	 * @param _eventBehavior a BpmModel.IntermediateEventBehavior
 	 * @param _dataPath a data path (key) to use for data lookup on a DataStorage.
 	 * @param _dataStorageId an optional key to identify a DataStorage as basis for the data path other than the default one
 	 * @param _dataStorage an optional address of a DataStorage as basis for the data path other than the default one
 	 * @param _timestampConstant a fixed value for timer based events representing either a datetime or a duration in secs
 	 * @param _durationConstant a fixed value for timer-based events representing a duration in secs
+	 * @return eventId a generated boundary event ID unique within the process
 	 */
 	function addBoundaryEvent(bytes32 _activityId, bytes32 _id, BpmModel.EventType _eventType, BpmModel.BoundaryEventBehavior _eventBehavior, bytes32 _dataPath, bytes32 _dataStorageId, address _dataStorage, uint256 _timestampConstant, string calldata _durationConstant)
 		external
 		pre_invalidate
+		returns (bytes32 eventId)
 	{
-		ErrorsLib.revertIf(!(graphElements.rows[_activityId].exists && graphElements.rows[_activityId].elementType == BpmModel.ModelElementType.ACTIVITY), 
+		ErrorsLib.revertIf(!graphElements.rows[_activityId].exists || graphElements.rows[_activityId].elementType != BpmModel.ModelElementType.ACTIVITY, 
 			ErrorsLib.INVALID_PARAMETER_STATE(), "DefaultProcessDefinition.addBoundaryEvent", "Cannot create boundary event since given activityId is either non-existent or not of the correct type BpmModel.ModelElementType.ACTIVITY");
-		ErrorsLib.revertIf(graphElements.rows[_id].exists,
-			ErrorsLib.RESOURCE_ALREADY_EXISTS(),"ProcessDefinition.addBoundaryEvent","Graph element with _id already exists");
-		// no need to check if the event already exists in the activity.boundaryEventIds, because the same ID would already be in the graphElements.rows and is covered by the prior check
-
-		graphElements.boundaryEventIds.push(_id);
-		graphElements.rows[_id].elementType = BpmModel.ModelElementType.BOUNDARY_EVENT;
-		graphElements.rows[_id].boundaryEvent.id = _id;
-		graphElements.rows[_id].boundaryEvent.eventType = _eventType;
-		graphElements.rows[_id].boundaryEvent.eventBehavior = _eventBehavior;
+		eventId = keccak256(abi.encodePacked(_activityId,_id));
+		ErrorsLib.revertIf(graphElements.rows[eventId].exists,
+			ErrorsLib.RESOURCE_ALREADY_EXISTS(),"ProcessDefinition.addBoundaryEvent","Graph element with generated eventId = (_activityId,_id) already exists in the process");
+		
+		graphElements.boundaryEventIds.push(eventId);
+		graphElements.rows[eventId].elementType = BpmModel.ModelElementType.BOUNDARY_EVENT;
+		graphElements.rows[eventId].boundaryEvent.id = _id;
+		graphElements.rows[eventId].boundaryEvent.eventType = _eventType;
+		graphElements.rows[eventId].boundaryEvent.eventBehavior = _eventBehavior;
 		// use constant value or dynamic lookup via conditional data
 		if (_timestampConstant > 0 && _eventType == BpmModel.EventType.TIMER_TIMESTAMP) {
-			graphElements.rows[_id].boundaryEvent.timerValue.uintValue = _timestampConstant;
+			graphElements.rows[eventId].boundaryEvent.timerValue.uintValue = _timestampConstant;
 		}
 		else if (bytes(_durationConstant).length > 0 && _eventType == BpmModel.EventType.TIMER_DURATION) {
-			graphElements.rows[_id].boundaryEvent.timerValue.stringValue = _durationConstant;
+			graphElements.rows[eventId].boundaryEvent.timerValue.stringValue = _durationConstant;
 		}
 		else {
-			graphElements.rows[_id].boundaryEvent.timerStorage.dataPath = _dataPath;
-			graphElements.rows[_id].boundaryEvent.timerStorage.dataStorageId = _dataStorageId;
-			graphElements.rows[_id].boundaryEvent.timerStorage.dataStorage = _dataStorage;
+			graphElements.rows[eventId].boundaryEvent.timerStorage.dataPath = _dataPath;
+			graphElements.rows[eventId].boundaryEvent.timerStorage.dataStorageId = _dataStorageId;
+			graphElements.rows[eventId].boundaryEvent.timerStorage.dataStorage = _dataStorage;
 		}
-		graphElements.rows[_activityId].activity.boundaryEventIds.push(_id);
-		graphElements.rows[_id].exists = true;
+		// no need to check if the event already exists in the activity.boundaryEventIds, because the same ID is used in the graphElements.rows and is covered by a prior check
+		graphElements.rows[_activityId].activity.boundaryEventIds.push(eventId);
+		graphElements.rows[eventId].exists = true;
 	}
 
 	/**
 	 * @dev Adds an event action to a given boundary event.
-	 * @param _id the boundary event ID
+	 * @param _id the boundary event ID used in the process
 	 * @param _dataPath a data path (key) to use for data lookup on a DataStorage to find the escalation target
 	 * @param _dataStorageId an optional key to identify a DataStorage as basis for the data path to find the escalation target
 	 * @param _dataStorage an optional address of a DataStorage as basis for the data path to find the escalation target

@@ -145,25 +145,27 @@ contract ProcessDefinitionTest {
 		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateIntermediateEvent, intermediateEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.IntermediateEventBehavior.CATCHING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
 		if (success) return "Creating an intermediate event with the same ID should REVERT";
 
+		bytes memory returnData;
 		// Boundary Event 1
-		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, activity2Id, boundaryEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32(""), bytes32(""), address(0), uint256(2323232678), EMPTY_STRING));
+		(success, returnData) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, activity2Id, boundaryEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32(""), bytes32(""), address(0), uint256(2323232678), EMPTY_STRING));
 		if(!success) return "Valid call to create boundary event 1 should succeed";
+		bytes32 eventId = abi.decode(returnData,(bytes32));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, activity2Id, boundaryEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
+		if (success) return "Creating a boundary event on the same activity with already taken ID should REVERT";
 		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, bytes32("fakeActivity"), bytes32("newBoundary2"), uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
 		if (success) return "Adding a boundary event to non-existent activity should REVERT";
 		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, gateway1Id, bytes32("newBoundary3"), uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
 		if (success) return "Adding a boundary event to a gateway should REVERT";
-		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, activity2Id, boundaryEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
-		if (success) return "Creating a boundary event with the same ID should REVERT";
-		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, boundaryEvent1Id, bytes32("agreement"), bytes32(""), address(0), address(0), functionSigCancel));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, eventId, bytes32("agreement"), bytes32(""), address(0), address(0), functionSigCancel));
 		if(!success) return "Creating a valid boundary event action on event1 should succeed";
 		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, bytes32("hubbabubba"), bytes32("agreement"), bytes32(""), address(0), address(0), functionSigCancel));
 		if (success) return "Creating a boundary event action on a non-existant event ID should REVERT";
-		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, boundaryEvent1Id, bytes32(""), bytes32(""), address(0), address(0), functionSigCancel));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, eventId, bytes32(""), bytes32(""), address(0), address(0), functionSigCancel));
 		if (success) return "Creating an invalid boundary event action not leading to a target should REVERT";
-		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, boundaryEvent1Id, bytes32("agreement"), bytes32(""), address(0), address(0), EMPTY_STRING));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, eventId, bytes32("agreement"), bytes32(""), address(0), address(0), EMPTY_STRING));
 		if (success) return "Creating a boundary event action with an empty action function should REVERT";
 
-		(BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, bytes32 successor) = pd.getBoundaryEventGraphDetails(boundaryEvent1Id);
+		(BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, bytes32 successor) = pd.getBoundaryEventGraphDetails(eventId);
 		if (eventType != BpmModel.EventType.TIMER_TIMESTAMP) return "Retrieval of boundary event did not match event type";
 		if (eventBehavior != BpmModel.BoundaryEventBehavior.NON_INTERRUPTING) return "Retrieval of boundary event did not match event behavior";
 		if (successor != EMPTY) return "Retrieval of boundary event did not match successor";

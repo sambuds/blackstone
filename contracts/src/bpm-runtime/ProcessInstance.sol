@@ -284,11 +284,34 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	function getNumberOfIntermediateEventInstances() external view returns (uint size);
 
 	/**
+	 * @dev Returns the number of intermediate event instances currently contained in this ProcessInstance.
+	 * Note that this number is subject to change as long as the process isntance is not completed.
+	 * @return the number of intermediate event instances
+	 */
+	function getNumberOfBoundaryEventInstances() external view returns (uint size);
+
+	/**
 	 * @dev Returns the globally unique ID of the activity instance at the specified index in the ProcessInstance.
 	 * @param _idx the index position
 	 * @return the bytes32 ID
 	 */
-	function getIntermediateInstanceAtIndex(uint _idx) external view returns (bytes32);
+	function getIntermediaEventIdAtIndex(uint _idx) external view returns (bytes32);
+
+	/**
+	 * @dev Returns the globally unique ID of the boundary event instance at the specified index in the ProcessInstance.
+	 * @param _idx the index position
+	 * @return the bytes32 ID
+	 */
+	function getBoundaryEventIdAtIndex(uint _idx) external view returns (bytes32);
+
+    /**
+     * @dev Returns details about the BoundaryEventInstance with the given ID.
+     * @param _id the event instance ID
+     * @return activityInstanceId the ActivityInstance to which the boundary event is attached
+     * @return state the uint8 representation of the BpmRuntime.BoundaryEventInstanceState
+     * @return timerResolution the value of a timer, if the event is a timer event. Can return empty if the event instance is not active.
+     */
+    function getBoundaryEventDetails(bytes32 _id) external view returns (bytes32 activityInstanceId, uint8 state, uint timerResolution);
 
 	/**
 	 * @dev Returns the number of activity instances currently contained in this ProcessInstance.

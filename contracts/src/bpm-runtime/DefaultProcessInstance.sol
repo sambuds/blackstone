@@ -21,12 +21,13 @@ import "bpm-runtime/AbstractProcessStateChangeEmitter.sol";
  */
 contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDelegateTarget, AbstractDataStorage, AbstractAddressScopes, AbstractProcessStateChangeEmitter, Owned, ProcessInstance {
 
+    using BpmRuntimeLib for ProcessDefinition;
     using BpmRuntimeLib for BpmRuntime.ProcessGraph;
     using BpmRuntimeLib for BpmRuntime.ProcessInstance;
     using BpmRuntimeLib for BpmRuntime.ActivityNode;
     using BpmRuntimeLib for BpmRuntime.ActivityInstanceMap;
     using BpmRuntimeLib for BpmRuntime.ActivityInstance;
-    using BpmRuntimeLib for ProcessDefinition;
+    using BpmRuntimeLib for BpmRuntime.BoundaryEventInstance;
 
     BpmRuntime.ProcessInstance self;
 
@@ -176,7 +177,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
         ErrorsLib.revertIf(instance.timerTarget > block.timestamp,
                 ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerBoundaryEvent", "Attempt to fire boundary event before timer expired");
 
-        // FIME: execute actions and deactivate the boundary event!
+        // TODO: execute actions and deactivate the boundary event!
     }
 
     /**
@@ -234,12 +235,16 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
         }
         
         if (self.activities.rows[_activityInstanceId].value.state == BpmRuntime.ActivityInstanceState.COMPLETED) {
-            bytes32 activityId = self.activities.rows[_activityInstanceId].value.activityId;
-            self.graph.activities[activityId].instancesCompleted++;
-            if (self.graph.activities[activityId].instancesCompleted == self.graph.activities[activityId].instancesTotal) {
-                self.graph.activities[activityId].done = true;
+            BpmRuntime.ActivityInstance storage ai = self.activities.rows[_activityInstanceId].value;
+            self.graph.activities[ai.activityId].instancesCompleted++;
+            if (self.graph.activities[ai.activityId].instancesCompleted == self.graph.activities[ai.activityId].instancesTotal) {
+                self.graph.activities[ai.activityId].done = true;
             }
         }
+
+        // I think the BoundaryEventInstanceMap belongs into the ActivityInstance. Do we ever need to really iterate on all events?? We just need to be able to connect from an eventInstanceId to the storage struct in functions that live on the ProcessInstance .......?
+        // ... just make the aiId part of the events and when triggering events and setting data!
+
 
         // attempt to continue the transaction as there might now be more activities to process
         return self.continueTransaction(_service);
@@ -591,43 +596,39 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     }
 
 	/**
-	 * @dev boundary and intermediate events should fire after a specific duration, which can be set as a string, e.g. "3 weeks". The conversion
+	 * @dev Boundary and intermediate events should fire after a specific duration, which can be set as a string, e.g. "3 weeks". The conversion
 	 * to an actual point in time is done off-chain, since this can get tricky. We might need to calculate number of weekdays excluding public
 	 * holidays in a specific locale or calculate sunrise in Dallas. This is done off-chain and then this function is called with the blocktime
 	 * at which the event should fire.
+     * REVERTS if:
+     * - The targetTime is zero (empty)
+     * - No IntermediateEventInstance or BoundaryEventInstance with the specified ID exist in the ProcessInstance
+     * - The specified event instance already has a target timer set and cannot be overwritten
 	 * @param _eventInstanceId - the event instance Id
-	 * @param _targetTime - the unix epoch (or blocktime) at which the time should fire
+	 * @param _targetTime - the unix epoch (or blocktime) at which the event should fire
 	 */
     function setTimerEventTarget(bytes32 _eventInstanceId, uint _targetTime) public {
-        ErrorsLib.revertIf(!self.intermediateEvents.rows[_eventInstanceId].exists,
-                ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessInstance.setTimerEventTarget", "The specified target event instance ID does not exist");
-
-        BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
-
-        ErrorsLib.revertIf(instance.timerTarget != 0,
-                ErrorsLib.OVERWRITE_NOT_ALLOWED(), "ProcessInstance.setTimerEventTarget", "The specified target event instance ID already has timer set");
-
-        instance.timerTarget = _targetTime;
-    }
-
-	/**
-	 * @dev boundary and intermediate events should fire after a specific duration, which can be set as a string, e.g. "3 weeks". The conversion
-	 * to an actual point in time is done off-chain, since this can get tricky. We might need to calculate number of weekdays excluding public
-	 * holidays in a specific locale or calculate sunrise in Dallas. This is done off-chain and then this function is called with the blocktime
-	 * at which the event should fire.
-	 * @param _boundaryInstanceId - the boundary event instance Id
-	 * @param _targetTime - the unix epoch (or blocktime) at which the time should fire
-	 */
-    function setTimerBoundaryTarget(bytes32 _boundaryInstanceId, uint _targetTime) public {
-        ErrorsLib.revertIf(!self.boundaryEvents.rows[_boundaryInstanceId].exists,
-                ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessInstance.setTimerBoundaryTarget", "The specified target event instance ID does not exist");
-
-        BpmRuntime.BoundaryEventInstance storage instance = self.boundaryEvents.rows[_boundaryInstanceId].value;
-
-        ErrorsLib.revertIf(instance.timerTarget != 0,
-                ErrorsLib.OVERWRITE_NOT_ALLOWED(), "ProcessInstance.setTimerBoundaryTarget", "The specified target event instance ID already has timer set");
-
-        instance.timerTarget = _targetTime;
+        ErrorsLib.revertIf(_targetTime == 0,
+            ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(), "DefaultProcessInstance.setTimerEventTarget", "The provided target time must not be empty");
+        // the target can be an intermediate event
+        if (self.intermediateEvents.rows[_eventInstanceId].exists) {
+            BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
+            ErrorsLib.revertIf(instance.timerTarget != 0,
+                ErrorsLib.OVERWRITE_NOT_ALLOWED(), "DefaultProcessInstance.setTimerEventTarget", "The specified target IntermediateEventInstance already has timer set");
+            instance.timerTarget = _targetTime;
+        }
+        // or a boundary event
+        else if (self.boundaryEvents.rows[_eventInstanceId].exists) {
+            BpmRuntime.BoundaryEventInstance storage instance = self.boundaryEvents.rows[_eventInstanceId].value;
+            ErrorsLib.revertIf(instance.timerTarget != 0,
+                ErrorsLib.OVERWRITE_NOT_ALLOWED(), "DefaultProcessInstance.setTimerEventTarget", "The specified target BoundaryEventInstance already has timer set");
+            instance.timerTarget = _targetTime;
+            // attempt to activate the boundar event after setting the timer target
+            instance.activateBoundaryEvent(this, self.processDefinition);
+        }
+        else {
+            revert(ErrorsLib.format(ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.setTimerEventTarget", "Unable to find an IntermediateEvent or BoundaryEvent with the specified ID"));
+        }
     }
 
 	/**
@@ -673,6 +674,15 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     }
 
 	/**
+	 * @dev Returns the number of intermediate event instances currently contained in this ProcessInstance.
+	 * Note that this number is subject to change as long as the process isntance is not completed.
+	 * @return the number of intermediate event instances
+	 */
+	function getNumberOfBoundaryEventInstances() external view returns (uint size) {
+        return self.boundaryEvents.keys.length;
+    }
+
+	/**
 	 * @dev Returns the globally unique ID of the activity instance at the specified index in the ProcessInstance.
 	 * @param _idx the index position
 	 * @return the bytes32 ID
@@ -684,14 +694,40 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     }
 
 	/**
-	 * @dev Returns the globally unique ID of the activity instance at the specified index in the ProcessInstance.
+	 * @dev Returns the globally unique ID of the intermediate event instance at the specified index in the ProcessInstance.
 	 * @param _idx the index position
 	 * @return the bytes32 ID
 	 */
-	function getIntermediateInstanceAtIndex(uint _idx) external view returns (bytes32) {
+	function getIntermediaEventIdAtIndex(uint _idx) external view returns (bytes32) {
         if (_idx < self.intermediateEvents.keys.length) {
             return self.intermediateEvents.keys[_idx];
         }
+    }
+
+	/**
+	 * @dev Returns the globally unique ID of the boundary event instance at the specified index in the ProcessInstance.
+	 * @param _idx the index position
+	 * @return the bytes32 ID
+	 */
+	function getBoundaryEventIdAtIndex(uint _idx) external view returns (bytes32) {
+        if (_idx < self.boundaryEvents.keys.length) {
+            return self.boundaryEvents.keys[_idx];
+        }
+    }
+
+    /**
+     * @dev Returns details about the BoundaryEventInstance with the given ID.
+     * @param _id the event instance ID
+     * @return activityInstanceId the ActivityInstance to which the boundary event is attached
+     * @return state the uint8 representation of the BpmRuntime.BoundaryEventInstanceState
+     * @return timerResolution the value of a timer, if the event is a timer event. Can return empty if the event instance is not active
+     */
+    function getBoundaryEventDetails(bytes32 _id) external view returns (bytes32 activityInstanceId, uint8 state, uint timerResolution) {
+        ErrorsLib.revertIf(!self.boundaryEvents.rows[_id].exists,
+            ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.getBoundaryEventDetails", "No BoundaryEventInstance found for the given ID");
+        
+        BpmRuntime.BoundaryEventInstance storage _instance = self.boundaryEvents.rows[_id].value;
+        return (_instance.activityInstanceId, uint8(_instance.state), _instance.timerTarget);
     }
 
 	/**

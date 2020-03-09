@@ -106,20 +106,23 @@ contract ProcessDefinition is VersionedArtifact, Bytes32Identifiable {
 	 * @dev Addes a boundary event to the specified activity using the provided ID, parameters, conditional (DataStorage-based)
 	 * data or constant uint value. If a constant value is provided, the conditional data will be ignored! 
 	 * @param _activityId the activity for which the boundary event is added
-	 * @param _id the ID under which to register the element
-	 * @param _eventType a BpmModel.EventType.
+	 * @param _id an ID unique within the context of the activity, e.g. a name like "deadline"
+	 * @param _eventType a BpmModel.EventType
 	 * @param _eventBehavior a BpmModel.IntermediateEventBehavior
 	 * @param _dataPath a data path (key) to use for data lookup on a DataStorage.
 	 * @param _dataStorageId an optional key to identify a DataStorage as basis for the data path other than the default one
 	 * @param _dataStorage an optional address of a DataStorage as basis for the data path other than the default one
 	 * @param _timestampConstant a fixed value for timer based events representing either a datetime or a duration in secs
 	 * @param _durationConstant a fixed value for timer-based events representing a duration in secs
+	 * @return eventId a generated boundary event ID unique within the process
 	 */
-	function addBoundaryEvent(bytes32 _activityId, bytes32 _id, BpmModel.EventType _eventType, BpmModel.BoundaryEventBehavior _eventBehavior, bytes32 _dataPath, bytes32 _dataStorageId, address _dataStorage, uint256 _timestampConstant, string calldata _durationConstant) external;
+	function addBoundaryEvent(bytes32 _activityId, bytes32 _id, BpmModel.EventType _eventType, BpmModel.BoundaryEventBehavior _eventBehavior, bytes32 _dataPath, bytes32 _dataStorageId, address _dataStorage, uint256 _timestampConstant, string calldata _durationConstant)
+		external
+		returns (bytes32 eventId);
 
 	/**
 	 * @dev Adds an event action to a given boundary event.
-	 * @param _id the boundary event ID
+	 * @param _id the boundary event ID used within the process
 	 * @param _dataPath a data path (key) to use for data lookup on a DataStorage to find the escalation target
 	 * @param _dataStorageId an optional key to identify a DataStorage as basis for the data path to find the escalation target
 	 * @param _dataStorage an optional address of a DataStorage as basis for the data path to find the escalation target

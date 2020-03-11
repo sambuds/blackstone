@@ -23,7 +23,6 @@ library BpmRuntime {
         ProcessGraph graph;
         ActivityInstanceMap activities;
         IntermediateEventInstanceMap intermediateEvents;
-        BoundaryEventInstanceMap boundaryEvents;
 	}
 	
 	struct ActivityInstance {
@@ -36,6 +35,7 @@ library BpmRuntime {
         address performer;
         address completedBy;
 		ActivityInstanceState state;
+        BoundaryEventInstanceMap boundaryEvents;
 	}
 
     struct ActivityInstanceElement {

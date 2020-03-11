@@ -59,7 +59,6 @@ library BpmRuntimeLib {
         bytes32 indexed eventURN,
         bytes32 eventInstanceId,
         bytes32 activityInstanceId,
-        address processInstanceAddress,
         BpmModel.EventType eventType,
         BpmModel.BoundaryEventBehavior eventBehavior,
         BpmRuntime.BoundaryEventInstanceState state
@@ -273,16 +272,7 @@ library BpmRuntimeLib {
                 }
                 // in all other cases it is completed
                 else {
-                    _activityInstance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
-                    _activityInstance.completedBy = msg.sender;
-                    _activityInstance.completed = block.timestamp;
-                    emitAICompletionEvent(
-                        _activityInstance.id,
-                        _activityInstance.completedBy,
-                        _activityInstance.completed,
-                        address(0),
-                        BpmRuntime.ActivityInstanceState.COMPLETED
-                    );
+                    completeActivityInstance(_activityInstance, msg.sender);
                 }
             }
             // ### USER ###
@@ -336,17 +326,7 @@ library BpmRuntimeLib {
                     // Task performer has been authenticated and the completion function (if there was one) returned no error
                     // all clear to mark task as complete.
                     // The AI performer is unset to avoid leaving any permissions open.
-                    _activityInstance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
-                    _activityInstance.performer = address(0);
-                    _activityInstance.completedBy = taskPerformer;
-                    _activityInstance.completed = block.timestamp;
-                    emitAICompletionEvent(
-                        _activityInstance.id,
-                        _activityInstance.completedBy,
-                        _activityInstance.completed,
-                        address(0),
-                        BpmRuntime.ActivityInstanceState.COMPLETED
-                    );
+                    completeActivityInstance(_activityInstance, taskPerformer);
                 }
             }
             // ### SERVICE ###
@@ -380,16 +360,7 @@ library BpmRuntimeLib {
                     return (error);
                 }
                 
-                _activityInstance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
-                _activityInstance.completedBy = _activityInstance.performer;
-                _activityInstance.completed = block.timestamp;
-                emitAICompletionEvent(
-                    _activityInstance.id,
-                    _activityInstance.completedBy,
-                    _activityInstance.completed,
-                    address(0),
-                    BpmRuntime.ActivityInstanceState.COMPLETED
-                );
+                completeActivityInstance(_activityInstance, _activityInstance.performer);
             }
             // ### EVENT ###
             else if (taskType == uint8(BpmModel.TaskType.EVENT)) {
@@ -437,17 +408,7 @@ library BpmRuntimeLib {
                         );
                     }
                     else {
-                        _activityInstance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
-                        _activityInstance.completedBy = _activityInstance.performer;
-                        _activityInstance.performer = address(0);
-                        _activityInstance.completed = block.timestamp;
-                        emitAICompletionEvent(
-                            _activityInstance.id,
-                            _activityInstance.completedBy,
-                            _activityInstance.completed,
-                            address(0),
-                            BpmRuntime.ActivityInstanceState.COMPLETED
-                        );
+                        completeActivityInstance(_activityInstance, _activityInstance.performer);
                     }
                 }
                 // A SUSPENDED event task can only be completed by the performing application
@@ -455,17 +416,7 @@ library BpmRuntimeLib {
                     if (_activityInstance.performer != msg.sender) {
                         return BaseErrors.INVALID_ACTOR();
                     }
-                    _activityInstance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
-                    _activityInstance.completedBy = _activityInstance.performer;
-                    _activityInstance.performer = address(0);
-                    _activityInstance.completed = block.timestamp;
-                    emitAICompletionEvent(
-                        _activityInstance.id,
-                        _activityInstance.completedBy,
-                        _activityInstance.completed,
-                        address(0),
-                        BpmRuntime.ActivityInstanceState.COMPLETED
-                    );
+                    completeActivityInstance(_activityInstance, _activityInstance.performer);
                 }
             }
             else {
@@ -611,10 +562,9 @@ library BpmRuntimeLib {
      * REVERTS if:
      * - the ActivityInstance's state is already final, COMPLETED or ABORTED
      * @param _activityInstance the BpmRuntime.ActivityInstance to be marked as completed
-     * @param _processInstance the BpmRuntime.ProcessInstance from which any of the activiy's boundary events need to be removed
      * @param _completedBy the address to be set as having completed the ActivityInstance
      */
-    function completeActivityInstance(BpmRuntime.ProcessInstance storage _processInstance, BpmRuntime.ActivityInstance storage _activityInstance, address _completedBy) public {
+    function completeActivityInstance(BpmRuntime.ActivityInstance storage _activityInstance, address _completedBy) public {
         ErrorsLib.revertIf(_activityInstance.state == BpmRuntime.ActivityInstanceState.COMPLETED || _activityInstance.state == BpmRuntime.ActivityInstanceState.ABORTED,
             ErrorsLib.INVALID_PARAMETER_STATE(), "BpmRuntimeLib.completeActivityInstance", "The provided ActivityInstance is already in a final state, COMPLETED or ABORTED");
    
@@ -629,14 +579,19 @@ library BpmRuntimeLib {
             address(0),
             BpmRuntime.ActivityInstanceState.COMPLETED
         );
-        //TODO activate the below code after boundar events are available on an ActivityInstance
-        // deactivate and remove any boundary events from the ActivityInstance and the Process
-        // if (_activityInstance.boundaryEvents.length > 0) {
-        //     for (uint i = 0; i < _activityInstance.boundaryEvents.length; i++) {
-        //         remove(_processInstance.boundaryEvents, _activityInstance.boundaryEvents[i]);
-        //     }
-        //     delete _activityInstance.boundaryEvents;
-        // }
+        // deactivate and remove any boundary events from the ActivityInstance
+        if (_activityInstance.boundaryEvents.keys.length > 0) {
+            for (uint i = 0; i < _activityInstance.boundaryEvents.keys.length; i++) {
+                BpmRuntime.BoundaryEventInstance storage eventInstance = _activityInstance.boundaryEvents.rows[_activityInstance.boundaryEvents.keys[i]].value;
+                // TODO this should only happen for timer-related events or we need to change the event name
+                emit LogBoundaryEventTimerDeactivation(
+                        EVENT_ID_TIMER_EVENTS,
+                        eventInstance.id,
+                        eventInstance.activityInstanceId
+                );
+            }
+            delete _activityInstance.boundaryEvents;
+        }
     }
 
     /**
@@ -1069,6 +1024,7 @@ library BpmRuntimeLib {
     function createActivityInstance(BpmRuntime.ProcessInstance storage _processInstance, bytes32 _activityId, uint _index) public returns (bytes32 aiId) {
         aiId = keccak256(abi.encodePacked(_processInstance.addr, _activityId, _processInstance.activities.keys.length));
         uint created = block.timestamp;
+        bytes32[] memory keys;
         BpmRuntime.ActivityInstance memory ai = BpmRuntime.ActivityInstance({id: aiId,
                                                                              activityId: _activityId,
                                                                              processInstance: _processInstance.addr,
@@ -1077,7 +1033,8 @@ library BpmRuntimeLib {
                                                                              created: created,
                                                                              performer: address(0),
                                                                              completed: uint8(0),
-                                                                             completedBy: address(0)});
+                                                                             completedBy: address(0),
+                                                                             boundaryEvents: BpmRuntime.BoundaryEventInstanceMap({keys: keys})});
         insertOrUpdate(_processInstance.activities, ai);
         emit LogActivityInstanceCreation(
             EVENT_ID_ACTIVITY_INSTANCES,
@@ -1129,35 +1086,41 @@ library BpmRuntimeLib {
      * @dev Creates a new BpmRuntime.BoundaryEventInstance, based on the provided activity ID in the given ProcessInstance.
      * An attempt is made to activate the event, i.e. bind any configured runtime data needed to allow a triggering of the event.
      * If the event could not be activated automatically, it can still be done later via the #activateBoundaryEvent(...) function.
-     * @param _processInstance A ProcessInstance struct providing the runtime context for the new boundary event
-     * @param _aiId the ID of an ActivityInstance to which the boundary event will be attached
+     * @param _processInstance A ProcessInstance struct providing the runtime and modeling context
+     * @param _aiId The ID of an ActivityInstance to which the BoundaryEventInstance will be added
      * @param _boundaryId the ID of the boundary event definition to look up in the ProcessDefinition of the ProcessInstance
      * @param _index an additional index to affect the boundary event ID creation in case multiple event instances are being added to the same ActivityInstance
      * @return the unique ID of the created BoundaryEventInstance
      */
-    function createBoundaryEventInstance(BpmRuntime.ProcessInstance storage _processInstance, bytes32 _aiId, bytes32 _boundaryId, uint _index) public returns (bytes32 biId) {
+    function createBoundaryEventInstance(BpmRuntime.ProcessInstance storage _processInstance, bytes32 _aiId, bytes32 _boundaryId, uint _index)
+        public
+        returns (bytes32 biId)
+    {
+        ErrorsLib.revertIf(!_processInstance.activities.rows[_aiId].exists,
+            ErrorsLib.RESOURCE_NOT_FOUND(), "BpmRuntimeLib.createBoundaryEventInstance", "The specified ActivityInstance could not be located in the provided ProcessInstance");
+
+        BpmRuntime.ActivityInstance storage activityInstance = _processInstance.activities.rows[_aiId].value;
         biId = keccak256(abi.encodePacked(_aiId, _boundaryId, _index));
 
         BpmRuntime.BoundaryEventInstance memory bei = BpmRuntime.BoundaryEventInstance({id: biId,
                                                                                         boundaryId: _boundaryId,
-                                                                                        activityInstanceId: _aiId,
+                                                                                        activityInstanceId: activityInstance.id,
                                                                                         state: BpmRuntime.BoundaryEventInstanceState.INACTIVE,
                                                                                         timerTarget: 0 });
-        insertOrUpdate(_processInstance.boundaryEvents, bei);
+        insertOrUpdate(activityInstance.boundaryEvents, bei);
 
         (BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, ) = _processInstance.processDefinition.getBoundaryEventGraphDetails(_boundaryId);
 
         // try to activate the boundary event and transmit the result via the Log event
         // If the boundary event could not be activated, e.g. due to missing data, an external system can activate (bind the data) it later
 
-        BpmRuntime.BoundaryEventInstanceState beiState = activateBoundaryEvent(_processInstance.boundaryEvents.rows[biId].value, DataStorage(_processInstance.addr), _processInstance.processDefinition);
+        BpmRuntime.BoundaryEventInstanceState beiState = activateBoundaryEvent(activityInstance.boundaryEvents.rows[biId].value, DataStorage(_processInstance.addr), _processInstance.processDefinition);
 
-        emit LogBoundaryEventInstanceCreation( //TODO if the biId is the primary key for identifying a boundary event in external calls, we need to include it in the event. Also, the actvity ID.
-             EVENT_ID_BOUNDARY_EVENTS,
-             biId,
-             _aiId,
-             _processInstance.addr,
-             eventType,
+        emit LogBoundaryEventInstanceCreation(
+            EVENT_ID_BOUNDARY_EVENTS,
+            biId,
+            _aiId,
+            eventType,
             eventBehavior,
             beiState
         );

@@ -58,13 +58,18 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	 */
 	function abort() external;
 
-    // @SEAN
-    function triggerBoundaryEvent(bytes32 _boundaryEventId) external;
+    /**
+	 * @dev Triggers the boundary event specified by the given ID and bound to the specified ActivityInstance. 
+	 * @param _activityInstanceId the ID of an ActivityInstance
+	 * @param _eventInstanceId the ID of a BoundaryEventInstance bound to the activity
+	 */
+    function triggerBoundaryEvent(bytes32 _activityInstanceId, bytes32 _eventInstanceId) external;
 
 	/**
-	 * @dev Once an intermediate event is ready to run due the timer expiring, this function should be called from anything off-chain
+	 * @dev Triggers the intermediate event specified by the given ID.
+	 * @param _eventInstanceId the ID of an IntermediateEventInstance
 	 */
-    function triggerIntermediateEvent(bytes32 _eventId, BpmService _service) external;
+    function triggerIntermediateEvent(bytes32 _eventInstanceId, BpmService _service) external;
 
 	/**
 	 * @dev Completes the specified activity
@@ -256,7 +261,18 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	 * @param _eventInstanceId - the event instance Id
 	 * @param _targetTime - the unix epoch (or blocktime) at which the time should fire
 	 */
-    function setTimerEventTarget(bytes32 _eventInstanceId, uint _targetTime) public;
+    function setIntermediateEventTimerTarget(bytes32 _eventInstanceId, uint _targetTime) public;
+
+	/**
+	 * @dev Boundary events should fire after a specific duration, which can be set as a string, e.g. "3 weeks". The conversion
+	 * to an actual point in time is done off-chain, since this can get tricky. We might need to calculate number of weekdays excluding public
+	 * holidays in a specific locale or calculate sunrise in Dallas. This is done off-chain and then this function is called with the blocktime
+	 * at which the event should fire.
+     * @param _activityInstanceId - the ID of the ActivityInstance the event is bound to
+	 * @param _eventInstanceId - the event instance ID
+	 * @param _targetTime - the unix epoch (or blocktime) at which the event should fire
+	 */
+    function setBoundaryEventTimerTarget(bytes32 _activityInstanceId, bytes32 _eventInstanceId, uint _targetTime) public;
 
 	/**
 	 * @dev Returns the process definition on which this instance is based.
@@ -284,11 +300,11 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	function getNumberOfIntermediateEventInstances() external view returns (uint size);
 
 	/**
-	 * @dev Returns the number of intermediate event instances currently contained in this ProcessInstance.
-	 * Note that this number is subject to change as long as the process isntance is not completed.
+	 * @dev Returns the number of boundary event instances for the given ActivityInstance.
+     * @param _activityInstanceId the ActivityInstance to which the boundary event is bound
 	 * @return the number of intermediate event instances
 	 */
-	function getNumberOfBoundaryEventInstances() external view returns (uint size);
+	function getNumberOfBoundaryEventInstances(bytes32 _activityInstanceId) external view returns (uint size);
 
 	/**
 	 * @dev Returns the globally unique ID of the activity instance at the specified index in the ProcessInstance.
@@ -298,20 +314,21 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	function getIntermediaEventIdAtIndex(uint _idx) external view returns (bytes32);
 
 	/**
-	 * @dev Returns the globally unique ID of the boundary event instance at the specified index in the ProcessInstance.
+	 * @dev Returns the ID of the boundary event instance at the specified index in the specified ActivityInstance.
+     * @param _activityInstanceId the ActivityInstance to which the boundary event is bound
 	 * @param _idx the index position
 	 * @return the bytes32 ID
 	 */
-	function getBoundaryEventIdAtIndex(uint _idx) external view returns (bytes32);
+	function getBoundaryEventIdAtIndex(bytes32 _activityInstanceId, uint _idx) external view returns (bytes32);
 
     /**
      * @dev Returns details about the BoundaryEventInstance with the given ID.
-     * @param _id the event instance ID
-     * @return activityInstanceId the ActivityInstance to which the boundary event is attached
+     * @param _activityInstanceId the ActivityInstance to which the boundary event is bound
+     * @param _eventInstanceId the event instance ID
      * @return state the uint8 representation of the BpmRuntime.BoundaryEventInstanceState
      * @return timerResolution the value of a timer, if the event is a timer event. Can return empty if the event instance is not active.
      */
-    function getBoundaryEventDetails(bytes32 _id) external view returns (bytes32 activityInstanceId, uint8 state, uint timerResolution);
+    function getBoundaryEventDetails(bytes32 _activityInstanceId, bytes32 _eventInstanceId) external view returns (uint8 state, uint timerResolution);
 
 	/**
 	 * @dev Returns the number of activity instances currently contained in this ProcessInstance.

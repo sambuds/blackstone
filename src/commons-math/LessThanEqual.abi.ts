@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -27,16 +29,14 @@ export module LessThanEqual {
         let bytecode = "608060405234801561001057600080fd5b506102fb806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063867c715114610030575b600080fd5b6100a66004803603608081101561004657600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291908035906020019092919080359060200190929190803573ffffffffffffffffffffffffffffffffffffffff1690602001909291905050506100a8565b005b60008473ffffffffffffffffffffffffffffffffffffffff1663c2334a5a856040518263ffffffff1660e01b815260040180828152602001807f6e756d626572496e4f6e65000000000000000000000000000000000000000000815250602001915050602060405180830381600087803b15801561012557600080fd5b505af1158015610139573d6000803e3d6000fd5b505050506040513d602081101561014f57600080fd5b8101908080519060200190929190505050905060008573ffffffffffffffffffffffffffffffffffffffff1663c2334a5a866040518263ffffffff1660e01b815260040180828152602001807f6e756d626572496e54776f000000000000000000000000000000000000000000815250602001915050602060405180830381600087803b1580156101df57600080fd5b505af11580156101f3573d6000803e3d6000fd5b505050506040513d602081101561020957600080fd5b810190808051906020019092919050505090508573ffffffffffffffffffffffffffffffffffffffff16639cc222bd86838511156040518363ffffffff1660e01b815260040180838152602001807f726573756c7400000000000000000000000000000000000000000000000000008152506020018215151515815260200192505050600060405180830381600087803b1580156102a657600080fd5b505af11580156102ba573d6000803e3d6000fd5b5050505050505050505056fea265627a7a7231582062464d8a14100ad62accfb8d1dd8da2d3700cf824b2409ac794346e1c8a6a02064736f6c634300050c0032";
         const data = bytecode;
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -47,7 +47,7 @@ export module LessThanEqual {
         }
         complete(_piAddress: string, _activityInstanceId: Buffer) {
             const data = Encode(this.client).complete(_piAddress, _activityInstanceId);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).complete();
             });
         }

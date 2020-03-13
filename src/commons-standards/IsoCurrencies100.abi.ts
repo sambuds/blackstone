@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -28,16 +30,14 @@ export module IsoCurrencies100 {
         bytecode = Replace(bytecode, "$ecfb6c4d3c3ceff197e19e585a0a53728c$", commons_base_ErrorsLib_sol_ErrorsLib);
         const data = bytecode + client.encode("", []);
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -50,1075 +50,1075 @@ export module IsoCurrencies100 {
         LogOwnerChanged(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogOwnerChanged", this.address, callback); }
         AED() {
             const data = Encode(this.client).AED();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AED();
             });
         }
         AFN() {
             const data = Encode(this.client).AFN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AFN();
             });
         }
         ALL() {
             const data = Encode(this.client).ALL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ALL();
             });
         }
         AMD() {
             const data = Encode(this.client).AMD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AMD();
             });
         }
         ANG() {
             const data = Encode(this.client).ANG();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ANG();
             });
         }
         AOA() {
             const data = Encode(this.client).AOA();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AOA();
             });
         }
         ARS() {
             const data = Encode(this.client).ARS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ARS();
             });
         }
         AUD() {
             const data = Encode(this.client).AUD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AUD();
             });
         }
         AWG() {
             const data = Encode(this.client).AWG();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AWG();
             });
         }
         AZN() {
             const data = Encode(this.client).AZN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).AZN();
             });
         }
         BAM() {
             const data = Encode(this.client).BAM();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BAM();
             });
         }
         BBD() {
             const data = Encode(this.client).BBD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BBD();
             });
         }
         BDT() {
             const data = Encode(this.client).BDT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BDT();
             });
         }
         BGN() {
             const data = Encode(this.client).BGN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BGN();
             });
         }
         BHD() {
             const data = Encode(this.client).BHD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BHD();
             });
         }
         BIF() {
             const data = Encode(this.client).BIF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BIF();
             });
         }
         BMD() {
             const data = Encode(this.client).BMD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BMD();
             });
         }
         BND() {
             const data = Encode(this.client).BND();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BND();
             });
         }
         BOB() {
             const data = Encode(this.client).BOB();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BOB();
             });
         }
         BOV() {
             const data = Encode(this.client).BOV();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BOV();
             });
         }
         BRL() {
             const data = Encode(this.client).BRL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BRL();
             });
         }
         BSD() {
             const data = Encode(this.client).BSD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BSD();
             });
         }
         BTN() {
             const data = Encode(this.client).BTN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BTN();
             });
         }
         BWP() {
             const data = Encode(this.client).BWP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BWP();
             });
         }
         BYN() {
             const data = Encode(this.client).BYN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BYN();
             });
         }
         BZD() {
             const data = Encode(this.client).BZD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).BZD();
             });
         }
         CAD() {
             const data = Encode(this.client).CAD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CAD();
             });
         }
         CDF() {
             const data = Encode(this.client).CDF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CDF();
             });
         }
         CHE() {
             const data = Encode(this.client).CHE();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CHE();
             });
         }
         CHF() {
             const data = Encode(this.client).CHF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CHF();
             });
         }
         CHW() {
             const data = Encode(this.client).CHW();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CHW();
             });
         }
         CLF() {
             const data = Encode(this.client).CLF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CLF();
             });
         }
         CLP() {
             const data = Encode(this.client).CLP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CLP();
             });
         }
         CNY() {
             const data = Encode(this.client).CNY();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CNY();
             });
         }
         COP() {
             const data = Encode(this.client).COP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).COP();
             });
         }
         COU() {
             const data = Encode(this.client).COU();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).COU();
             });
         }
         CRC() {
             const data = Encode(this.client).CRC();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CRC();
             });
         }
         CUC() {
             const data = Encode(this.client).CUC();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CUC();
             });
         }
         CUP() {
             const data = Encode(this.client).CUP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CUP();
             });
         }
         CVE() {
             const data = Encode(this.client).CVE();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CVE();
             });
         }
         CZK() {
             const data = Encode(this.client).CZK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).CZK();
             });
         }
         DJF() {
             const data = Encode(this.client).DJF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).DJF();
             });
         }
         DKK() {
             const data = Encode(this.client).DKK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).DKK();
             });
         }
         DOP() {
             const data = Encode(this.client).DOP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).DOP();
             });
         }
         DZD() {
             const data = Encode(this.client).DZD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).DZD();
             });
         }
         EGP() {
             const data = Encode(this.client).EGP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EGP();
             });
         }
         ERN() {
             const data = Encode(this.client).ERN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERN();
             });
         }
         ETB() {
             const data = Encode(this.client).ETB();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ETB();
             });
         }
         EUR() {
             const data = Encode(this.client).EUR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EUR();
             });
         }
         EVENT_ID_ISO_CURRENCIES() {
             const data = Encode(this.client).EVENT_ID_ISO_CURRENCIES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ISO_CURRENCIES();
             });
         }
         FJD() {
             const data = Encode(this.client).FJD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).FJD();
             });
         }
         FKP() {
             const data = Encode(this.client).FKP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).FKP();
             });
         }
         GBP() {
             const data = Encode(this.client).GBP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GBP();
             });
         }
         GEL() {
             const data = Encode(this.client).GEL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GEL();
             });
         }
         GHS() {
             const data = Encode(this.client).GHS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GHS();
             });
         }
         GIP() {
             const data = Encode(this.client).GIP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GIP();
             });
         }
         GMD() {
             const data = Encode(this.client).GMD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GMD();
             });
         }
         GNF() {
             const data = Encode(this.client).GNF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GNF();
             });
         }
         GTQ() {
             const data = Encode(this.client).GTQ();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GTQ();
             });
         }
         GYD() {
             const data = Encode(this.client).GYD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).GYD();
             });
         }
         HKD() {
             const data = Encode(this.client).HKD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).HKD();
             });
         }
         HNL() {
             const data = Encode(this.client).HNL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).HNL();
             });
         }
         HRK() {
             const data = Encode(this.client).HRK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).HRK();
             });
         }
         HTG() {
             const data = Encode(this.client).HTG();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).HTG();
             });
         }
         HUF() {
             const data = Encode(this.client).HUF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).HUF();
             });
         }
         IDR() {
             const data = Encode(this.client).IDR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).IDR();
             });
         }
         ILS() {
             const data = Encode(this.client).ILS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ILS();
             });
         }
         INR() {
             const data = Encode(this.client).INR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).INR();
             });
         }
         IQD() {
             const data = Encode(this.client).IQD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).IQD();
             });
         }
         IRR() {
             const data = Encode(this.client).IRR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).IRR();
             });
         }
         ISK() {
             const data = Encode(this.client).ISK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ISK();
             });
         }
         JMD() {
             const data = Encode(this.client).JMD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).JMD();
             });
         }
         JOD() {
             const data = Encode(this.client).JOD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).JOD();
             });
         }
         JPY() {
             const data = Encode(this.client).JPY();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).JPY();
             });
         }
         KES() {
             const data = Encode(this.client).KES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KES();
             });
         }
         KGS() {
             const data = Encode(this.client).KGS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KGS();
             });
         }
         KHR() {
             const data = Encode(this.client).KHR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KHR();
             });
         }
         KMF() {
             const data = Encode(this.client).KMF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KMF();
             });
         }
         KPW() {
             const data = Encode(this.client).KPW();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KPW();
             });
         }
         KRW() {
             const data = Encode(this.client).KRW();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KRW();
             });
         }
         KWD() {
             const data = Encode(this.client).KWD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KWD();
             });
         }
         KYD() {
             const data = Encode(this.client).KYD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KYD();
             });
         }
         KZT() {
             const data = Encode(this.client).KZT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).KZT();
             });
         }
         LAK() {
             const data = Encode(this.client).LAK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).LAK();
             });
         }
         LBP() {
             const data = Encode(this.client).LBP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).LBP();
             });
         }
         LKR() {
             const data = Encode(this.client).LKR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).LKR();
             });
         }
         LRD() {
             const data = Encode(this.client).LRD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).LRD();
             });
         }
         LSL() {
             const data = Encode(this.client).LSL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).LSL();
             });
         }
         LYD() {
             const data = Encode(this.client).LYD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).LYD();
             });
         }
         MAD() {
             const data = Encode(this.client).MAD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MAD();
             });
         }
         MDL() {
             const data = Encode(this.client).MDL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MDL();
             });
         }
         MGA() {
             const data = Encode(this.client).MGA();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MGA();
             });
         }
         MKD() {
             const data = Encode(this.client).MKD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MKD();
             });
         }
         MMK() {
             const data = Encode(this.client).MMK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MMK();
             });
         }
         MNT() {
             const data = Encode(this.client).MNT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MNT();
             });
         }
         MOP() {
             const data = Encode(this.client).MOP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MOP();
             });
         }
         MRO() {
             const data = Encode(this.client).MRO();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MRO();
             });
         }
         MUR() {
             const data = Encode(this.client).MUR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MUR();
             });
         }
         MVR() {
             const data = Encode(this.client).MVR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MVR();
             });
         }
         MWK() {
             const data = Encode(this.client).MWK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MWK();
             });
         }
         MXN() {
             const data = Encode(this.client).MXN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MXN();
             });
         }
         MXV() {
             const data = Encode(this.client).MXV();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MXV();
             });
         }
         MYR() {
             const data = Encode(this.client).MYR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MYR();
             });
         }
         MZN() {
             const data = Encode(this.client).MZN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).MZN();
             });
         }
         NAD() {
             const data = Encode(this.client).NAD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).NAD();
             });
         }
         NGN() {
             const data = Encode(this.client).NGN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).NGN();
             });
         }
         NIO() {
             const data = Encode(this.client).NIO();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).NIO();
             });
         }
         NOK() {
             const data = Encode(this.client).NOK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).NOK();
             });
         }
         NPR() {
             const data = Encode(this.client).NPR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).NPR();
             });
         }
         NZD() {
             const data = Encode(this.client).NZD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).NZD();
             });
         }
         OMR() {
             const data = Encode(this.client).OMR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).OMR();
             });
         }
         PAB() {
             const data = Encode(this.client).PAB();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PAB();
             });
         }
         PEN() {
             const data = Encode(this.client).PEN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PEN();
             });
         }
         PGK() {
             const data = Encode(this.client).PGK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PGK();
             });
         }
         PHP() {
             const data = Encode(this.client).PHP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PHP();
             });
         }
         PKR() {
             const data = Encode(this.client).PKR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PKR();
             });
         }
         PLN() {
             const data = Encode(this.client).PLN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PLN();
             });
         }
         PYG() {
             const data = Encode(this.client).PYG();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).PYG();
             });
         }
         QAR() {
             const data = Encode(this.client).QAR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).QAR();
             });
         }
         RON() {
             const data = Encode(this.client).RON();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).RON();
             });
         }
         RSD() {
             const data = Encode(this.client).RSD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).RSD();
             });
         }
         RUB() {
             const data = Encode(this.client).RUB();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).RUB();
             });
         }
         RWF() {
             const data = Encode(this.client).RWF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).RWF();
             });
         }
         SAR() {
             const data = Encode(this.client).SAR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SAR();
             });
         }
         SBD() {
             const data = Encode(this.client).SBD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SBD();
             });
         }
         SCR() {
             const data = Encode(this.client).SCR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SCR();
             });
         }
         SDG() {
             const data = Encode(this.client).SDG();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SDG();
             });
         }
         SEK() {
             const data = Encode(this.client).SEK();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SEK();
             });
         }
         SGD() {
             const data = Encode(this.client).SGD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SGD();
             });
         }
         SHP() {
             const data = Encode(this.client).SHP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SHP();
             });
         }
         SLL() {
             const data = Encode(this.client).SLL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SLL();
             });
         }
         SOS() {
             const data = Encode(this.client).SOS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SOS();
             });
         }
         SRD() {
             const data = Encode(this.client).SRD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SRD();
             });
         }
         SSP() {
             const data = Encode(this.client).SSP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SSP();
             });
         }
         STD() {
             const data = Encode(this.client).STD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).STD();
             });
         }
         SVC() {
             const data = Encode(this.client).SVC();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SVC();
             });
         }
         SYP() {
             const data = Encode(this.client).SYP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SYP();
             });
         }
         SZL() {
             const data = Encode(this.client).SZL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).SZL();
             });
         }
         THB() {
             const data = Encode(this.client).THB();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).THB();
             });
         }
         TJS() {
             const data = Encode(this.client).TJS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TJS();
             });
         }
         TMT() {
             const data = Encode(this.client).TMT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TMT();
             });
         }
         TND() {
             const data = Encode(this.client).TND();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TND();
             });
         }
         TOP() {
             const data = Encode(this.client).TOP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TOP();
             });
         }
         TRY() {
             const data = Encode(this.client).TRY();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TRY();
             });
         }
         TTD() {
             const data = Encode(this.client).TTD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TTD();
             });
         }
         TWD() {
             const data = Encode(this.client).TWD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TWD();
             });
         }
         TZS() {
             const data = Encode(this.client).TZS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).TZS();
             });
         }
         UAH() {
             const data = Encode(this.client).UAH();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).UAH();
             });
         }
         UGX() {
             const data = Encode(this.client).UGX();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).UGX();
             });
         }
         USD() {
             const data = Encode(this.client).USD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).USD();
             });
         }
         USN() {
             const data = Encode(this.client).USN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).USN();
             });
         }
         UYI() {
             const data = Encode(this.client).UYI();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).UYI();
             });
         }
         UYU() {
             const data = Encode(this.client).UYU();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).UYU();
             });
         }
         UZS() {
             const data = Encode(this.client).UZS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).UZS();
             });
         }
         VEF() {
             const data = Encode(this.client).VEF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).VEF();
             });
         }
         VND() {
             const data = Encode(this.client).VND();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).VND();
             });
         }
         VUV() {
             const data = Encode(this.client).VUV();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).VUV();
             });
         }
         WST() {
             const data = Encode(this.client).WST();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).WST();
             });
         }
         XAF() {
             const data = Encode(this.client).XAF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XAF();
             });
         }
         XAG() {
             const data = Encode(this.client).XAG();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XAG();
             });
         }
         XAU() {
             const data = Encode(this.client).XAU();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XAU();
             });
         }
         XBA() {
             const data = Encode(this.client).XBA();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XBA();
             });
         }
         XBB() {
             const data = Encode(this.client).XBB();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XBB();
             });
         }
         XBC() {
             const data = Encode(this.client).XBC();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XBC();
             });
         }
         XBD() {
             const data = Encode(this.client).XBD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XBD();
             });
         }
         XCD() {
             const data = Encode(this.client).XCD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XCD();
             });
         }
         XDR() {
             const data = Encode(this.client).XDR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XDR();
             });
         }
         XOF() {
             const data = Encode(this.client).XOF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XOF();
             });
         }
         XPD() {
             const data = Encode(this.client).XPD();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XPD();
             });
         }
         XPF() {
             const data = Encode(this.client).XPF();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XPF();
             });
         }
         XPT() {
             const data = Encode(this.client).XPT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XPT();
             });
         }
         XSU() {
             const data = Encode(this.client).XSU();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XSU();
             });
         }
         XTS() {
             const data = Encode(this.client).XTS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XTS();
             });
         }
         XUA() {
             const data = Encode(this.client).XUA();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XUA();
             });
         }
         XXX() {
             const data = Encode(this.client).XXX();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).XXX();
             });
         }
         YER() {
             const data = Encode(this.client).YER();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).YER();
             });
         }
         ZAR() {
             const data = Encode(this.client).ZAR();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ZAR();
             });
         }
         ZMW() {
             const data = Encode(this.client).ZMW();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ZMW();
             });
         }
         ZWL() {
             const data = Encode(this.client).ZWL();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ZWL();
             });
         }
@@ -1126,7 +1126,7 @@ export module IsoCurrencies100 {
             const data = Encode(this.client).appendNewVersion(_link);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).appendNewVersion();
             });
         }
@@ -1134,7 +1134,7 @@ export module IsoCurrencies100 {
             const data = Encode(this.client).compareVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareVersion();
             });
         }
@@ -1145,13 +1145,13 @@ export module IsoCurrencies100 {
                 m49: Buffer;
                 name: string;
                 exists: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).currencies();
             });
         }
         getCurrencyAtIndex(_index: number) {
             const data = Encode(this.client).getCurrencyAtIndex(_index);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCurrencyAtIndex();
             });
         }
@@ -1161,13 +1161,13 @@ export module IsoCurrencies100 {
                 alpha3: Buffer;
                 m49: Buffer;
                 name: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCurrencyData();
             });
         }
         getLatest() {
             const data = Encode(this.client).getLatest();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getLatest();
             });
         }
@@ -1175,25 +1175,25 @@ export module IsoCurrencies100 {
             const data = Encode(this.client).getNumberOfCurrencies();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfCurrencies();
             });
         }
         getOwner() {
             const data = Encode(this.client).getOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getOwner();
             });
         }
         getPredecessor() {
             const data = Encode(this.client).getPredecessor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPredecessor();
             });
         }
         getSuccessor() {
             const data = Encode(this.client).getSuccessor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSuccessor();
             });
         }
@@ -1201,37 +1201,37 @@ export module IsoCurrencies100 {
             const data = Encode(this.client).getTargetVersion(_targetVer);
             return Call<Tx, {
                 targetAddr: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getTargetVersion();
             });
         }
         getVersion() {
             const data = Encode(this.client).getVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersion();
             });
         }
         getVersionMajor() {
             const data = Encode(this.client).getVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionMajor();
             });
         }
         getVersionMinor() {
             const data = Encode(this.client).getVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionMinor();
             });
         }
         getVersionPatch() {
             const data = Encode(this.client).getVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionPatch();
             });
         }
         isCurrency(_alpha3: Buffer) {
             const data = Encode(this.client).isCurrency(_alpha3);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isCurrency();
             });
         }
@@ -1239,7 +1239,7 @@ export module IsoCurrencies100 {
             const data = Encode(this.client).setLatest(_latest);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setLatest();
             });
         }
@@ -1247,13 +1247,13 @@ export module IsoCurrencies100 {
             const data = Encode(this.client).setPredecessor();
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setPredecessor();
             });
         }
         transferOwnership(_newOwner: string) {
             const data = Encode(this.client).transferOwnership(_newOwner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferOwnership();
             });
         }

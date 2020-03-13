@@ -33,6 +33,14 @@ export class Client extends Burrow {
         })
     }
 
+    callSim(msg: CallTx, callback: (err: Error, exec: Uint8Array) => void) {
+        this.pipe.call(msg, (err, exec) => {
+            if (err) callback(err, null);
+            else if (exec.hasException()) callback(new Error(exec.getException().getException()), null);
+            else this.interceptor(exec).then(exec => callback(null, exec.getResult().getReturn_asU8()));
+        })
+    }
+
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable {
         return this.events.subContractEvents(address, signature, callback)
     }

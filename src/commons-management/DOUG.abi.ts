@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -34,7 +36,7 @@ export module DOUG {
             const data = Encode(this.client).deploy(_id, _address);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).deploy();
             });
         }
@@ -42,7 +44,7 @@ export module DOUG {
             const data = Encode(this.client).deployVersion(_id, _address, _version);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).deployVersion();
             });
         }
@@ -50,7 +52,7 @@ export module DOUG {
             const data = Encode(this.client).lookup(_id);
             return Call<Tx, {
                 contractAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).lookup();
             });
         }
@@ -58,7 +60,7 @@ export module DOUG {
             const data = Encode(this.client).lookupVersion(_id, _version);
             return Call<Tx, {
                 contractAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).lookupVersion();
             });
         }
@@ -66,7 +68,7 @@ export module DOUG {
             const data = Encode(this.client).register(_id, _address);
             return Call<Tx, {
                 version: [number, number, number];
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).register();
             });
         }
@@ -74,7 +76,7 @@ export module DOUG {
             const data = Encode(this.client).registerVersion(_id, _address, _version);
             return Call<Tx, {
                 version: [number, number, number];
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).registerVersion();
             });
         }

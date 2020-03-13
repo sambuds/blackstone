@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -34,31 +36,31 @@ export module ApplicationRegistry {
         LogApplicationCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogApplicationCreation", this.address, callback); }
         DEFAULT_COMPLETION_FUNCTION() {
             const data = Encode(this.client).DEFAULT_COMPLETION_FUNCTION();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).DEFAULT_COMPLETION_FUNCTION();
             });
         }
         ERC165_ID_Upgradeable() {
             const data = Encode(this.client).ERC165_ID_Upgradeable();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_Upgradeable();
             });
         }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_VERSIONED_ARTIFACT();
             });
         }
         EVENT_ID_APPLICATIONS() {
             const data = Encode(this.client).EVENT_ID_APPLICATIONS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_APPLICATIONS();
             });
         }
         EVENT_ID_APPLICATION_ACCESS_POINTS() {
             const data = Encode(this.client).EVENT_ID_APPLICATION_ACCESS_POINTS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_APPLICATION_ACCESS_POINTS();
             });
         }
@@ -66,7 +68,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).addAccessPoint(_id, _accessPointId, _dataType, _direction);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addAccessPoint();
             });
         }
@@ -74,7 +76,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).addApplication(_id, _type, _location, _function, _webForm);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addApplication();
             });
         }
@@ -82,7 +84,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareArtifactVersion();
             });
         }
@@ -90,7 +92,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).getAccessPointAtIndex(_id, _index);
             return Call<Tx, {
                 accessPointId: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAccessPointAtIndex();
             });
         }
@@ -99,13 +101,13 @@ export module ApplicationRegistry {
             return Call<Tx, {
                 dataType: number;
                 direction: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAccessPointData();
             });
         }
         getApplicationAtIndex(_idx: number) {
             const data = Encode(this.client).getApplicationAtIndex(_idx);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getApplicationAtIndex();
             });
         }
@@ -117,31 +119,31 @@ export module ApplicationRegistry {
                 method: Buffer;
                 webForm: Buffer;
                 accessPointCount: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getApplicationData();
             });
         }
         getArtifactVersion() {
             const data = Encode(this.client).getArtifactVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersion();
             });
         }
         getArtifactVersionMajor() {
             const data = Encode(this.client).getArtifactVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMajor();
             });
         }
         getArtifactVersionMinor() {
             const data = Encode(this.client).getArtifactVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMinor();
             });
         }
         getArtifactVersionPatch() {
             const data = Encode(this.client).getArtifactVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
@@ -149,7 +151,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).getNumberOfAccessPoints(_id);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfAccessPoints();
             });
         }
@@ -157,7 +159,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).getNumberOfApplications();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfApplications();
             });
         }
@@ -165,7 +167,7 @@ export module ApplicationRegistry {
             const data = Encode(this.client).upgrade(_successor);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).upgrade();
             });
         }

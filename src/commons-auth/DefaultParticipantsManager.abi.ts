@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -28,16 +30,14 @@ export module DefaultParticipantsManager {
         bytecode = Replace(bytecode, "$ecfb6c4d3c3ceff197e19e585a0a53728c$", commons_base_ErrorsLib_sol_ErrorsLib);
         const data = bytecode;
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -49,37 +49,37 @@ export module DefaultParticipantsManager {
         LogUpgradeOwnerChanged(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogUpgradeOwnerChanged", this.address, callback); }
         ERC165_ID_ArtifactsFinderEnabled() {
             const data = Encode(this.client).ERC165_ID_ArtifactsFinderEnabled();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_ArtifactsFinderEnabled();
             });
         }
         ERC165_ID_ObjectFactory() {
             const data = Encode(this.client).ERC165_ID_ObjectFactory();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_ObjectFactory();
             });
         }
         ERC165_ID_Upgradeable() {
             const data = Encode(this.client).ERC165_ID_Upgradeable();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_Upgradeable();
             });
         }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_VERSIONED_ARTIFACT();
             });
         }
         OBJECT_CLASS_ORGANIZATION() {
             const data = Encode(this.client).OBJECT_CLASS_ORGANIZATION();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).OBJECT_CLASS_ORGANIZATION();
             });
         }
         OBJECT_CLASS_USER_ACCOUNT() {
             const data = Encode(this.client).OBJECT_CLASS_USER_ACCOUNT();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).OBJECT_CLASS_USER_ACCOUNT();
             });
         }
@@ -87,7 +87,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).acceptDatabase(_db);
             return Call<Tx, {
                 accepted: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).acceptDatabase();
             });
         }
@@ -95,7 +95,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareArtifactVersion();
             });
         }
@@ -104,7 +104,7 @@ export module DefaultParticipantsManager {
             return Call<Tx, {
                 error: number;
                 organization: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createOrganization();
             });
         }
@@ -112,19 +112,19 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).createUserAccount(_id, _owner, _ecosystem);
             return Call<Tx, {
                 userAccount: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createUserAccount();
             });
         }
         departmentExists(_organization: string, _departmentId: Buffer) {
             const data = Encode(this.client).departmentExists(_organization, _departmentId);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).departmentExists();
             });
         }
         getApproverAtIndex(_organization: string, _pos: number) {
             const data = Encode(this.client).getApproverAtIndex(_organization, _pos);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getApproverAtIndex();
             });
         }
@@ -132,31 +132,31 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getApproverData(_approver);
             return Call<Tx, {
                 approverAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getApproverData();
             });
         }
         getArtifactVersion() {
             const data = Encode(this.client).getArtifactVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersion();
             });
         }
         getArtifactVersionMajor() {
             const data = Encode(this.client).getArtifactVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMajor();
             });
         }
         getArtifactVersionMinor() {
             const data = Encode(this.client).getArtifactVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMinor();
             });
         }
         getArtifactVersionPatch() {
             const data = Encode(this.client).getArtifactVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
@@ -164,7 +164,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getDepartmentAtIndex(_organization, _index);
             return Call<Tx, {
                 id: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDepartmentAtIndex();
             });
         }
@@ -172,7 +172,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getDepartmentData(_organization, _id);
             return Call<Tx, {
                 userCount: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDepartmentData();
             });
         }
@@ -180,7 +180,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getDepartmentUserAtIndex(_organization, _depId, _index);
             return Call<Tx, {
                 departmentMember: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDepartmentUserAtIndex();
             });
         }
@@ -188,7 +188,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getNumberOfApprovers(_organization);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfApprovers();
             });
         }
@@ -196,7 +196,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getNumberOfDepartmentUsers(_organization, _depId);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfDepartmentUsers();
             });
         }
@@ -204,7 +204,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getNumberOfDepartments(_organization);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfDepartments();
             });
         }
@@ -212,7 +212,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getNumberOfOrganizations();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfOrganizations();
             });
         }
@@ -220,7 +220,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getNumberOfUsers(_organization);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfUsers();
             });
         }
@@ -228,7 +228,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getOrganizationAtIndex(_pos);
             return Call<Tx, {
                 organization: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getOrganizationAtIndex();
             });
         }
@@ -237,13 +237,13 @@ export module DefaultParticipantsManager {
             return Call<Tx, {
                 numApprovers: number;
                 organizationKey: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getOrganizationData();
             });
         }
         getUpgradeOwner() {
             const data = Encode(this.client).getUpgradeOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getUpgradeOwner();
             });
         }
@@ -251,13 +251,13 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getUserAccountsSize();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getUserAccountsSize();
             });
         }
         getUserAtIndex(_organization: string, _pos: number) {
             const data = Encode(this.client).getUserAtIndex(_organization, _pos);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getUserAtIndex();
             });
         }
@@ -265,7 +265,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).getUserData(_user);
             return Call<Tx, {
                 userAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getUserData();
             });
         }
@@ -273,7 +273,7 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).migrateFrom();
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).migrateFrom();
             });
         }
@@ -281,31 +281,31 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).migrateTo(_successor);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).migrateTo();
             });
         }
         organizationExists(_address: string) {
             const data = Encode(this.client).organizationExists(_address);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).organizationExists();
             });
         }
         setArtifactsFinder(_artifactsFinder: string) {
             const data = Encode(this.client).setArtifactsFinder(_artifactsFinder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setArtifactsFinder();
             });
         }
         supportsInterface(_interfaceId: Buffer) {
             const data = Encode(this.client).supportsInterface(_interfaceId);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).supportsInterface();
             });
         }
         transferUpgradeOwnership(_newOwner: string) {
             const data = Encode(this.client).transferUpgradeOwnership(_newOwner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferUpgradeOwnership();
             });
         }
@@ -313,13 +313,13 @@ export module DefaultParticipantsManager {
             const data = Encode(this.client).upgrade(_successor);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).upgrade();
             });
         }
         userAccountExists(_userAccount: string) {
             const data = Encode(this.client).userAccountExists(_userAccount);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).userAccountExists();
             });
         }

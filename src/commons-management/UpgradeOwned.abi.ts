@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -28,16 +30,14 @@ export module UpgradeOwned {
         bytecode = Replace(bytecode, "$ecfb6c4d3c3ceff197e19e585a0a53728c$", commons_base_ErrorsLib_sol_ErrorsLib);
         const data = bytecode;
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -49,13 +49,13 @@ export module UpgradeOwned {
         LogUpgradeOwnerChanged(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogUpgradeOwnerChanged", this.address, callback); }
         getUpgradeOwner() {
             const data = Encode(this.client).getUpgradeOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getUpgradeOwner();
             });
         }
         transferUpgradeOwnership(_newOwner: string) {
             const data = Encode(this.client).transferUpgradeOwnership(_newOwner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferUpgradeOwnership();
             });
         }

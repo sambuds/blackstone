@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -29,16 +31,14 @@ export module DefaultProcessModel {
         bytecode = Replace(bytecode, "$5e3d4bda46c81e962f48c99e99f980d175$", commons_collections_MappingsLib_sol_MappingsLib);
         const data = bytecode;
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -51,37 +51,37 @@ export module DefaultProcessModel {
         LogProcessModelDataCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessModelDataCreation", this.address, callback); }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_VERSIONED_ARTIFACT();
             });
         }
         EVENT_ID_PROCESS_DEFINITIONS() {
             const data = Encode(this.client).EVENT_ID_PROCESS_DEFINITIONS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_PROCESS_DEFINITIONS();
             });
         }
         EVENT_ID_PROCESS_MODELS() {
             const data = Encode(this.client).EVENT_ID_PROCESS_MODELS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_PROCESS_MODELS();
             });
         }
         EVENT_ID_PROCESS_MODEL_DATA() {
             const data = Encode(this.client).EVENT_ID_PROCESS_MODEL_DATA();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_PROCESS_MODEL_DATA();
             });
         }
         OBJECT_CLASS_PROCESS_DEFINITION() {
             const data = Encode(this.client).OBJECT_CLASS_PROCESS_DEFINITION();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).OBJECT_CLASS_PROCESS_DEFINITION();
             });
         }
         addDataDefinition(_dataId: Buffer, _dataPath: Buffer, _parameterType: number) {
             const data = Encode(this.client).addDataDefinition(_dataId, _dataPath, _parameterType);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addDataDefinition();
             });
         }
@@ -89,13 +89,13 @@ export module DefaultProcessModel {
             const data = Encode(this.client).addParticipant(_id, _account, _dataPath, _dataStorageId, _dataStorage);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addParticipant();
             });
         }
         addProcessInterface(_interfaceId: Buffer) {
             const data = Encode(this.client).addProcessInterface(_interfaceId);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addProcessInterface();
             });
         }
@@ -103,7 +103,7 @@ export module DefaultProcessModel {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareArtifactVersion();
             });
         }
@@ -111,7 +111,7 @@ export module DefaultProcessModel {
             const data = Encode(this.client).compareVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareVersion();
             });
         }
@@ -119,43 +119,43 @@ export module DefaultProcessModel {
             const data = Encode(this.client).createProcessDefinition(_processDefinitionId, _artifactsFinder);
             return Call<Tx, {
                 newAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createProcessDefinition();
             });
         }
         getArtifactVersion() {
             const data = Encode(this.client).getArtifactVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersion();
             });
         }
         getArtifactVersionMajor() {
             const data = Encode(this.client).getArtifactVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMajor();
             });
         }
         getArtifactVersionMinor() {
             const data = Encode(this.client).getArtifactVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMinor();
             });
         }
         getArtifactVersionPatch() {
             const data = Encode(this.client).getArtifactVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
         getAuthor() {
             const data = Encode(this.client).getAuthor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAuthor();
             });
         }
         getConditionalParticipant(_dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string) {
             const data = Encode(this.client).getConditionalParticipant(_dataPath, _dataStorageId, _dataStorage);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getConditionalParticipant();
             });
         }
@@ -164,49 +164,49 @@ export module DefaultProcessModel {
             return Call<Tx, {
                 key: Buffer;
                 parameterType: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataDefinitionDetailsAtIndex();
             });
         }
         getId() {
             const data = Encode(this.client).getId();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getId();
             });
         }
         getModelFileReference() {
             const data = Encode(this.client).getModelFileReference();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getModelFileReference();
             });
         }
         getNumberOfDataDefinitions() {
             const data = Encode(this.client).getNumberOfDataDefinitions();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfDataDefinitions();
             });
         }
         getNumberOfParticipants() {
             const data = Encode(this.client).getNumberOfParticipants();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfParticipants();
             });
         }
         getNumberOfProcessDefinitions() {
             const data = Encode(this.client).getNumberOfProcessDefinitions();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfProcessDefinitions();
             });
         }
         getNumberOfProcessInterfaces() {
             const data = Encode(this.client).getNumberOfProcessInterfaces();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfProcessInterfaces();
             });
         }
         getParticipantAtIndex(_idx: number) {
             const data = Encode(this.client).getParticipantAtIndex(_idx);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParticipantAtIndex();
             });
         }
@@ -217,73 +217,73 @@ export module DefaultProcessModel {
                 dataPath: Buffer;
                 dataStorageId: Buffer;
                 dataStorage: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParticipantData();
             });
         }
         getProcessDefinition(_id: Buffer) {
             const data = Encode(this.client).getProcessDefinition(_id);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getProcessDefinition();
             });
         }
         getProcessDefinitionAtIndex(_idx: number) {
             const data = Encode(this.client).getProcessDefinitionAtIndex(_idx);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getProcessDefinitionAtIndex();
             });
         }
         getVersion() {
             const data = Encode(this.client).getVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersion();
             });
         }
         getVersionMajor() {
             const data = Encode(this.client).getVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionMajor();
             });
         }
         getVersionMinor() {
             const data = Encode(this.client).getVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionMinor();
             });
         }
         getVersionPatch() {
             const data = Encode(this.client).getVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionPatch();
             });
         }
         hasParticipant(_id: Buffer) {
             const data = Encode(this.client).hasParticipant(_id);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).hasParticipant();
             });
         }
         hasProcessInterface(_interfaceId: Buffer) {
             const data = Encode(this.client).hasProcessInterface(_interfaceId);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).hasProcessInterface();
             });
         }
         initialize(_id: Buffer, _version: [number, number, number], _author: string, _isPrivate: boolean, _modelFileReference: string) {
             const data = Encode(this.client).initialize(_id, _version, _author, _isPrivate, _modelFileReference);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).initialize();
             });
         }
         isPrivate() {
             const data = Encode(this.client).isPrivate();
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isPrivate();
             });
         }
         supportsInterface(_interfaceId: Buffer) {
             const data = Encode(this.client).supportsInterface(_interfaceId);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).supportsInterface();
             });
         }

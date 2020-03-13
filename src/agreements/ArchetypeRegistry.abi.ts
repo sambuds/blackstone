@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -35,61 +37,61 @@ export module ArchetypeRegistry {
         LogArchetypeToPackageUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeToPackageUpdate", this.address, callback); }
         ERC165_ID_ObjectFactory() {
             const data = Encode(this.client).ERC165_ID_ObjectFactory();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_ObjectFactory();
             });
         }
         ERC165_ID_Upgradeable() {
             const data = Encode(this.client).ERC165_ID_Upgradeable();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_Upgradeable();
             });
         }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_VERSIONED_ARTIFACT();
             });
         }
         EVENT_ID_ARCHETYPES() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPES();
             });
         }
         EVENT_ID_ARCHETYPE_PACKAGES() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPE_PACKAGES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPE_PACKAGES();
             });
         }
         EVENT_ID_ARCHETYPE_PACKAGE_MAP() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPE_PACKAGE_MAP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPE_PACKAGE_MAP();
             });
         }
         OBJECT_CLASS_ARCHETYPE() {
             const data = Encode(this.client).OBJECT_CLASS_ARCHETYPE();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).OBJECT_CLASS_ARCHETYPE();
             });
         }
         activatePackage(_id: Buffer, _author: string) {
             const data = Encode(this.client).activatePackage(_id, _author);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).activatePackage();
             });
         }
         addArchetypeToPackage(_packageId: Buffer, _archetype: string) {
             const data = Encode(this.client).addArchetypeToPackage(_packageId, _archetype);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addArchetypeToPackage();
             });
         }
         addDocument(_archetype: string, _fileReference: string) {
             const data = Encode(this.client).addDocument(_archetype, _fileReference);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addDocument();
             });
         }
@@ -97,7 +99,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).addJurisdiction(_archetype, _country, _region);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addJurisdiction();
             });
         }
@@ -105,7 +107,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).addJurisdictions(_archetype, _countries, _regions);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addJurisdictions();
             });
         }
@@ -113,7 +115,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).addParameter(_archetype, _parameterType, _parameterName);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addParameter();
             });
         }
@@ -121,7 +123,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).addParameters(_archetype, _parameterTypes, _parameterNames);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addParameters();
             });
         }
@@ -129,7 +131,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareArtifactVersion();
             });
         }
@@ -137,7 +139,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).createArchetype(_price, _isPrivate, _active, _author, _owner, _formationProcess, _executionProcess, _packageId, _governingArchetypes);
             return Call<Tx, {
                 archetype: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createArchetype();
             });
         }
@@ -146,13 +148,13 @@ export module ArchetypeRegistry {
             return Call<Tx, {
                 error: number;
                 id: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createArchetypePackage();
             });
         }
         deactivatePackage(_id: Buffer, _author: string) {
             const data = Encode(this.client).deactivatePackage(_id, _author);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).deactivatePackage();
             });
         }
@@ -160,7 +162,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getArchetypeAtIndex(_index);
             return Call<Tx, {
                 archetype: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypeAtIndex();
             });
         }
@@ -168,7 +170,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getArchetypeAtIndexInPackage(_id, _index);
             return Call<Tx, {
                 archetype: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypeAtIndexInPackage();
             });
         }
@@ -183,7 +185,7 @@ export module ArchetypeRegistry {
                 successor: string;
                 formationProcessDefinition: string;
                 executionProcessDefinition: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypeData();
             });
         }
@@ -191,7 +193,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getArchetypePackageAtIndex(_index);
             return Call<Tx, {
                 id: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypePackageAtIndex();
             });
         }
@@ -201,13 +203,13 @@ export module ArchetypeRegistry {
                 author: string;
                 isPrivate: boolean;
                 active: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypePackageData();
             });
         }
         getArchetypeSuccessor(_archetype: string) {
             const data = Encode(this.client).getArchetypeSuccessor(_archetype);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypeSuccessor();
             });
         }
@@ -215,31 +217,31 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getArchetypesSize();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypesSize();
             });
         }
         getArtifactVersion() {
             const data = Encode(this.client).getArtifactVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersion();
             });
         }
         getArtifactVersionMajor() {
             const data = Encode(this.client).getArtifactVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMajor();
             });
         }
         getArtifactVersionMinor() {
             const data = Encode(this.client).getArtifactVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMinor();
             });
         }
         getArtifactVersionPatch() {
             const data = Encode(this.client).getArtifactVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
@@ -247,7 +249,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getGoverningArchetypeAtIndex(_archetype, _index);
             return Call<Tx, {
                 archetype: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getGoverningArchetypeAtIndex();
             });
         }
@@ -255,7 +257,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getJurisdictionAtIndexForArchetype(_archetype, _index);
             return Call<Tx, {
                 key: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getJurisdictionAtIndexForArchetype();
             });
         }
@@ -264,7 +266,7 @@ export module ArchetypeRegistry {
             return Call<Tx, {
                 country: Buffer;
                 region: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getJurisdictionDataForArchetype();
             });
         }
@@ -272,7 +274,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getNumberOfArchetypePackages();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfArchetypePackages();
             });
         }
@@ -280,7 +282,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getNumberOfArchetypesInPackage(_id);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfArchetypesInPackage();
             });
         }
@@ -288,7 +290,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getNumberOfGoverningArchetypes(_archetype);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfGoverningArchetypes();
             });
         }
@@ -296,7 +298,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getNumberOfJurisdictionsForArchetype(_archetype);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfJurisdictionsForArchetype();
             });
         }
@@ -304,7 +306,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getParameterByArchetypeAtIndex(_archetype, _index);
             return Call<Tx, {
                 name: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParameterByArchetypeAtIndex();
             });
         }
@@ -313,7 +315,7 @@ export module ArchetypeRegistry {
             return Call<Tx, {
                 position: number;
                 parameterType: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParameterByArchetypeData();
             });
         }
@@ -321,7 +323,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).getParametersByArchetypeSize(_archetype);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParametersByArchetypeSize();
             });
         }
@@ -329,13 +331,13 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).packageHasArchetype(_packageId, _archetype);
             return Call<Tx, {
                 hasArchetype: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).packageHasArchetype();
             });
         }
         setArchetypePrice(_archetype: string, _price: number) {
             const data = Encode(this.client).setArchetypePrice(_archetype, _price);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setArchetypePrice();
             });
         }
@@ -343,7 +345,7 @@ export module ArchetypeRegistry {
             const data = Encode(this.client).upgrade(_successor);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).upgrade();
             });
         }

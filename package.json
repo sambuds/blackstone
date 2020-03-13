@@ -1,6 +1,6 @@
 {
   "name": "@monax/blackstone",
-  "version": "0.6.0-rc5",
+  "version": "0.6.0-rc6",
   "description": "Contract Suite for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -47,6 +47,6 @@
     "nanoid": "^2.1.10",
     "random-id": "^1.0.3",
     "solc": "0.5.12",
-    "solts": "0.0.5"
+    "solts": "0.0.6"
   }
 }

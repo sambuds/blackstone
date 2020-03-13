@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -30,16 +32,14 @@ export module ArchetypeRegistryDb {
         bytecode = Replace(bytecode, "$6c578ef14ebe2070bb2319c6842ae291e1$", commons_utils_ArrayUtilsLib_sol_ArrayUtilsLib);
         const data = bytecode + client.encode("", []);
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -51,7 +51,7 @@ export module ArchetypeRegistryDb {
         LogSystemOwnerChanged(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogSystemOwnerChanged", this.address, callback); }
         activatePackage(_id: Buffer) {
             const data = Encode(this.client).activatePackage(_id);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).activatePackage();
             });
         }
@@ -59,31 +59,31 @@ export module ArchetypeRegistryDb {
             const data = Encode(this.client).addArchetype(_archetype);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addArchetype();
             });
         }
         addArchetypeToPackage(_id: Buffer, _archetype: string) {
             const data = Encode(this.client).addArchetypeToPackage(_id, _archetype);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addArchetypeToPackage();
             });
         }
         archetypeExists(_archetype: string) {
             const data = Encode(this.client).archetypeExists(_archetype);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).archetypeExists();
             });
         }
         createPackage(_id: Buffer, _author: string, _isPrivate: boolean, _active: boolean) {
             const data = Encode(this.client).createPackage(_id, _author, _isPrivate, _active);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createPackage();
             });
         }
         deactivatePackage(_id: Buffer) {
             const data = Encode(this.client).deactivatePackage(_id);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).deactivatePackage();
             });
         }
@@ -92,37 +92,37 @@ export module ArchetypeRegistryDb {
             return Call<Tx, {
                 error: number;
                 archetype: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypeAtIndex();
             });
         }
         getArchetypeAtIndexInPackage(_packageId: Buffer, _index: number) {
             const data = Encode(this.client).getArchetypeAtIndexInPackage(_packageId, _index);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetypeAtIndexInPackage();
             });
         }
         getNumberOfArchetypes() {
             const data = Encode(this.client).getNumberOfArchetypes();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfArchetypes();
             });
         }
         getNumberOfArchetypesInPackage(_packageId: Buffer) {
             const data = Encode(this.client).getNumberOfArchetypesInPackage(_packageId);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfArchetypesInPackage();
             });
         }
         getNumberOfPackages() {
             const data = Encode(this.client).getNumberOfPackages();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfPackages();
             });
         }
         getPackageAtIndex(_index: number) {
             const data = Encode(this.client).getPackageAtIndex(_index);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPackageAtIndex();
             });
         }
@@ -132,25 +132,25 @@ export module ArchetypeRegistryDb {
                 author: string;
                 isPrivate: boolean;
                 active: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPackageData();
             });
         }
         getSystemOwner() {
             const data = Encode(this.client).getSystemOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSystemOwner();
             });
         }
         packageExists(_id: Buffer) {
             const data = Encode(this.client).packageExists(_id);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).packageExists();
             });
         }
         transferSystemOwnership(_newOwner: string) {
             const data = Encode(this.client).transferSystemOwnership(_newOwner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferSystemOwnership();
             });
         }

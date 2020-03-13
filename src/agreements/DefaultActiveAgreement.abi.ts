@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -33,16 +35,14 @@ export module DefaultActiveAgreement {
         bytecode = Replace(bytecode, "$6c578ef14ebe2070bb2319c6842ae291e1$", commons_utils_ArrayUtilsLib_sol_ArrayUtilsLib);
         const data = bytecode;
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -77,103 +77,103 @@ export module DefaultActiveAgreement {
         LogGoverningAgreementUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogGoverningAgreementUpdate", this.address, callback); }
         DATA_FIELD_AGREEMENT_PARTIES() {
             const data = Encode(this.client).DATA_FIELD_AGREEMENT_PARTIES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).DATA_FIELD_AGREEMENT_PARTIES();
             });
         }
         ERC165_ID_Address_Scopes() {
             const data = Encode(this.client).ERC165_ID_Address_Scopes();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_Address_Scopes();
             });
         }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_VERSIONED_ARTIFACT();
             });
         }
         EVENT_CREATED() {
             const data = Encode(this.client).EVENT_CREATED();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_CREATED();
             });
         }
         EVENT_DELETED() {
             const data = Encode(this.client).EVENT_DELETED();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_DELETED();
             });
         }
         EVENT_ID_AGREEMENTS() {
             const data = Encode(this.client).EVENT_ID_AGREEMENTS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_AGREEMENTS();
             });
         }
         EVENT_ID_AGREEMENT_PARTY_MAP() {
             const data = Encode(this.client).EVENT_ID_AGREEMENT_PARTY_MAP();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_AGREEMENT_PARTY_MAP();
             });
         }
         EVENT_ID_DATA_STORAGE() {
             const data = Encode(this.client).EVENT_ID_DATA_STORAGE();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_DATA_STORAGE();
             });
         }
         EVENT_ID_ENTITIES_ADDRESS_SCOPES() {
             const data = Encode(this.client).EVENT_ID_ENTITIES_ADDRESS_SCOPES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ENTITIES_ADDRESS_SCOPES();
             });
         }
         EVENT_ID_GOVERNING_AGREEMENT() {
             const data = Encode(this.client).EVENT_ID_GOVERNING_AGREEMENT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_GOVERNING_AGREEMENT();
             });
         }
         EVENT_ID_STATE_CHANGED() {
             const data = Encode(this.client).EVENT_ID_STATE_CHANGED();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_STATE_CHANGED();
             });
         }
         EVENT_UPDATED() {
             const data = Encode(this.client).EVENT_UPDATED();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_UPDATED();
             });
         }
         ROLE_ID_LEGAL_STATE_CONTROLLER() {
             const data = Encode(this.client).ROLE_ID_LEGAL_STATE_CONTROLLER();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ROLE_ID_LEGAL_STATE_CONTROLLER();
             });
         }
         ROLE_ID_OBJECT_ADMIN() {
             const data = Encode(this.client).ROLE_ID_OBJECT_ADMIN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ROLE_ID_OBJECT_ADMIN();
             });
         }
         ROLE_ID_OWNER() {
             const data = Encode(this.client).ROLE_ID_OWNER();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ROLE_ID_OWNER();
             });
         }
         addEventListener(_event: Buffer | Buffer, _listener: string) {
             const data = Encode(this.client).addEventListener(_event, _listener);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addEventListener();
             });
         }
         cancel() {
             const data = Encode(this.client).cancel();
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).cancel();
             });
         }
@@ -181,13 +181,13 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareArtifactVersion();
             });
         }
         createPermission(_permission: Buffer, _multiHolder: boolean, _revocable: boolean, _transferable: boolean) {
             const data = Encode(this.client).createPermission(_permission, _multiHolder, _revocable, _transferable);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createPermission();
             });
         }
@@ -198,7 +198,7 @@ export module DefaultActiveAgreement {
                 dataPath: Buffer;
                 dataStorageId: Buffer;
                 dataStorage: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAddressScopeDetails();
             });
         }
@@ -211,55 +211,55 @@ export module DefaultActiveAgreement {
                 dataPath: Buffer;
                 dataStorageId: Buffer;
                 dataStorage: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAddressScopeDetailsForKey();
             });
         }
         getAddressScopeKeys() {
             const data = Encode(this.client).getAddressScopeKeys();
-            return Call<Tx, [Buffer[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAddressScopeKeys();
             });
         }
         getArchetype() {
             const data = Encode(this.client).getArchetype();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArchetype();
             });
         }
         getArrayLength(_id: Buffer) {
             const data = Encode(this.client).getArrayLength(_id);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArrayLength();
             });
         }
         getArtifactVersion() {
             const data = Encode(this.client).getArtifactVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersion();
             });
         }
         getArtifactVersionMajor() {
             const data = Encode(this.client).getArtifactVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMajor();
             });
         }
         getArtifactVersionMinor() {
             const data = Encode(this.client).getArtifactVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMinor();
             });
         }
         getArtifactVersionPatch() {
             const data = Encode(this.client).getArtifactVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
         getCreator() {
             const data = Encode(this.client).getCreator();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCreator();
             });
         }
@@ -268,85 +268,85 @@ export module DefaultActiveAgreement {
             return Call<Tx, {
                 error: number;
                 id: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataIdAtIndex();
             });
         }
         getDataType(_id: Buffer) {
             const data = Encode(this.client).getDataType(_id);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataType();
             });
         }
         getDataValueAsAddress(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsAddress(_id);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsAddress();
             });
         }
         getDataValueAsAddressArray(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsAddressArray(_id);
-            return Call<Tx, [string[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsAddressArray();
             });
         }
         getDataValueAsBool(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsBool(_id);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsBool();
             });
         }
         getDataValueAsBoolArray(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsBoolArray(_id);
-            return Call<Tx, [boolean[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsBoolArray();
             });
         }
         getDataValueAsBytes32(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsBytes32(_id);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsBytes32();
             });
         }
         getDataValueAsBytes32Array(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsBytes32Array(_id);
-            return Call<Tx, [Buffer[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsBytes32Array();
             });
         }
         getDataValueAsInt(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsInt(_id);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsInt();
             });
         }
         getDataValueAsIntArray(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsIntArray(_id);
-            return Call<Tx, [number[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsIntArray();
             });
         }
         getDataValueAsString(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsString(_id);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsString();
             });
         }
         getDataValueAsUint(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsUint(_id);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsUint();
             });
         }
         getDataValueAsUintArray(_id: Buffer) {
             const data = Encode(this.client).getDataValueAsUintArray(_id);
-            return Call<Tx, [number[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDataValueAsUintArray();
             });
         }
         getEventLogReference() {
             const data = Encode(this.client).getEventLogReference();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getEventLogReference();
             });
         }
@@ -354,31 +354,31 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).getGoverningAgreementAtIndex(_index);
             return Call<Tx, {
                 agreementAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getGoverningAgreementAtIndex();
             });
         }
         getHolder(_permission: Buffer, _index: number) {
             const data = Encode(this.client).getHolder(_permission, _index);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getHolder();
             });
         }
         getLegalState() {
             const data = Encode(this.client).getLegalState();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getLegalState();
             });
         }
         getMaxNumberOfEvents() {
             const data = Encode(this.client).getMaxNumberOfEvents();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getMaxNumberOfEvents();
             });
         }
         getNumberOfData() {
             const data = Encode(this.client).getNumberOfData();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfData();
             });
         }
@@ -386,7 +386,7 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).getNumberOfGoverningAgreements();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfGoverningAgreements();
             });
         }
@@ -394,13 +394,13 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).getNumberOfParties();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfParties();
             });
         }
         getOwner() {
             const data = Encode(this.client).getOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getOwner();
             });
         }
@@ -408,7 +408,7 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).getPartyAtIndex(_index);
             return Call<Tx, {
                 party: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPartyAtIndex();
             });
         }
@@ -420,13 +420,13 @@ export module DefaultActiveAgreement {
                 revocable: boolean;
                 transferable: boolean;
                 holderSize: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPermissionDetails();
             });
         }
         getPrivateParametersReference() {
             const data = Encode(this.client).getPrivateParametersReference();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPrivateParametersReference();
             });
         }
@@ -435,13 +435,13 @@ export module DefaultActiveAgreement {
             return Call<Tx, {
                 signee: string;
                 signatureTimestamp: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSignatureDetails();
             });
         }
         getSignatureLogReference() {
             const data = Encode(this.client).getSignatureLogReference();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSignatureLogReference();
             });
         }
@@ -449,7 +449,7 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).getSignatureTimestamp(_party);
             return Call<Tx, {
                 signatureTimestamp: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSignatureTimestamp();
             });
         }
@@ -457,13 +457,13 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).getSignee(_party);
             return Call<Tx, {
                 signee: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSignee();
             });
         }
         grantPermission(_permission: Buffer, _newHolder: string) {
             const data = Encode(this.client).grantPermission(_permission, _newHolder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).grantPermission();
             });
         }
@@ -471,187 +471,187 @@ export module DefaultActiveAgreement {
             const data = Encode(this.client).hasPermission(_permission, _holder);
             return Call<Tx, {
                 result: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).hasPermission();
             });
         }
         initialize(_archetype: string, _creator: string, _owner: string, _privateParametersFileReference: string, _isPrivate: boolean, _parties: string[], _governingAgreements: string[]) {
             const data = Encode(this.client).initialize(_archetype, _creator, _owner, _privateParametersFileReference, _isPrivate, _parties, _governingAgreements);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).initialize();
             });
         }
         initializeObjectAdministrator(_admin: string) {
             const data = Encode(this.client).initializeObjectAdministrator(_admin);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).initializeObjectAdministrator();
             });
         }
         isPrivate() {
             const data = Encode(this.client).isPrivate();
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isPrivate();
             });
         }
         isSignedBy(_signee: string) {
             const data = Encode(this.client).isSignedBy(_signee);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isSignedBy();
             });
         }
         redact() {
             const data = Encode(this.client).redact();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).redact();
             });
         }
         removeData(_id: Buffer) {
             const data = Encode(this.client).removeData(_id);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).removeData();
             });
         }
         removeEventListener(_event: Buffer | Buffer, _listener: string) {
             const data = Encode(this.client).removeEventListener(_event, _listener);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).removeEventListener();
             });
         }
         resolveAddressScope(_address: string, _context: Buffer, _dataStorage: string) {
             const data = Encode(this.client).resolveAddressScope(_address, _context, _dataStorage);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).resolveAddressScope();
             });
         }
         revokePermission(_permission: Buffer, _holder: string) {
             const data = Encode(this.client).revokePermission(_permission, _holder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).revokePermission();
             });
         }
         setAddressScope(_address: string, _context: Buffer, _fixedScope: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string) {
             const data = Encode(this.client).setAddressScope(_address, _context, _fixedScope, _dataPath, _dataStorageId, _dataStorage);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setAddressScope();
             });
         }
         setDataValueAsAddress(_id: Buffer, _value: string) {
             const data = Encode(this.client).setDataValueAsAddress(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsAddress();
             });
         }
         setDataValueAsAddressArray(_id: Buffer, _value: string[]) {
             const data = Encode(this.client).setDataValueAsAddressArray(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsAddressArray();
             });
         }
         setDataValueAsBool(_id: Buffer, _value: boolean) {
             const data = Encode(this.client).setDataValueAsBool(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsBool();
             });
         }
         setDataValueAsBoolArray(_id: Buffer, _value: boolean[]) {
             const data = Encode(this.client).setDataValueAsBoolArray(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsBoolArray();
             });
         }
         setDataValueAsBytes32(_id: Buffer, _value: Buffer) {
             const data = Encode(this.client).setDataValueAsBytes32(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsBytes32();
             });
         }
         setDataValueAsBytes32Array(_id: Buffer, _value: Buffer[]) {
             const data = Encode(this.client).setDataValueAsBytes32Array(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsBytes32Array();
             });
         }
         setDataValueAsInt(_id: Buffer, _value: number) {
             const data = Encode(this.client).setDataValueAsInt(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsInt();
             });
         }
         setDataValueAsIntArray(_id: Buffer, _value: number[]) {
             const data = Encode(this.client).setDataValueAsIntArray(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsIntArray();
             });
         }
         setDataValueAsString(_id: Buffer, _value: string) {
             const data = Encode(this.client).setDataValueAsString(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsString();
             });
         }
         setDataValueAsUint(_id: Buffer, _value: number) {
             const data = Encode(this.client).setDataValueAsUint(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsUint();
             });
         }
         setDataValueAsUintArray(_id: Buffer, _value: number[]) {
             const data = Encode(this.client).setDataValueAsUintArray(_id, _value);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setDataValueAsUintArray();
             });
         }
         setEventLogReference(_eventLogFileReference: string) {
             const data = Encode(this.client).setEventLogReference(_eventLogFileReference);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setEventLogReference();
             });
         }
         setFulfilled() {
             const data = Encode(this.client).setFulfilled();
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setFulfilled();
             });
         }
         setLegalState(_legalState: number) {
             const data = Encode(this.client).setLegalState(_legalState);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setLegalState();
             });
         }
         setMaxNumberOfEvents(_maxNumberOfEvents: number) {
             const data = Encode(this.client).setMaxNumberOfEvents(_maxNumberOfEvents);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setMaxNumberOfEvents();
             });
         }
         setPrivateParametersReference(_privateParametersFileReference: string) {
             const data = Encode(this.client).setPrivateParametersReference(_privateParametersFileReference);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setPrivateParametersReference();
             });
         }
         setSignatureLogReference(_signatureLogFileReference: string) {
             const data = Encode(this.client).setSignatureLogReference(_signatureLogFileReference);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setSignatureLogReference();
             });
         }
         sign() {
             const data = Encode(this.client).sign();
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).sign();
             });
         }
         supportsInterface(_interfaceId: Buffer) {
             const data = Encode(this.client).supportsInterface(_interfaceId);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).supportsInterface();
             });
         }
         transferPermission(_permission: Buffer, _newHolder: string) {
             const data = Encode(this.client).transferPermission(_permission, _newHolder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferPermission();
             });
         }

@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -30,16 +32,14 @@ export module ActiveAgreementRegistryDb {
         bytecode = Replace(bytecode, "$6c578ef14ebe2070bb2319c6842ae291e1$", commons_utils_ArrayUtilsLib_sol_ArrayUtilsLib);
         const data = bytecode + client.encode("", []);
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -51,19 +51,19 @@ export module ActiveAgreementRegistryDb {
         LogSystemOwnerChanged(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogSystemOwnerChanged", this.address, callback); }
         addAgreementToCollection(_id: Buffer, _agreement: string) {
             const data = Encode(this.client).addAgreementToCollection(_id, _agreement);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addAgreementToCollection();
             });
         }
         collectionExists(_id: Buffer) {
             const data = Encode(this.client).collectionExists(_id);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).collectionExists();
             });
         }
         createCollection(_id: Buffer, _author: string, _collectionType: number, _packageId: Buffer) {
             const data = Encode(this.client).createCollection(_id, _author, _collectionType, _packageId);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createCollection();
             });
         }
@@ -71,31 +71,31 @@ export module ActiveAgreementRegistryDb {
             const data = Encode(this.client).getActiveAgreementAtIndex(_index);
             return Call<Tx, {
                 activeAgreement: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getActiveAgreementAtIndex();
             });
         }
         getAgreementAtIndexInCollection(_id: Buffer, _index: number) {
             const data = Encode(this.client).getAgreementAtIndexInCollection(_id, _index);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAgreementAtIndexInCollection();
             });
         }
         getAgreementExecutionProcess(_activeAgreement: string) {
             const data = Encode(this.client).getAgreementExecutionProcess(_activeAgreement);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAgreementExecutionProcess();
             });
         }
         getAgreementFormationProcess(_activeAgreement: string) {
             const data = Encode(this.client).getAgreementFormationProcess(_activeAgreement);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAgreementFormationProcess();
             });
         }
         getCollectionAtIndex(_index: number) {
             const data = Encode(this.client).getCollectionAtIndex(_index);
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCollectionAtIndex();
             });
         }
@@ -105,7 +105,7 @@ export module ActiveAgreementRegistryDb {
                 author: string;
                 collectionType: number;
                 packageId: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCollectionData();
             });
         }
@@ -113,31 +113,31 @@ export module ActiveAgreementRegistryDb {
             const data = Encode(this.client).getNumberOfActiveAgreements();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfActiveAgreements();
             });
         }
         getNumberOfAgreementsInCollection(_id: Buffer) {
             const data = Encode(this.client).getNumberOfAgreementsInCollection(_id);
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfAgreementsInCollection();
             });
         }
         getNumberOfCollections() {
             const data = Encode(this.client).getNumberOfCollections();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfCollections();
             });
         }
         getSystemOwner() {
             const data = Encode(this.client).getSystemOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSystemOwner();
             });
         }
         isAgreementRegistered(_activeAgreement: string) {
             const data = Encode(this.client).isAgreementRegistered(_activeAgreement);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isAgreementRegistered();
             });
         }
@@ -145,25 +145,25 @@ export module ActiveAgreementRegistryDb {
             const data = Encode(this.client).registerActiveAgreement(_activeAgreement);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).registerActiveAgreement();
             });
         }
         setAgreementExecutionProcess(_activeAgreement: string, _processInstance: string) {
             const data = Encode(this.client).setAgreementExecutionProcess(_activeAgreement, _processInstance);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setAgreementExecutionProcess();
             });
         }
         setAgreementFormationProcess(_activeAgreement: string, _processInstance: string) {
             const data = Encode(this.client).setAgreementFormationProcess(_activeAgreement, _processInstance);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setAgreementFormationProcess();
             });
         }
         transferSystemOwnership(_newOwner: string) {
             const data = Encode(this.client).transferSystemOwnership(_newOwner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferSystemOwnership();
             });
         }

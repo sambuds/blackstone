@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -31,16 +33,14 @@ export module DefaultArchetype {
         bytecode = Replace(bytecode, "$6c578ef14ebe2070bb2319c6842ae291e1$", commons_utils_ArrayUtilsLib_sol_ArrayUtilsLib);
         const data = bytecode;
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -61,61 +61,61 @@ export module DefaultArchetype {
         LogGoverningArchetypeUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogGoverningArchetypeUpdate", this.address, callback); }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ERC165_ID_VERSIONED_ARTIFACT();
             });
         }
         EVENT_ID_ARCHETYPES() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPES();
             });
         }
         EVENT_ID_ARCHETYPE_DOCUMENTS() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPE_DOCUMENTS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPE_DOCUMENTS();
             });
         }
         EVENT_ID_ARCHETYPE_JURISDICTIONS() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPE_JURISDICTIONS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPE_JURISDICTIONS();
             });
         }
         EVENT_ID_ARCHETYPE_PARAMETERS() {
             const data = Encode(this.client).EVENT_ID_ARCHETYPE_PARAMETERS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ARCHETYPE_PARAMETERS();
             });
         }
         EVENT_ID_GOVERNING_ARCHETYPES() {
             const data = Encode(this.client).EVENT_ID_GOVERNING_ARCHETYPES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_GOVERNING_ARCHETYPES();
             });
         }
         ROLE_ID_OBJECT_ADMIN() {
             const data = Encode(this.client).ROLE_ID_OBJECT_ADMIN();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ROLE_ID_OBJECT_ADMIN();
             });
         }
         ROLE_ID_OWNER() {
             const data = Encode(this.client).ROLE_ID_OWNER();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).ROLE_ID_OWNER();
             });
         }
         activate() {
             const data = Encode(this.client).activate();
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).activate();
             });
         }
         addDocument(_fileReference: string) {
             const data = Encode(this.client).addDocument(_fileReference);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addDocument();
             });
         }
@@ -124,7 +124,7 @@ export module DefaultArchetype {
             return Call<Tx, {
                 error: number;
                 key: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addJurisdiction();
             });
         }
@@ -133,7 +133,7 @@ export module DefaultArchetype {
             return Call<Tx, {
                 error: number;
                 position: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addParameter();
             });
         }
@@ -141,49 +141,49 @@ export module DefaultArchetype {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareArtifactVersion();
             });
         }
         createPermission(_permission: Buffer, _multiHolder: boolean, _revocable: boolean, _transferable: boolean) {
             const data = Encode(this.client).createPermission(_permission, _multiHolder, _revocable, _transferable);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createPermission();
             });
         }
         deactivate() {
             const data = Encode(this.client).deactivate();
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).deactivate();
             });
         }
         getArtifactVersion() {
             const data = Encode(this.client).getArtifactVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersion();
             });
         }
         getArtifactVersionMajor() {
             const data = Encode(this.client).getArtifactVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMajor();
             });
         }
         getArtifactVersionMinor() {
             const data = Encode(this.client).getArtifactVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionMinor();
             });
         }
         getArtifactVersionPatch() {
             const data = Encode(this.client).getArtifactVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
         getAuthor() {
             const data = Encode(this.client).getAuthor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getAuthor();
             });
         }
@@ -191,7 +191,7 @@ export module DefaultArchetype {
             const data = Encode(this.client).getDocument(_key);
             return Call<Tx, {
                 fileReference: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDocument();
             });
         }
@@ -199,19 +199,19 @@ export module DefaultArchetype {
             const data = Encode(this.client).getDocumentKeyAtIndex(_index);
             return Call<Tx, {
                 key: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getDocumentKeyAtIndex();
             });
         }
         getExecutionProcessDefinition() {
             const data = Encode(this.client).getExecutionProcessDefinition();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getExecutionProcessDefinition();
             });
         }
         getFormationProcessDefinition() {
             const data = Encode(this.client).getFormationProcessDefinition();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getFormationProcessDefinition();
             });
         }
@@ -219,19 +219,19 @@ export module DefaultArchetype {
             const data = Encode(this.client).getGoverningArchetypeAtIndex(_index);
             return Call<Tx, {
                 archetypeAddress: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getGoverningArchetypeAtIndex();
             });
         }
         getGoverningArchetypes() {
             const data = Encode(this.client).getGoverningArchetypes();
-            return Call<Tx, [string[]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getGoverningArchetypes();
             });
         }
         getHolder(_permission: Buffer, _index: number) {
             const data = Encode(this.client).getHolder(_permission, _index);
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getHolder();
             });
         }
@@ -240,7 +240,7 @@ export module DefaultArchetype {
             return Call<Tx, {
                 error: number;
                 key: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getJurisdictionAtIndex();
             });
         }
@@ -249,7 +249,7 @@ export module DefaultArchetype {
             return Call<Tx, {
                 country: Buffer;
                 region: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getJurisdictionData();
             });
         }
@@ -257,7 +257,7 @@ export module DefaultArchetype {
             const data = Encode(this.client).getNumberOfDocuments();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfDocuments();
             });
         }
@@ -265,7 +265,7 @@ export module DefaultArchetype {
             const data = Encode(this.client).getNumberOfGoverningArchetypes();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfGoverningArchetypes();
             });
         }
@@ -273,7 +273,7 @@ export module DefaultArchetype {
             const data = Encode(this.client).getNumberOfJurisdictions();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfJurisdictions();
             });
         }
@@ -281,13 +281,13 @@ export module DefaultArchetype {
             const data = Encode(this.client).getNumberOfParameters();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfParameters();
             });
         }
         getOwner() {
             const data = Encode(this.client).getOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getOwner();
             });
         }
@@ -295,7 +295,7 @@ export module DefaultArchetype {
             const data = Encode(this.client).getParameterAtIndex(_index);
             return Call<Tx, {
                 parameter: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParameterAtIndex();
             });
         }
@@ -304,7 +304,7 @@ export module DefaultArchetype {
             return Call<Tx, {
                 position: number;
                 parameterType: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getParameterDetails();
             });
         }
@@ -316,25 +316,25 @@ export module DefaultArchetype {
                 revocable: boolean;
                 transferable: boolean;
                 holderSize: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPermissionDetails();
             });
         }
         getPrice() {
             const data = Encode(this.client).getPrice();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPrice();
             });
         }
         getSuccessor() {
             const data = Encode(this.client).getSuccessor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSuccessor();
             });
         }
         grantPermission(_permission: Buffer, _newHolder: string) {
             const data = Encode(this.client).grantPermission(_permission, _newHolder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).grantPermission();
             });
         }
@@ -342,67 +342,67 @@ export module DefaultArchetype {
             const data = Encode(this.client).hasPermission(_permission, _holder);
             return Call<Tx, {
                 result: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).hasPermission();
             });
         }
         initialize(_price: number, _isPrivate: boolean, _active: boolean, _author: string, _owner: string, _formationProcess: string, _executionProcess: string, _governingArchetypes: string[]) {
             const data = Encode(this.client).initialize(_price, _isPrivate, _active, _author, _owner, _formationProcess, _executionProcess, _governingArchetypes);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).initialize();
             });
         }
         initializeObjectAdministrator(_admin: string) {
             const data = Encode(this.client).initializeObjectAdministrator(_admin);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).initializeObjectAdministrator();
             });
         }
         isActive() {
             const data = Encode(this.client).isActive();
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isActive();
             });
         }
         isPrivate() {
             const data = Encode(this.client).isPrivate();
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isPrivate();
             });
         }
         revokePermission(_permission: Buffer, _holder: string) {
             const data = Encode(this.client).revokePermission(_permission, _holder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).revokePermission();
             });
         }
         setPrice(_price: number) {
             const data = Encode(this.client).setPrice(_price);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setPrice();
             });
         }
         setSuccessor(_successor: string) {
             const data = Encode(this.client).setSuccessor(_successor);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setSuccessor();
             });
         }
         supportsInterface(_interfaceId: Buffer) {
             const data = Encode(this.client).supportsInterface(_interfaceId);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).supportsInterface();
             });
         }
         transferPermission(_permission: Buffer, _newHolder: string) {
             const data = Encode(this.client).transferPermission(_permission, _newHolder);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferPermission();
             });
         }
         upgradeOwnerPermission(_owner: string) {
             const data = Encode(this.client).upgradeOwnerPermission(_owner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).upgradeOwnerPermission();
             });
         }

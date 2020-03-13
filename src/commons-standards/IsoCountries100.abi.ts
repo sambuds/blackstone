@@ -3,16 +3,18 @@ import { Readable } from "stream";
 interface Provider<Tx> {
     deploy(msg: Tx, callback: (err: Error, addr: Uint8Array) => void): void;
     call(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
+    callSim(msg: Tx, callback: (err: Error, exec: Uint8Array) => void): void;
     listen(signature: string, address: string, callback: (err: Error, event: any) => void): Readable;
     payload(data: string, address?: string): Tx;
     encode(name: string, inputs: string[], ...args: any[]): string;
     decode(data: Uint8Array, outputs: string[]): any;
 }
-function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, callback: (exec: Uint8Array) => Output): Promise<Output> {
+function Call<Tx, Output>(client: Provider<Tx>, addr: string, data: string, isSim: boolean, callback: (exec: Uint8Array) => Output): Promise<Output> {
     const payload = client.payload(data, addr);
-    return new Promise((resolve, reject) => {
-        client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); });
-    });
+    if (isSim)
+        return new Promise((resolve, reject) => { client.callSim(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
+    else
+        return new Promise((resolve, reject) => { client.call(payload, (err, exec) => { err ? reject(err) : resolve(callback(exec)); }); });
 }
 function Replace(bytecode: string, name: string, address: string): string {
     address = address + Array(40 - address.length + 1).join("0");
@@ -28,16 +30,14 @@ export module IsoCountries100 {
         bytecode = Replace(bytecode, "$ecfb6c4d3c3ceff197e19e585a0a53728c$", commons_base_ErrorsLib_sol_ErrorsLib);
         const data = bytecode + client.encode("", []);
         const payload = client.payload(data);
-        return new Promise((resolve, reject) => {
-            client.deploy(payload, (err, addr) => {
-                if (err)
-                    reject(err);
-                else {
-                    const address = Buffer.from(addr).toString("hex").toUpperCase();
-                    resolve(address);
-                }
-            });
-        });
+        return new Promise((resolve, reject) => { client.deploy(payload, (err, addr) => {
+            if (err)
+                reject(err);
+            else {
+                const address = Buffer.from(addr).toString("hex").toUpperCase();
+                resolve(address);
+            }
+        }); });
     }
     export class Contract<Tx> {
         private client: Provider<Tx>;
@@ -51,13 +51,13 @@ export module IsoCountries100 {
         LogRegionRegistration(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogRegionRegistration", this.address, callback); }
         EVENT_ID_ISO_COUNTRIES() {
             const data = Encode(this.client).EVENT_ID_ISO_COUNTRIES();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ISO_COUNTRIES();
             });
         }
         EVENT_ID_ISO_REGIONS() {
             const data = Encode(this.client).EVENT_ID_ISO_REGIONS();
-            return Call<Tx, [Buffer]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_ISO_REGIONS();
             });
         }
@@ -65,7 +65,7 @@ export module IsoCountries100 {
             const data = Encode(this.client).appendNewVersion(_link);
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).appendNewVersion();
             });
         }
@@ -73,7 +73,7 @@ export module IsoCountries100 {
             const data = Encode(this.client).compareVersion(_other, _version);
             return Call<Tx, {
                 result: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).compareVersion();
             });
         }
@@ -85,7 +85,7 @@ export module IsoCountries100 {
                 m49: Buffer;
                 name: string;
                 exists: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).countries();
             });
         }
@@ -93,7 +93,7 @@ export module IsoCountries100 {
             const data = Encode(this.client).getCountryAtIndex(_index);
             return Call<Tx, {
                 alpha2: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCountryAtIndex();
             });
         }
@@ -104,13 +104,13 @@ export module IsoCountries100 {
                 alpha3: Buffer;
                 m49: Buffer;
                 name: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getCountryData();
             });
         }
         getLatest() {
             const data = Encode(this.client).getLatest();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getLatest();
             });
         }
@@ -118,7 +118,7 @@ export module IsoCountries100 {
             const data = Encode(this.client).getNumberOfCountries();
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfCountries();
             });
         }
@@ -126,19 +126,19 @@ export module IsoCountries100 {
             const data = Encode(this.client).getNumberOfRegions(_country);
             return Call<Tx, {
                 size: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfRegions();
             });
         }
         getOwner() {
             const data = Encode(this.client).getOwner();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getOwner();
             });
         }
         getPredecessor() {
             const data = Encode(this.client).getPredecessor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPredecessor();
             });
         }
@@ -146,7 +146,7 @@ export module IsoCountries100 {
             const data = Encode(this.client).getRegionAtIndex(_country, _index);
             return Call<Tx, {
                 key: Buffer;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getRegionAtIndex();
             });
         }
@@ -157,13 +157,13 @@ export module IsoCountries100 {
                 code2: Buffer;
                 code3: Buffer;
                 name: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getRegionData();
             });
         }
         getSuccessor() {
             const data = Encode(this.client).getSuccessor();
-            return Call<Tx, [string]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getSuccessor();
             });
         }
@@ -171,43 +171,43 @@ export module IsoCountries100 {
             const data = Encode(this.client).getTargetVersion(_targetVer);
             return Call<Tx, {
                 targetAddr: string;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getTargetVersion();
             });
         }
         getVersion() {
             const data = Encode(this.client).getVersion();
-            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [[number, number, number]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersion();
             });
         }
         getVersionMajor() {
             const data = Encode(this.client).getVersionMajor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionMajor();
             });
         }
         getVersionMinor() {
             const data = Encode(this.client).getVersionMinor();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionMinor();
             });
         }
         getVersionPatch() {
             const data = Encode(this.client).getVersionPatch();
-            return Call<Tx, [number]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getVersionPatch();
             });
         }
         isCountry(_country: Buffer) {
             const data = Encode(this.client).isCountry(_country);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isCountry();
             });
         }
         isRegion(_country: Buffer, _code2: Buffer, _code3: Buffer) {
             const data = Encode(this.client).isRegion(_country, _code2, _code3);
-            return Call<Tx, [boolean]>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isRegion();
             });
         }
@@ -215,7 +215,7 @@ export module IsoCountries100 {
             const data = Encode(this.client).setLatest(_latest);
             return Call<Tx, {
                 success: boolean;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setLatest();
             });
         }
@@ -223,13 +223,13 @@ export module IsoCountries100 {
             const data = Encode(this.client).setPredecessor();
             return Call<Tx, {
                 error: number;
-            }>(this.client, this.address, data, (exec: Uint8Array) => {
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setPredecessor();
             });
         }
         transferOwnership(_newOwner: string) {
             const data = Encode(this.client).transferOwnership(_newOwner);
-            return Call<Tx, void>(this.client, this.address, data, (exec: Uint8Array) => {
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferOwnership();
             });
         }

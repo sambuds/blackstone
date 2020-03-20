@@ -1,7 +1,8 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.5;
 
 import "commons-base/BaseErrors.sol";
 import "commons-utils/TypeUtilsLib.sol";
+import "commons-utils/ArrayUtilsLib.sol";
 import "commons-collections/AbstractDataStorage.sol";
 
 import "bpm-model/ProcessDefinition.sol";
@@ -10,8 +11,15 @@ import "bpm-model/DefaultProcessModel.sol";
 contract ProcessDefinitionTest {
 	
 	using TypeUtilsLib for bytes32;
+	using ArrayUtilsLib for bytes32[];
 
 	string constant SUCCESS = "success";
+	string constant functionSigCreateTransition = "createTransition(bytes32,bytes32)";
+	string constant functionSigCreateTransitionConditionForAddress = "createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)";
+	string constant functionSigCreateIntermediateEvent = "createIntermediateEvent(bytes32,uint8,uint8,bytes32,bytes32,address,uint256,string)";
+	string constant functionSigAddBoundaryEvent = "addBoundaryEvent(bytes32,bytes32,uint8,uint8,bytes32,bytes32,address,uint256,string)";
+	string constant functionSigAddBoundaryEventAction = "addBoundaryEventAction(bytes32,bytes32,bytes32,address,address,string)";
+	string constant functionSigCancel = "cancel()";
 
 	// test data
 	bytes32 activity1Id = "activity1";
@@ -19,7 +27,11 @@ contract ProcessDefinitionTest {
 	bytes32 activity3Id = "activity3";
 	bytes32 activity4Id = "activity4";
 	bytes32 activity5Id = "activity5";
+	bytes32 intermediateEvent1Id = "event1";
+	bytes32 boundaryEvent1Id = "boundaryEvent1";
 	bytes32 transition1Id = "transition1";
+	bytes32 gateway1Id = "gateway1";
+	bytes32 gateway2Id = "gateway2";
 	address assignee1 = 0x1040e6521541daB4E7ee57F21226dD17Ce9F0Fb7;
 	address assignee2 = 0x58fd1799aa32deD3F6eac096A1dC77834a446b9C;
 	address assignee3 = 0x68112f9380f75a13f6Ce2d5923F1dB8386EF1339;
@@ -32,14 +44,16 @@ contract ProcessDefinitionTest {
 	bytes32 modelId;
 	string dummyModelFileReference = "{json grant}";
 	bytes32 EMPTY = "";
+	string constant EMPTY_STRING = "";
 
 	/**
 	 * @dev Tests building of the ProcessDefinition and checking for validity along the way
 	 */
 	function testProcessDefinition() external returns (string memory) {
 	
-		//                                              
-		// Graph: activity1 -> activity2 -> XOR SPLIT -/---------------> XOR JOIN -> activity4
+		//                               boundaryEvent1
+		//                              /                
+		// Graph: activity1 -> activity2 -> XOR SPLIT -/---------------> XOR JOIN -> intermediateEvent1 -> activity4
 		//                                            \                /                               
 		//                                             \-> activity3 -/
 
@@ -99,10 +113,10 @@ contract ProcessDefinitionTest {
 		if (success) return "The process definition has duplicate start activities and should not be valid";
 		
 		// Scenario 1: Sequential Process
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransition(bytes32,bytes32)", bytes32("blablaActivity"), activity2Id));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransition, bytes32("blablaActivity"), activity2Id));
 		if (success)
 			return "Creating transition for non-existent source element should revert";
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransition(bytes32,bytes32)", activity1Id, bytes32("blablaActivity")));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransition, activity1Id, bytes32("blablaActivity")));
 		if (success)
 			return "Creating transition for non-existent target element should revert";
 		error = pd.createTransition(activity1Id, activity2Id);
@@ -114,62 +128,111 @@ contract ProcessDefinitionTest {
 
 		// Scenario 2: XOR Split
 		// create gateway to allow valid setup
-		pd.createGateway("gateway1", BpmModel.GatewayType.XOR);
+		pd.createGateway(gateway1Id, BpmModel.GatewayType.XOR);
 		(success, errorMsg) = pd.validate();
 		if (success) return "The process definition has an unreachable gateway and should not be valid";
 
 		// Activity 3
 		error = pd.createActivityDefinition(activity3Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		if (error != BaseErrors.NO_ERROR()) return "Creating activity3 failed";
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransition(bytes32,bytes32)", activity1Id, activity3Id));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransition, activity1Id, activity3Id));
 		if (success)
-			return "Expected REVERT when attempting to overwrite existing outgoing transition";
+			return "Expected REVERT when attempting to overwrite existing outgoing transition on activity1";
+
+		// Intermediate Event 1
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateIntermediateEvent, intermediateEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.IntermediateEventBehavior.CATCHING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
+		if(!success) return "Valid call to create intermediate event 1 should succeed";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateIntermediateEvent, intermediateEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.IntermediateEventBehavior.CATCHING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
+		if (success) return "Creating an intermediate event with the same ID should REVERT";
+
+		bytes memory returnData;
+		// Boundary Event 1
+		(success, returnData) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, activity2Id, boundaryEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32(""), bytes32(""), address(0), uint256(2323232678), EMPTY_STRING));
+		if(!success) return "Valid call to create boundary event 1 should succeed";
+		bytes32 eventId = abi.decode(returnData,(bytes32));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, activity2Id, boundaryEvent1Id, uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
+		if (success) return "Creating a boundary event on the same activity with already taken ID should REVERT";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, bytes32("fakeActivity"), bytes32("newBoundary2"), uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
+		if (success) return "Adding a boundary event to non-existent activity should REVERT";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEvent, gateway1Id, bytes32("newBoundary3"), uint8(BpmModel.EventType.TIMER_TIMESTAMP), uint8(BpmModel.BoundaryEventBehavior.NON_INTERRUPTING), bytes32("targetDate"), bytes32("agreement"), address(0), uint256(0), EMPTY_STRING));
+		if (success) return "Adding a boundary event to a gateway should REVERT";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, eventId, bytes32("agreement"), bytes32(""), address(0), address(0), functionSigCancel));
+		if(!success) return "Creating a valid boundary event action on event1 should succeed";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, bytes32("hubbabubba"), bytes32("agreement"), bytes32(""), address(0), address(0), functionSigCancel));
+		if (success) return "Creating a boundary event action on a non-existant event ID should REVERT";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, eventId, bytes32(""), bytes32(""), address(0), address(0), functionSigCancel));
+		if (success) return "Creating an invalid boundary event action not leading to a target should REVERT";
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigAddBoundaryEventAction, eventId, bytes32("agreement"), bytes32(""), address(0), address(0), EMPTY_STRING));
+		if (success) return "Creating a boundary event action with an empty action function should REVERT";
+
+		(BpmModel.EventType eventType, BpmModel.BoundaryEventBehavior eventBehavior, bytes32 successor) = pd.getBoundaryEventGraphDetails(eventId);
+		if (eventType != BpmModel.EventType.TIMER_TIMESTAMP) return "Retrieval of boundary event did not match event type";
+		if (eventBehavior != BpmModel.BoundaryEventBehavior.NON_INTERRUPTING) return "Retrieval of boundary event did not match event behavior";
+		if (successor != EMPTY) return "Retrieval of boundary event did not match successor";
+
 		// Activity 4
 		error = pd.createActivityDefinition(activity4Id, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		if (error != BaseErrors.NO_ERROR()) return "Creating activity4 failed";
 
 		// check transition condition failure
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)", bytes32("fakeXX"), activity3Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransitionConditionForAddress, bytes32("fakeXX"), activity3Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
 		if (success)
 			return "Adding condition for non-existent gateway should revert";
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)", bytes32("gateway1"), bytes32("fakeXX"), EMPTY, EMPTY, address(0), uint8(0), address(0)));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransitionConditionForAddress, bytes32("gateway1"), bytes32("fakeXX"), EMPTY, EMPTY, address(0), uint8(0), address(0)));
 		if (success)
 			return "Adding condition for non-existent activity should revert";
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)", bytes32("gateway1"), activity3Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransitionConditionForAddress, bytes32("gateway1"), activity3Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
 		if (success)
 			return "Adding condition for non-existent transition connection should revert";
 
 		// establish all missing connections
-		pd.createGateway("gateway2", BpmModel.GatewayType.XOR);
-		pd.createTransition(activity2Id, "gateway1");
-		pd.createTransition("gateway1", "gateway2");
-		pd.createTransition("gateway1", activity3Id);
-		pd.createTransition("gateway2", activity4Id);
+		pd.createGateway(gateway2Id, BpmModel.GatewayType.XOR);
+		pd.createTransition(activity2Id, gateway1Id);
+		pd.createTransition(gateway1Id, gateway2Id);
+		pd.createTransition(gateway1Id, activity3Id);
+		pd.createTransition(gateway2Id, intermediateEvent1Id);
+		pd.createTransition(intermediateEvent1Id, activity4Id);
+
+		(success, errorMsg) = pd.validate();
+		if (!success) return errorMsg.toString(); // process definition should be valid at this point as transition conditions are not part of the validation
 
 		// test transition condition failure when adding condition on default transition
-		pd.setDefaultTransition("gateway1", "gateway2");
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)", bytes32("gateway1"), bytes32("gateway2"), EMPTY, EMPTY, address(0), uint8(0), address(0)));
+		pd.setDefaultTransition(gateway1Id, gateway2Id);
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransitionConditionForAddress, gateway1Id, gateway2Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
 		if (success)
 			return "Adding condition for the default transition should revert";
 
 		// test transition condition success
-		(success, ) = address(pd).call(abi.encodeWithSignature("createTransitionConditionForAddress(bytes32,bytes32,bytes32,bytes32,address,uint8,address)", bytes32("gateway1"), activity3Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
+		(success, ) = address(pd).call(abi.encodeWithSignature(functionSigCreateTransitionConditionForAddress, gateway1Id, activity3Id, EMPTY, EMPTY, address(0), uint8(0), address(0)));
 		if (!success)
 			return "Adding condition on valid transition should succeed";
 
 		//TODO missing test if condition gets deleted when setting activity3 as the default transition
 
-		// check transitions on gateways
+		// check transitions on a gateway
 		bytes32[] memory inputs;
 		bytes32[] memory outputs;
 		bytes32 defaultOutput;
-		(inputs, outputs, , defaultOutput) = pd.getGatewayGraphDetails("gateway1");
+
+		(inputs, outputs, , defaultOutput) = pd.getGatewayGraphDetails(gateway1Id);
 		if (inputs.length != 1) return "XOR SPLIT gateway should have 1 incoming transitions";
 		if (outputs.length != 2) return "XOR SPLIT gateway should have 2 outgoing transitions";
 		if (defaultOutput != "gateway2") return "XOR SPLIT should have gateway2 set as default transition";
+		if (inputs[0] != activity2Id) return "Activity2 should be input to gateway1";
+		if (!outputs.contains(activity3Id)) return "Gateway1 should have activity3 as output";
+		if (!outputs.contains(gateway2Id)) return "Gateway1 should have gateway2 as output";
 
-		(success, errorMsg) = pd.validate();
-		if (!success) return errorMsg.toString(); // process definition should be valid at this point
+		// check transitions on an activity
+		bytes32 predecessor;
+		(predecessor, successor, outputs) = pd.getActivityGraphDetails(activity2Id);
+		if (predecessor != activity1Id) return "Activity2 should have activity1 as predecessor";
+		if (successor != gateway1Id) return "Activity2 should have gateway1 as successor";
+		if (outputs.length != 1) return "Activity2 should have 1 boundary event";
+
+		// check transitions on an intermediate event
+		( , ,predecessor, successor) = pd.getIntermediateEventGraphDetails(intermediateEvent1Id);
+		if (predecessor != gateway2Id) return "IntermediateEvent1 should have gateway2 as predecessor";
+		if (successor != activity4Id) return "IntermediateEvent1 should have activity4 as successor";
 
 		bytes32[] memory activityIds = pd.getActivitiesForParticipant(participantId1);
 		if (activityIds.length != 1)

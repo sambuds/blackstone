@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.5;
 
 import "commons-base/BaseErrors.sol";
 import "commons-base/SystemOwned.sol";
@@ -30,6 +30,7 @@ contract BpmServiceTest {
 
 	using TypeUtilsLib for bytes32;
 	using TypeUtilsLib for bytes;
+	using TypeUtilsLib for uint;
 	using ArrayUtilsLib for bytes32[];
 	using BpmRuntimeLib for BpmRuntime.ProcessGraph;
 	using BpmRuntimeLib for BpmRuntime.ActivityNode;
@@ -37,6 +38,24 @@ contract BpmServiceTest {
 	using BpmRuntimeLib for ProcessDefinition;
 
 	string constant EMPTY_STRING = "";
+	string constant functionSigSetActivityOutDataAsBytes32 = "setActivityOutDataAsBytes32(bytes32,bytes32,bytes32)";
+	string constant functionSigGetActivityInDataAsUint = "getActivityInDataAsUint(bytes32,bytes32)";
+	string constant functionSigRetrieveInDataAge = "retrieveInDataAge()";
+	string constant functionSigExecuteGraph = "executeGraph()";
+	string constant functionSigInitRuntime = "initRuntime()";
+	string constant functionSigStartProcessFromRepository = "startProcessFromRepository(bytes32,bytes32,bytes32)";
+	string constant functionSigGetActivityInDataAsBytes32 = "getActivityInDataAsBytes32(bytes32,bytes32)";
+	string constant functionSigResolveTransitionCondition = "resolveTransitionCondition(bytes32,bytes32)";
+	string constant functionSigSetActivityOutDataAsBool = "setActivityOutDataAsBool(bytes32,bytes32,bool)";
+	string constant functionSigCompleteActivity = "completeActivity(bytes32,address)";
+	string constant functionSigForwardCall = "forwardCall(address,bytes)";
+	string constant functionSigGetActivityInDataAsBool = "getActivityInDataAsBool(bytes32,bytes32)";
+	string constant functionSigSetActivityOutDataAsUint = "setActivityOutDataAsUint(bytes32,bytes32,uint256)";
+	string constant functionSigCompleteActivityWithUintData = "completeActivityWithUintData(bytes32,address,bytes32,uint256)";
+	string constant functionSigTriggerIntermediateEvent = "triggerIntermediateEvent(bytes32)";
+	string constant functionSigTriggerBoundaryEvent = "triggerBoundaryEvent(bytes32,bytes32)";
+	string constant functionSigSetIntermediateEventTimerTarget = "setIntermediateEventTimerTarget(bytes32,uint256)";
+	string constant functionSigSetBoundaryEventTimerTarget = "setBoundaryEventTimerTarget(bytes32,bytes32,uint256)";
 
 	// re-usable variables for return values
 	uint error;
@@ -54,6 +73,9 @@ contract BpmServiceTest {
 	bytes32 transitionId2 = "transition2";
 	bytes32 transitionId3 = "transition3";
 	bytes32 transitionId4 = "transition4";
+	bytes32 eventId1 = "event1";
+	bytes32 marker1 = "marker1";
+	bytes32 marker2 = "marker2";
 
 	address assignee1 = 0x1040e6521541daB4E7ee57F21226dD17Ce9F0Fb7;
 	address assignee2 = 0x58fd1799aa32deD3F6eac096A1dC77834a446b9C;
@@ -151,8 +173,8 @@ contract BpmServiceTest {
 		graph.addActivity(activityId3);
 	
 		// add connections
-		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, activityId2, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, activityId3, BpmModel.ModelElementType.ACTIVITY);
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, activityId2, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, activityId3, BpmModel.ModelElementType.ACTIVITY, "");
 
 		// Test graph connectivity
 		if (graph.activityKeys.length != 3) return "There should be 3 activities in the graph";
@@ -199,6 +221,88 @@ contract BpmServiceTest {
 	}
 
 	/**
+	 * @dev Tests a process graph consisting of sequential activities.
+	 */
+	function testProcessGraphColoredPaths() external returns (string memory) {
+
+		//              coloredPath -> activity3
+		//             /  
+		// Graph: activity1 -> activity2
+		//                          \
+		//                           coloredPath -> activity4
+		graph.clear();
+
+		// add places
+		graph.addActivity(activityId1);
+		graph.addActivity(activityId2);
+		graph.addActivity(activityId3);
+		graph.addActivity(activityId4);
+	
+		// add connections
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, activityId2, BpmModel.ModelElementType.ACTIVITY, EMPTY);
+		bytes32 coloredTransition1Id = graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, activityId3, BpmModel.ModelElementType.ACTIVITY, marker1);
+		bytes32 coloredTransition2Id = graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, activityId4, BpmModel.ModelElementType.ACTIVITY, marker2);
+
+		// Test graph connectivity
+		if (graph.activityKeys.length != 4) return "There should be 4 activities in the graph";
+		if (graph.transitionKeys.length != 3) return "There should be 3 transitions in the graph";
+
+		if (graph.activities[activityId1].node.inputs.length != 0) return "activity1 should have 0 in arcs";
+		if (graph.activities[activityId1].node.outputs.length != 2) return "activity1 should have 2 out arcs with index 1 being colored";
+		if (graph.transitions[graph.transitionKeys[0]].node.inputs.length != 1) return "transition1 should have 1 in arcs";
+		if (graph.transitions[graph.transitionKeys[0]].node.outputs.length != 1) return "transition1 should have 1 out arcs";
+		if (graph.activities[activityId2].node.inputs.length != 1) return "activity2 should have 1 in arcs";
+		if (graph.activities[activityId2].node.outputs.length != 1) return "activity2 should have 1 out arc for the colored transition";
+		if (graph.transitions[graph.transitionKeys[1]].node.inputs.length != 1) return "transition2 should have 1 in arcs";
+		if (graph.transitions[graph.transitionKeys[1]].node.outputs.length != 1) return "transition2 should have 1 out arcs";
+		if (graph.activities[activityId3].node.inputs.length != 1) return "activity3 should have 1 in arcs";
+		if (graph.activities[activityId3].node.outputs.length != 0) return "activity3 should have 0 out arcs";
+		if (graph.transitions[graph.transitionKeys[2]].node.inputs.length != 1) return "transition3 should have 1 in arcs";
+		if (graph.transitions[graph.transitionKeys[2]].node.outputs.length != 1) return "transition3 should have 1 out arcs";
+		if (graph.activities[activityId4].node.inputs.length != 1) return "activity4 should have 1 in arcs";
+		if (graph.activities[activityId4].node.outputs.length != 0) return "activity4 should have 0 out arcs";
+		// check correct colored indexing
+		if (graph.activities[activityId1].node.outputs[0] != graph.activities[activityId2].node.inputs[0]) return "ouputs[0] of activity1 should be the transition to activity2";
+		if (graph.activities[activityId1].node.outputs[1] != graph.activities[activityId3].node.inputs[0]) return "ouputs[1] of activity1 should be the transition to activity3";
+		if (graph.activities[activityId2].node.outputs[0] != graph.activities[activityId4].node.inputs[0]) return "ouputs[0] of activity2 should be the transition to activity4";
+		if (graph.transitions[coloredTransition1Id].marker != marker1) return "ColoredTransition1 should have marker1";
+		if (graph.transitions[coloredTransition2Id].marker != marker2) return "ColoredTransition2 should have marker2";
+
+		// on the first activity, the done marker as well as the colored path are activited
+		graph.activities[activityId1].done = true;
+		// test helper functions
+		if (graph.isTransitionEnabled(graph.transitionKeys[0]) != true) return "Transition1 should be enabled";
+		if (graph.isTransitionEnabled(coloredTransition1Id) != false) return "ColoredTransition1 should not be enabled";
+		if (graph.isTransitionEnabled(coloredTransition2Id) != false) return "ColoredTransition2 should not be enabled";
+		graph.activities[activityId1].markers[marker1] = true;
+		if (graph.isTransitionEnabled(coloredTransition1Id) != true) return "ColoredTransition1 should now be enabled after marker was set";
+
+		// Test token movement
+	  	if (graph.activities[activityId1].done != true) return "State1: activity1 should have 1 completion markers";
+		if (graph.activities[activityId2].done != false) return "State1: activity2 should have 0 completion markers";
+		if (graph.activities[activityId3].done != false) return "State1: activity3 should have 0 completion markers";
+		if (graph.activities[activityId4].done != false) return "State1: activity3 should have 0 completion markers";
+
+		graph.execute();
+
+		if (graph.activities[activityId1].done != false) return "State2: activity1 should have 0 completion markers";
+	  	if (graph.activities[activityId1].markers[marker1] != false) return "State1: activity1 should have no colored marker1 after transition fired";
+		if (graph.activities[activityId2].ready != true) return "State2: activity2 should have 1 activation markers";
+		if (graph.activities[activityId3].ready != true) return "State2: activity3 should have 1 activation markers";
+		if (graph.activities[activityId4].ready != false) return "State2: activity4 should have 0 activation markers";
+
+		graph.activities[activityId2].markers[marker2] = true;
+		if (graph.isTransitionEnabled(coloredTransition2Id) != true) return "Transition3 should be enabled now after marker was set";
+
+		graph.execute();
+
+	  	if (graph.activities[activityId2].markers[marker2] != false) return "State4: activity2 should have no colored marker2 after transition fired";
+		if (graph.activities[activityId4].ready != true) return "State3: activity4 should have 1 activation markers";
+
+		return SUCCESS;
+	}
+
+	/**
 	 * @dev Tests a process graph containing AND split and join transitions
 	 */
 	function testProcessGraphParallelGateway() external returns (string memory) {
@@ -220,12 +324,12 @@ contract BpmServiceTest {
 		graph.addTransition(transitionId2, BpmRuntime.TransitionType.AND);
 	
 		// add connections
-		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY);
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY, "");
 
 		// Test graph connectivity
 		if (graph.activityKeys.length != 4) return "There should be 4 activities in the graph";
@@ -296,14 +400,14 @@ contract BpmServiceTest {
 		graph.addTransition(transitionId2, BpmRuntime.TransitionType.XOR);
 	
 		// add connections
-		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(activityId4, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId5, BpmModel.ModelElementType.ACTIVITY);
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(activityId4, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId5, BpmModel.ModelElementType.ACTIVITY, "");
 
 		// Test graph connectivity
 		if (graph.activityKeys.length != 5) return "There should be 4 activities in the graph";
@@ -381,9 +485,9 @@ contract BpmServiceTest {
 		graph.addTransition(transitionId1, BpmRuntime.TransitionType.XOR);
 	
 		// add connections
-		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY);
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY, "");
 
 		// add TransitionConditionResolver with all transitions false
 		TestConditionResolver resolver = new TestConditionResolver();
@@ -395,7 +499,7 @@ contract BpmServiceTest {
 
 		// test REVERT for XOR gateway with no outputs to fire
 		if (graph.isTransitionEnabled(graph.transitionKeys[0]) != true) return "Transition1 should be enabled";
-		(success, ) = address(this).call(abi.encodeWithSignature("executeGraph()"));
+		(success, ) = address(this).call(abi.encodeWithSignature(functionSigExecuteGraph));
 		if (success)
 			return "Executing transition1 with all outputs false and no default transition should REVERT";
 
@@ -437,18 +541,18 @@ contract BpmServiceTest {
 		graph.addTransition(transitionId4, BpmRuntime.TransitionType.AND);
 	
 		// add connections
-		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, transitionId2, BpmModel.ModelElementType.GATEWAY);
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
 		bytes32 hiddenPlace1Id = graph.activityKeys[graph.activityKeys.length-1]; // an artificial activity was added between the two transitions. Save ID for later
-		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId3, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(activityId4, BpmModel.ModelElementType.ACTIVITY, transitionId3, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, transitionId4, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId3, BpmModel.ModelElementType.GATEWAY, transitionId4, BpmModel.ModelElementType.GATEWAY);
+		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId3, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId3, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(activityId4, BpmModel.ModelElementType.ACTIVITY, transitionId3, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, transitionId4, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId3, BpmModel.ModelElementType.GATEWAY, transitionId4, BpmModel.ModelElementType.GATEWAY, "");
 		bytes32 hiddenPlace2Id = graph.activityKeys[graph.activityKeys.length-1];  // an artificial activity was added between the two transitions. Save ID for later
-		graph.connect(transitionId4, BpmModel.ModelElementType.GATEWAY, activityId5, BpmModel.ModelElementType.ACTIVITY);
+		graph.connect(transitionId4, BpmModel.ModelElementType.GATEWAY, activityId5, BpmModel.ModelElementType.ACTIVITY, "");
 
 		// Test graph connectivity
 		if (graph.activityKeys.length != 7) return "There should be 7 activities in the graph, including two artificial places to connect the gateways";
@@ -549,13 +653,13 @@ contract BpmServiceTest {
 		graph.addTransition(transitionId2, BpmRuntime.TransitionType.XOR);
 	
 		// add connections
-		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, activityId3, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY);
-		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId5, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY);
-		graph.connect(activityId4, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY);
+		graph.connect(activityId1, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId1, BpmModel.ModelElementType.GATEWAY, activityId2, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId2, BpmModel.ModelElementType.ACTIVITY, activityId3, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId3, BpmModel.ModelElementType.ACTIVITY, transitionId2, BpmModel.ModelElementType.GATEWAY, "");
+		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId5, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(transitionId2, BpmModel.ModelElementType.GATEWAY, activityId4, BpmModel.ModelElementType.ACTIVITY, "");
+		graph.connect(activityId4, BpmModel.ModelElementType.ACTIVITY, transitionId1, BpmModel.ModelElementType.GATEWAY, "");
 
 		// Test graph connectivity
 		if (graph.activityKeys.length != 5) return "There should be 5 activities in the graph";
@@ -623,12 +727,14 @@ contract BpmServiceTest {
 	}
 
 	/**
-	 * @dev Tests the creation and configuration of a process instance from a process definition, specifically the tranlation into a BpmRuntime.ProcessGraph
+	 * @dev Tests the creation and configuration of a process instance from a process definition,
+	 * specifically the conversion into a BpmRuntime.ProcessGraph. The test covers regular activities, intermediate events,
+	 * and XOR gateways.
 	 */
 	function testProcessGraphCreation() external returns (string memory) {
 
 		//                                              /--> activity3 -------------\
-		// Graph: activity1 -> activity2 -> XOR SPLIT --                             --> XOR JOIN -> activity6
+		// Graph: activity1 -> event1 -> XOR SPLIT --                             --> XOR JOIN -> activity6
 		//                                              \-> activity4 -> activity5 -/
 
 		bytes32 bytes32Value;
@@ -641,15 +747,15 @@ contract BpmServiceTest {
 		ProcessDefinition pd = ProcessDefinition(addr);
 
 		pd.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
-		pd.createActivityDefinition(activityId2, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createIntermediateEvent(eventId1, BpmModel.EventType.TIMER_DURATION, BpmModel.IntermediateEventBehavior.CATCHING, EMPTY, EMPTY, address(0), 30, EMPTY_STRING); // 30 sec wait event
 		pd.createActivityDefinition(activityId3, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		pd.createActivityDefinition(activityId4, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		pd.createActivityDefinition(activityId5, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		pd.createActivityDefinition(activityId6, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
 		pd.createGateway(transitionId1, BpmModel.GatewayType.XOR);
 		pd.createGateway(transitionId2, BpmModel.GatewayType.XOR);
-		pd.createTransition(activityId1, activityId2);
-		pd.createTransition(activityId2, transitionId1);
+		pd.createTransition(activityId1, eventId1);
+		pd.createTransition(eventId1, transitionId1);
 		pd.createTransition(transitionId1, activityId3);
 		pd.createTransition(transitionId1, activityId4);
 		pd.createTransition(activityId4, activityId5);
@@ -671,7 +777,7 @@ contract BpmServiceTest {
 		if (graph.activityKeys.length != 6) return "There should be 6 activities in the ProcessGraph";
 		if (graph.transitionKeys.length != 4) return "There should be 4 transitions in the ProcessGraph";
 		if (!graph.activities[activityId1].exists) return "Activity1 not found in graph.";
-		if (!graph.activities[activityId2].exists) return "Activity2 not found in graph.";
+		if (!graph.activities[eventId1].exists) return "Event1 not found in graph.";
 		if (!graph.activities[activityId3].exists) return "Activity3 not found in graph.";
 		if (!graph.activities[activityId4].exists) return "Activity4 not found in graph.";
 		if (!graph.activities[activityId5].exists) return "Activity5 not found in graph.";
@@ -683,8 +789,8 @@ contract BpmServiceTest {
 
 		if (graph.activities[activityId1].node.inputs.length != 0) return "Activity1 should have no inputs.";
 		if (graph.activities[activityId1].node.outputs.length != 1) return "Activity1 should have 1 outputs.";
-		if (graph.activities[activityId2].node.inputs.length != 1) return "Activity2 should have 1 inputs.";
-		if (graph.activities[activityId2].node.outputs.length != 1) return "Activity2 should have 1 outputs.";
+		if (graph.activities[eventId1].node.inputs.length != 1) return "Event1 should have 1 inputs.";
+		if (graph.activities[eventId1].node.outputs.length != 1) return "Event1 should have 1 outputs.";
 		if (graph.transitions[transitionId1].node.inputs.length != 1) return "Transition1 should have 1 inputs.";
 		if (graph.transitions[transitionId1].node.outputs.length != 2) return "Transition1 should have 2 outputs.";
 		if (graph.activities[activityId3].node.inputs.length != 1) return "Activity3 should have 1 inputs.";
@@ -698,9 +804,9 @@ contract BpmServiceTest {
 		if (graph.activities[activityId6].node.inputs.length != 1) return "Activity6 should have 1 inputs.";
 		if (graph.activities[activityId6].node.outputs.length != 0) return "Activity6 should have no outputs.";
 
-		if (graph.activities[activityId1].node.outputs[0] != graph.activities[activityId2].node.inputs[0]) return "Activity1 and Activity2 should share the same transition";
-		if (graph.activities[activityId2].node.outputs[0] != graph.activities[activityId3].node.inputs[0]) return "Activity2 and Activity3 should share the same transition";
-		if (graph.activities[activityId2].node.outputs[0] != graph.activities[activityId4].node.inputs[0]) return "Activity2 and Activity4 should share the same transition";
+		if (graph.activities[activityId1].node.outputs[0] != graph.activities[eventId1].node.inputs[0]) return "Activity1 and Event1 should share the same transition";
+		if (graph.activities[eventId1].node.outputs[0] != graph.activities[activityId3].node.inputs[0]) return "Event1 and Activity3 should share the same transition";
+		if (graph.activities[eventId1].node.outputs[0] != graph.activities[activityId4].node.inputs[0]) return "Event1 and Activity4 should share the same transition";
 		if (graph.activities[activityId4].node.outputs[0] != graph.activities[activityId5].node.inputs[0]) return "Activity4 and Activity5 should share the same transition";
 		if (graph.activities[activityId5].node.outputs[0] != graph.activities[activityId6].node.inputs[0]) return "Activity5 and Activity6 should share the same transition";
 		if (graph.activities[activityId3].node.outputs[0] != graph.activities[activityId6].node.inputs[0]) return "Activity3 and Activity6 should share the same transition";
@@ -737,7 +843,7 @@ contract BpmServiceTest {
 
 		pi.initRuntime();
 		if (pi.getState() != uint(BpmRuntime.ProcessInstanceState.ACTIVE)) return "PI should be ACTIVE after runtime initiation";
-		(success, ) = address(pi).call(abi.encodeWithSignature("initRuntime()"));
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigInitRuntime));
 		if (success)
 			return "Attempting to initiate an ACTIVE PI again should revert";
 		// TODO test more error conditions around pi.initRuntime(), e.g. invalid PD, etc.
@@ -765,6 +871,170 @@ contract BpmServiceTest {
 
 		return SUCCESS;
 	}
+
+	/**
+	 * @dev Tests an intermediate wait event
+	 */
+	function testIntermediateEventHandling() external returns (string memory) {
+
+		// Graph: activity1 ->  intermediateEvent1
+		(error, addr) = processModelRepository.createProcessModel("testModelIntermediateEvents", [1,0,0], modelAuthor, false, dummyModelFileReference);
+		if (addr == address(0)) return "Unable to create a ProcessModel";
+		ProcessModel pm = ProcessModel(addr);
+
+		addr = pm.createProcessDefinition("ProcessDefinitionSequence", address(artifactsRegistry));
+		ProcessDefinition pd = ProcessDefinition(addr);
+
+		pd.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createIntermediateEvent(eventId1, BpmModel.EventType.TIMER_DURATION, BpmModel.IntermediateEventBehavior.CATCHING, EMPTY, EMPTY, address(0), 0, "foo duration"); // 30 sec wait event
+		pd.createActivityDefinition(activityId3, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SEND, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createTransition(activityId1, eventId1);
+		pd.createTransition(eventId1, activityId3);
+		
+		// Validate to set the start activity and enable runtime configuration
+		pd.validate();
+
+		TestBpmService service = createNewTestBpmService();
+
+		ProcessInstance pi = service.createDefaultProcessInstance(address(pd), address(this), EMPTY);
+
+		pi.initRuntime();
+
+		service.addProcessInstance(pi);
+		error = pi.execute(service);
+		if (error != BaseErrors.NO_ERROR()) return "Unexpected error executing the PI";
+
+		// intermediate event is waiting for duration
+		bytes32 eventId = pi.getIntermediaEventIdAtIndex(0);
+		if (eventId.isEmpty()) return "Expected intermediateEventInstance for test not found";
+		pi.setIntermediateEventTimerTarget(eventId, block.timestamp);
+		pi.triggerIntermediateEvent(eventId, service);
+
+		// verify DB state
+		if (service.getDatabase().getNumberOfProcessInstances() != 1) return "There should be 1 PI in the DB";
+		if (service.getDatabase().getNumberOfActivityInstances() != 3) return "There should be 3 AIs in the DB";
+		if (pi.getNumberOfActivityInstances() != 2) return "There should be 3 AIs in the ProcessInstance";
+		if (pi.getNumberOfIntermediateEventInstances() != 1) return "There should be 1 IEs in the ProcessInstance";
+
+		// verify individual activity instances
+		uint8 state;
+		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity1 should be completed";
+		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(1));
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity2 should be completed";
+
+		// verify process state
+		if (pi.getState() != uint8(BpmRuntime.ProcessInstanceState.COMPLETED)) return "The PI should be completed";
+
+		return SUCCESS;
+	}
+
+	/**
+	 * @dev Tests boundary events.
+	 * Timer boundary events with chain-based data binding as well as external data binding
+	 * Also covers timer escalation behavior leading to activity/process abort.
+	 */
+	function testBoundaryEventHandling() external returns (string memory) {
+
+		uint activityTimerTarget = block.timestamp+2000;
+		
+		// Graph: activity1 ->  intermediateEvent1
+		(error, addr) = processModelRepository.createProcessModel("testModelBoundaryEvents", [1,0,0], modelAuthor, false, dummyModelFileReference);
+		if (addr == address(0)) return "Unable to create a ProcessModel";
+		ProcessModel pm = ProcessModel(addr);
+
+		addr = pm.createProcessDefinition("TestProcessDefinition", address(artifactsRegistry));
+		ProcessDefinition pd = ProcessDefinition(addr);
+
+		pd.createActivityDefinition(activityId1, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createActivityDefinition(activityId2, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createActivityDefinition(activityId3, BpmModel.ActivityType.TASK, BpmModel.TaskType.NONE, BpmModel.TaskBehavior.SENDRECEIVE, EMPTY, false, EMPTY, EMPTY, EMPTY);
+		pd.createTransition(activityId1, activityId2);
+		pd.createTransition(activityId2, activityId3);
+		// boundary event 1 with duration timer constant
+		pd.addBoundaryEvent(activityId1, "deadline", BpmModel.EventType.TIMER_DURATION, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "", "", address(0), 0, "10 seconds");
+		// boundary event 2 with a 10 sec. constant timer set to blocktime + 10 sec.
+		pd.addBoundaryEvent(activityId2, "deadline", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "", "", address(0), activityTimerTarget, "");
+		// boundary event 3 with timer from process variable
+		pd.addBoundaryEvent(activityId3, "deadline", BpmModel.EventType.TIMER_TIMESTAMP, BpmModel.BoundaryEventBehavior.NON_INTERRUPTING, "deadlineVariable", "", address(0), 0, "");
+
+		// Validate to set the start activity and enable runtime configuration
+		pd.validate();
+
+		TestBpmService service = createNewTestBpmService();
+
+		ProcessInstance pi = service.createDefaultProcessInstance(address(pd), address(this), EMPTY);
+
+		pi.initRuntime();
+
+		service.addProcessInstance(pi);
+		error = pi.execute(service);
+		if (error != BaseErrors.NO_ERROR()) return "Unexpected error executing the PI";
+
+		// Activity 1: External activation. The boundary event on activity 1 should be inactive and data needs to be injected externally
+		// test AI state and event state. test revert from trying to triggering it right away.
+		uint8 state;
+		bytes32 eventInstanceId;
+		bytes32 aiId;
+		uint timerResolution;
+		aiId = pi.getActivityInstanceAtIndex(0);
+		( , , , , , state) = pi.getActivityInstanceData(aiId);
+		if (state != uint8(BpmRuntime.ActivityInstanceState.SUSPENDED)) return "Activity1 should be suspended";
+		eventInstanceId = pi.getBoundaryEventIdAtIndex(aiId, 0);
+		if (eventInstanceId.isEmpty()) return "There should be an event instance at index 0 in Activity1's boundary events";
+		(state, timerResolution) = pi.getBoundaryEventDetails(aiId, eventInstanceId);
+		if (state != uint8(BpmRuntime.BoundaryEventInstanceState.INACTIVE)) return "Activity1's deadline boundary event should be inactive";
+		if (timerResolution > 0) return "Activity1's deadline boundary should be empty due to it being a duration.";
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigTriggerBoundaryEvent, eventInstanceId));
+		if (success) return "It should not be possible to trigger an inactive boundary event instance";
+		activityTimerTarget = block.timestamp+7000;
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigSetBoundaryEventTimerTarget, aiId, eventInstanceId, activityTimerTarget));
+		if (!success) return "Setting the timer target on a duration boundary event instance for the first time should succeed";
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigSetBoundaryEventTimerTarget, aiId, eventInstanceId, uint256(73737373)));
+		if (success) return "Attempt to overwrite an already set timer target of a boundary event should REVERT";
+		(state, timerResolution) = pi.getBoundaryEventDetails(aiId, eventInstanceId);
+		if (state != uint8(BpmRuntime.BoundaryEventInstanceState.ACTIVE)) return "Activity1's deadline boundary event should now be active";
+		if (timerResolution != activityTimerTarget) return "Activity1's deadline target should be set correctly as a uint now";
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigTriggerBoundaryEvent, eventInstanceId));
+		if (success) return "It should should still not be possible to trigger Activity1's deadline event since the target is in the future";
+		// complete AI and verify event instance no longer exists
+		pi.completeActivity(aiId, service);
+		( , , , , , state) = pi.getActivityInstanceData(aiId);
+		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity1 should be completed";
+		if (pi.getNumberOfBoundaryEventInstances(aiId) != 0) return "There should be no boundary event instance remaining after completion of Activity1";
+	
+		aiId = pi.getActivityInstanceAtIndex(1);
+		eventInstanceId = pi.getBoundaryEventIdAtIndex(aiId, 0);
+		if (eventInstanceId.isEmpty()) return "There should be an event instance at index 0 in Activity2's boundary events";
+		(state, timerResolution) = pi.getBoundaryEventDetails(aiId, eventInstanceId);
+		
+		// Activity 2: Automatic activation. The boundary event should already be active based on a constant deadline value
+
+
+
+		// boundary event 3 should not be active as long as the process variable is empty
+		pi.setDataValueAsUint("deadlineVariable", block.timestamp+5000);
+
+		
+
+
+		// Automatic activation 2. The boundary event on activity 2 should be activated and data autmatically bound from conditional data
+
+
+
+
+		// External binding: make an event with a string target date in the PI. Test state and event activation
+
+		// Activation with and without target functions
+		// Activation of different types (interrupting, non-interrupting) 
+
+
+		return SUCCESS;
+	}
+
+	// TODO make two more functions
+	// 1. create a PI with AIs and events in order to test triggering an activity with a future block timestamp (return event IDs!)
+	// 2. Second test function to test external activation and triggering
 
 	/**
 	 * @dev Tests a straight-through process with XOR and AND gateways
@@ -1057,7 +1327,7 @@ contract BpmServiceTest {
 		if (pi.resolveTransitionCondition(transitionId1, activityId2) == false) return "TransitionCondition for Year should be true in first run";
 		if (pi.resolveTransitionCondition(transitionId2, transitionId3) == true) return "TransitionCondition for Lastname should be false in first run using the PD element ID";
 		if (pi.resolveTransitionCondition(transitionId2, keccak256(abi.encodePacked(transitionId2, transitionId3))) == true) return "TransitionCondition for Lastname should be false in first run using the artificial place ID";
-		(success, ) = address(pi).call(abi.encodeWithSignature("resolveTransitionCondition(bytes32,bytes32)", transitionId2, bytes32("fakeIdTTGGSS")));
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigResolveTransitionCondition, transitionId2, bytes32("fakeIdTTGGSS")));
 		if (success)
 			return "Attempting to resolve a condition with an unknown target element should revert";
 
@@ -1166,10 +1436,10 @@ contract BpmServiceTest {
 		if (dataPath != "Message") return "The dataPath after storage resolution for inDataIdGreeting is not correct";
 
 		// test failure scenarios for IN mappings
-		(success, ) = address(pi).call(abi.encodeWithSignature("getActivityInDataAsUint(bytes32,bytes32)", eventApp.activityInstanceId(), eventApp.inDataIdAge()));
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigGetActivityInDataAsUint, eventApp.activityInstanceId(), eventApp.inDataIdAge()));
 		if (success)
 			return "Retrieving IN data outside of the application should REVERT";
-		(success, ) = address(eventApp).call(abi.encodeWithSignature("retrieveInDataAge()"));
+		(success, ) = address(eventApp).call(abi.encodeWithSignature(functionSigRetrieveInDataAge));
 		if (success)
 			return "Retrieving IN data in the event application outside of APPLICATION state should REVERT";
 		// test successful IN mappings set during completion of the event
@@ -1179,7 +1449,7 @@ contract BpmServiceTest {
 			return "IN data inDataIdGreeting not correctly saved during completion of eventApp";
 
 		// trying to set OUT data from here should fail
-		(success, ) = address(pi).call(abi.encodeWithSignature("setActivityOutDataAsBytes32(bytes32,bytes32,bytes32)", eventApp.activityInstanceId(), eventApp.inDataIdAge(), bytes32("bla")));
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigSetActivityOutDataAsBytes32, eventApp.activityInstanceId(), eventApp.inDataIdAge(), bytes32("bla")));
 		if (success)
 			return "Retrieving IN data outside of the application should REVERT";
 		// try completing activity1 from here should fail
@@ -1324,10 +1594,10 @@ contract BpmServiceTest {
 		if (!success) return bytes32Value.toString();
 
 		// test error conditions for creating a process via model and pd IDs
-		(success, ) = address(service).call(abi.encodeWithSignature("startProcessFromRepository(bytes32,bytes32,bytes32)", bytes32("FakeModelIdddddd"), bytes32("UserTaskProcess"), EMPTY));
+		(success, ) = address(service).call(abi.encodeWithSignature(functionSigStartProcessFromRepository, bytes32("FakeModelIdddddd"), bytes32("UserTaskProcess"), EMPTY));
 		if (success)
 			return "Starting a process with invalid model ID should REVERT";
-		(success, ) = address(service).call(abi.encodeWithSignature("startProcessFromRepository(bytes32,bytes32,bytes32)", pm.getId(), bytes32("TotallyFakeProcessssId"), EMPTY));
+		(success, ) = address(service).call(abi.encodeWithSignature(functionSigStartProcessFromRepository, pm.getId(), bytes32("TotallyFakeProcessssId"), EMPTY));
 		if (success)
 			return "Starting a process with invalid process definition ID should REVERT";
 
@@ -1352,17 +1622,17 @@ contract BpmServiceTest {
 		if (addr != address(user1)) return "Activity1 should be assigned to user1";
 
 		// test data mappings via user-assigned task
-		(success, ) = address(pi).call(abi.encodeWithSignature("getActivityInDataAsBytes32(bytes32,bytes32)", pi.getActivityInstanceAtIndex(0), bytes32("nameAccessPoint")));
+		(success, ) = address(pi).call(abi.encodeWithSignature(functionSigGetActivityInDataAsBytes32, pi.getActivityInstanceAtIndex(0), bytes32("nameAccessPoint")));
 		if (success)
 			 return "It should not be possible to access IN data mappings from a non-performer address";
-		returnData = user1.forwardCall(address(pi), abi.encodeWithSignature("getActivityInDataAsBytes32(bytes32,bytes32)", pi.getActivityInstanceAtIndex(0), bytes32("nameAccessPoint")));
+		returnData = user1.forwardCall(address(pi), abi.encodeWithSignature(functionSigGetActivityInDataAsBytes32, pi.getActivityInstanceAtIndex(0), bytes32("nameAccessPoint")));
 		if (returnData.toBytes32() != "Smith") return "IN data mapping Name should return correctly via user1";
-		returnData = user1.forwardCall(address(pi), abi.encodeWithSignature("setActivityOutDataAsBool(bytes32,bytes32,bool)", pi.getActivityInstanceAtIndex(0), bytes32("approvedAccessPoint"), true));
+		returnData = user1.forwardCall(address(pi), abi.encodeWithSignature(functionSigSetActivityOutDataAsBool, pi.getActivityInstanceAtIndex(0), bytes32("approvedAccessPoint"), true));
 
 		// complete user task 1 and check outcome
-		returnData = organizationUser.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(0), service));
+		returnData = organizationUser.forwardCall(address(pi), abi.encodeWithSignature(functionSigCompleteActivity, pi.getActivityInstanceAtIndex(0), service));
 		if (returnData.toUint() != BaseErrors.INVALID_ACTOR()) return "Attempt to complete activity1 by organizationUser should fail";
-		user1.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(0), service));
+		user1.forwardCall(address(pi), abi.encodeWithSignature(functionSigCompleteActivity, pi.getActivityInstanceAtIndex(0), service));
 		( , , , , addr, state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
 		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity1 should be completed";
 		if (addr != address(user1)) return "Activity1 should be completedBy user1";
@@ -1375,22 +1645,22 @@ contract BpmServiceTest {
 		if (addr != address(org1)) return "Activity2 should be assigned to the organization org1";
 
 		// test data mappings via organization-assigned task
-		(success, ) = address(user1).call(abi.encodeWithSignature("forwardCall(address,bytes)", address(pi), abi.encodeWithSignature("getActivityInDataAsBool(bytes32,bytes32)", pi.getActivityInstanceAtIndex(1), bytes32("approvedAccessPoint"))));
+		(success, ) = address(user1).call(abi.encodeWithSignature(functionSigForwardCall, address(pi), abi.encodeWithSignature(functionSigGetActivityInDataAsBool, pi.getActivityInstanceAtIndex(1), bytes32("approvedAccessPoint"))));
 		if (success)
 			return "Accessing IN data mappings from a user account that is not the performer should revert";
-		returnData = organizationUser.forwardCall(address(pi), abi.encodeWithSignature("getActivityInDataAsBool(bytes32,bytes32)", pi.getActivityInstanceAtIndex(1), bytes32("approvedAccessPoint")));
+		returnData = organizationUser.forwardCall(address(pi), abi.encodeWithSignature(functionSigGetActivityInDataAsBool, pi.getActivityInstanceAtIndex(1), bytes32("approvedAccessPoint")));
 		// TODO use "decode" with solidity 0.5
 		if (returnData.length != 32) return "should have length 32";
 		if (uint256(uint8(returnData[31])) != 1) return "IN data mapping Approved should return true via user organizationUser in activity2";
-		organizationUser.forwardCall(address(pi), abi.encodeWithSignature("setActivityOutDataAsUint(bytes32,bytes32,uint256)", pi.getActivityInstanceAtIndex(1), bytes32("ageAccessPoint"), uint(21)));
+		organizationUser.forwardCall(address(pi), abi.encodeWithSignature(functionSigSetActivityOutDataAsUint, pi.getActivityInstanceAtIndex(1), bytes32("ageAccessPoint"), uint(21)));
 
 		// complete user task 2 and check outcome
-		returnData = user1.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(1), service));
+		returnData = user1.forwardCall(address(pi), abi.encodeWithSignature(functionSigCompleteActivity, pi.getActivityInstanceAtIndex(1), service));
 		// TODO use "decode" with solidity 0.5
 		if (returnData.toUint() != BaseErrors.INVALID_ACTOR()) return "Attempt to complete activity2 by user1 should fail";
 
 		// complete the activity here using an OUT data mapping to set the Age
-		returnData = organizationUser.forwardCall(address(pi), abi.encodeWithSignature("completeActivityWithUintData(bytes32,address,bytes32,uint256)", pi.getActivityInstanceAtIndex(1), address(service), bytes32("Age"), uint(21)));
+		returnData = organizationUser.forwardCall(address(pi), abi.encodeWithSignature(functionSigCompleteActivityWithUintData, pi.getActivityInstanceAtIndex(1), address(service), bytes32("Age"), uint(21)));
 		if (returnData.toUint() != BaseErrors.NO_ERROR()) return "Attempt to complete activity2 by organizationUser should be successful";
 		( , , , , addr, state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(1));
 		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity2 should be completed";
@@ -1548,7 +1818,7 @@ contract BpmServiceTest {
 		if (addr != address(user2)) return "Activity1.2 should be assigned to user2";
 
 		// complete first user task
-		user1.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(0), service));
+		user1.forwardCall(address(pi), abi.encodeWithSignature(functionSigCompleteActivity, pi.getActivityInstanceAtIndex(0), service));
 		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(0));
 		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity1.1 should be completed";
 
@@ -1559,7 +1829,7 @@ contract BpmServiceTest {
 		if (service.getNumberOfActivityInstances(address(pi)) != 2) return "There should still be 2 AIs after completing only 1 instance";
 
 		// complete remaining user task
-		user2.forwardCall(address(pi), abi.encodeWithSignature("completeActivity(bytes32,address)", pi.getActivityInstanceAtIndex(1), service));
+		user2.forwardCall(address(pi), abi.encodeWithSignature(functionSigCompleteActivity, pi.getActivityInstanceAtIndex(1), service));
 		( , , , , , state) = pi.getActivityInstanceData(pi.getActivityInstanceAtIndex(1));
 		if (state != uint8(BpmRuntime.ActivityInstanceState.COMPLETED)) return "Activity1.2 should be completed";
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.12;
+pragma solidity ^0.5;
 
 import "bpm-model/BpmModel.sol";
 import "bpm-model/ProcessDefinition.sol";
@@ -11,6 +11,7 @@ library BpmRuntime {
 	
 	enum ProcessInstanceState {CREATED,ABORTED,ACTIVE,COMPLETED}
 	enum ActivityInstanceState {CREATED,ABORTED,COMPLETED,INTERRUPTED,SUSPENDED,APPLICATION}
+    enum BoundaryEventInstanceState {ACTIVE,INACTIVE}
     enum TransitionType {NONE,XOR,OR,AND}
 	
 	struct ProcessInstance {
@@ -21,6 +22,7 @@ library BpmRuntime {
 		ProcessInstanceState state;
         ProcessGraph graph;
         ActivityInstanceMap activities;
+        IntermediateEventInstanceMap intermediateEvents;
 	}
 	
 	struct ActivityInstance {
@@ -33,6 +35,7 @@ library BpmRuntime {
         address performer;
         address completedBy;
 		ActivityInstanceState state;
+        BoundaryEventInstanceMap boundaryEvents;
 	}
 
     struct ActivityInstanceElement {
@@ -43,6 +46,46 @@ library BpmRuntime {
 
     struct ActivityInstanceMap {
         mapping(bytes32 => ActivityInstanceElement) rows;
+        bytes32[] keys;
+    }
+
+	struct IntermediateEventInstance {
+        bytes32 id;
+        bytes32 eventId;
+        address processInstance;
+        uint created;
+        uint completed;
+		ActivityInstanceState state;
+        uint timerTarget;
+	}
+
+    struct IntermediateEventElement {
+        bool exists;
+        uint keyIdx;
+        IntermediateEventInstance value;
+    }
+
+    struct IntermediateEventInstanceMap {
+        mapping(bytes32 => IntermediateEventElement) rows;
+        bytes32[] keys;
+    }
+
+    struct BoundaryEventInstance {
+        bytes32 id;
+        bytes32 boundaryId;
+        bytes32 activityInstanceId;
+        BoundaryEventInstanceState state;
+        uint timerTarget;
+    }
+
+    struct BoundaryEventElement {
+        bool exists;
+        uint keyIdx;
+        BoundaryEventInstance value;
+    }
+
+    struct BoundaryEventInstanceMap {
+        mapping(bytes32 => BoundaryEventElement) rows;
         bytes32[] keys;
     }
 
@@ -70,14 +113,21 @@ library BpmRuntime {
     // Transitions create "activation tokens" and it's the responsibility of the place to signal it's readiness by setting a "completion token".
     // This supports the use of the places as state holders for BPM activities which generally require some form of processing before producing
     // a new token to activate an outgoing transition.
-    // TODO rename to ActivityNode
+    // Additionally, the node contains the capacity for arbitrary activation tokens to be placed as "markers", or "colored"
+    // tokens which allows the creation of dedicated transitions that respond only to a specific marker ID.
     struct ActivityNode {
-        bool ready;
-        bool done;
-        bool exists;
-        uint instancesTotal;
-        uint instancesCompleted;
         Node node;
+        // Ready means that the activity is ready to executed
+        bool ready;
+        // Done means that the activity is completed
+        bool done;
+        // ActivityNode is used in a mapping; when reading non-existent entry is accessed,
+        // solidity will give you an ActivityNode with zeroed fields. The field exists
+        // is set to true if there is actually an entry there.
+        bool exists;
+        uint instancesTotal; // only used for tasks
+        uint instancesCompleted; // only used for tasks
+        mapping (bytes32 => bool) markers; // only used for tasks
     }
 
     // The Transition guides the implementation of different gateway types in the Petri net
@@ -85,6 +135,7 @@ library BpmRuntime {
         Node node;
         bytes32 defaultOutput; // only applies to XOR gateway to set the default transition
         TransitionType transitionType;
+        bytes32 marker;
         bool exists;
     }
 

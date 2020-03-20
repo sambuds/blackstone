@@ -21,11 +21,19 @@
     "csvtojson": "~2.0.8",
     "dotenv": "^8.2.0",
     "grpc": "^1.24.2",
+    "db-migrate": "~0.11.1",
+    "db-migrate-pg": "~0.4.0",
+    "esm": "~3.2.25",
+    "express": "~4.16.4",
+    "express-healthcheck": "~0.1.0",
+    "helmet": "~3.15.0",
+    "iso8601-duration": "^1.2.0",
     "iteray": "~0.5.1",
     "log4js": "~4.5.1",
     "pg": "~7.4.3",
     "ramda": "~0.23.0",
-    "util": "~0.10.3"
+    "util": "~0.10.3",
+    "moment": "^2.24.0"
   },
   "devDependencies": {
     "chai": "^4.2.0",

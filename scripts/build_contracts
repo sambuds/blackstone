@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -e
+
+build_file="build.yaml"
+[[ -z "$1" ]] || build_file="build-$1.yaml"
+
+cd src
+burrow deploy "$build_file"
+cp ../abi.csv ./bin/.

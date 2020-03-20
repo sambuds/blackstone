@@ -1,0 +1,40 @@
+jobs:
+  - name: ErrorsLib
+    build:
+      contract: commons-base/ErrorsLib.sol
+  - name: TypeUtilsLib
+    build:
+      contract: commons-utils/TypeUtilsLib.sol
+  - name: ArrayUtilsLib
+    build:
+      contract: commons-utils/ArrayUtilsLib.sol
+  - name: DataTypesAccess
+    build:
+      contract: commons-utils/DataTypesAccess.sol
+  - name: MappingsLib
+    build:
+      contract: commons-collections/MappingsLib.sol
+  - name: DataStorageUtils
+    build:
+      contract: commons-collections/DataStorageUtils.sol
+  - name: ERC165Utils
+    build:
+      contract: commons-standards/ERC165Utils.sol
+  - name: BpmRuntimeLib
+    build:
+      contract: bpm-runtime/BpmRuntimeLib.sol
+  - name: AgreementsAPI
+    build:
+      contract: agreements/AgreementsAPI.sol
+  - name: DefaultArtifactsRegistry
+    build:
+      contract: commons-management/DefaultArtifactsRegistry.sol
+  - name: DefaultDoug
+    build:
+      contract: commons-management/DefaultDoug.sol
+  - name: DougProxy
+    build:
+      contract: commons-management/DougProxy.sol
+  - name: OwnedDelegateUnstructuredProxy
+    build:
+      contract: commons-management/OwnedDelegateUnstructuredProxy.sol

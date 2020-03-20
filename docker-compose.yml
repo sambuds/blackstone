@@ -1,5 +1,6 @@
-version: "3.4"
+version: "3.7"
 services:
+
   postgres:
     image: postgres:9-alpine
     ports:
@@ -8,29 +9,11 @@ services:
       POSTGRES_USER: blackstone_development
       POSTGRES_PASSWORD: blackstone_development
       POSTGRES_DB: blackstone_development
-  chain:
-    # We could reference hyperledger/burrow:$version directly here but for the sake of only specifying our dependency version
-    # once we do it in the project Dockerfile
-    build: .
-    ports:
-    # GRPC port for most interaction
-    - "10997:10997"
-    # HTTP status/information port
-    - "26658:26658"
-    working_dir: /app/test/chain
-    command:
-    - burrow
-    - start
+
   vent:
-    # Vent is using burrow 0.28.2 which contains the append-only event log feature
-    build:
-      context: .
-      args:
-        BURROW_REPO: hyperledger/burrow
-        BURROW_VERSION: "0.28.2"
+    image: hyperledger/burrow:0.29.5
     restart: always
     command:
-    - burrow
     - vent
     - start
     - --db-adapter
@@ -44,31 +27,47 @@ services:
     - --log-level
     - info
     - --spec
-    - /app/api/sqlsol
+    - /app/sqlsol
     - --abi
-    - /app/contracts/src/bin
+    - /app/src/bin
     volumes:
-      - .:/app
+    - .:/app
     depends_on:
     - postgres
     - chain
 
-  api:
-    build: .
-    env_file:
-      - dev.env
+  chain:
+    image: hyperledger/burrow:0.29.5
     ports:
-    - "3080:3080"
-    - "9222:9222"
-    working_dir: /app
+    # GRPC port for most interaction
+    - "10997:10997"
+    # HTTP status/information port
+    - "26658:26658"
     volumes:
-      - .:/app
-      - node_modules:/app/node_modules
-    depends_on:
-    - postgres
-    - vent
-    - chain
-    command: "npm --prefix api run-script start:dev"
+    - ./src/tests/chain/burrow.toml:/app/burrow.toml
+    - ./src/tests/chain/keys:/app/keys
+    - type: tmpfs
+      target: /app/.burrow
+    working_dir: /app
+    command:
+    - start
 
-volumes:
-  node_modules:
+  contracts:
+    image: hyperledger/burrow:0.29.5
+    volumes:
+    - type: bind
+      source: ./
+      target: /app
+    - type: tmpfs
+      target: /app/src/bin
+    working_dir: /app
+    depends_on:
+    - chain
+    command:
+    - deploy
+    - --chain=chain:10997
+    - --address=${CONTRACTS_DEPLOYMENT_ADDRESS}
+    - --jobs=1
+    - --timeout=30
+    - src/build-test.yaml
+    - src/test.yaml

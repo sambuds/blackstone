@@ -46,6 +46,7 @@ docs.agreements.network/
 # Build artifacts
 assembly
 release
+dist
 
 # Bundles-specific
 contract_bundles

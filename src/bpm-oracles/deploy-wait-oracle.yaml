@@ -1,0 +1,112 @@
+jobs:
+
+#####
+# Retrieve DOUG
+#####
+- name: DOUG
+  query-name:
+    name: DOUG
+    field: data
+
+#####
+# Retrieve Library Addresses
+#####
+- name: ErrorsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ErrorsLib]
+
+- name: TypeUtils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [TypeUtils]
+
+- name: ArrayUtils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ArrayUtils]
+
+- name: MappingsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [MappingsLib]
+
+- name: BpmRuntimeLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [BpmRuntimeLib]
+
+- name: DataStorageUtils
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [DataStorageUtils]
+
+- name: BpmService
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [BpmService]
+
+#####
+# Applications
+#
+# ApplicationTypes Enum: {0=EVENT, 1=SERVICE, 2=WEB}
+#####
+
+- name: ApplicationRegistry
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ApplicationRegistry]
+
+# WaitOracle
+- name: WaitOracleBuild
+  build:
+    contract: wait/WaitOracle.sol
+
+- name: WaitOracle
+  deploy:
+    contract: WaitOracle.bin
+    libraries: ErrorsLib:$ErrorsLib
+    data: [$BpmService]
+
+- name: registerWaitOracle
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["WaitOracle", 0, $WaitOracle, "", ""]
+
+- name: addWaitOracleFrequencyInAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["WaitOracle", "Frequency", 2, 0]
+
+- name: registerWaitOracleInDOUG
+  call:
+    destination: $DOUG
+    bin: DOUG
+    function: deploy
+    data: ["WaitOracle", $WaitOracle]
+
+- name: assertWaitOracleInDOUG
+  assert:
+    key: $registerWaitOracleInDOUG
+    relation: eq
+    val: "true"

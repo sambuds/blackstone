@@ -1,0 +1,35 @@
+# burrow deploy -f $FILE -a $ADDR -e piAddress=$PROCESS_INSTANCE_ADDRESS
+jobs:
+
+#####
+# Retrieve DOUG
+#####
+- name: DOUG
+  query-name:
+      name: DOUG
+      field: data
+
+#####
+# Retrieve Oracle Address
+#####
+- name: DeadlineOracle
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: ["DeadlineOracle"]
+
+- name: DeadlineOracleActivator
+  deploy:
+    contract: DeadlineOracleActivator.sol
+    data: [$DeadlineOracle]
+
+#####
+# Tickle Oracle
+#####
+- name: triggerOracleInProcessInstance
+  call:
+    destination: $DeadlineOracleActivator
+    bin: DeadlineOracleActivator
+    function: triggerOracleInProcessInstance
+    data: [$piAddress]

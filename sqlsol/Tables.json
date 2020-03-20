@@ -1,0 +1,1102 @@
+[
+    {
+      "TableName": "artifacts",
+      "Filter": "Log1Text = 'AN://artifacts'",
+      "FieldMappings": [
+        {
+          "Field": "artifactId",
+          "ColumnName": "artifact_id",
+          "Type": "string",
+          "Primary": true
+        },
+        {
+          "Field": "artifactAddress",
+          "ColumnName": "artifactAddress",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "versionMajor",
+          "ColumnName": "version_major",
+          "Type": "uint8"
+        },
+        {
+          "Field": "versionMinor",
+          "ColumnName": "version_minor",
+          "Type": "uint8"
+        },
+        {
+          "Field": "versionPath",
+          "ColumnName": "version_patch",
+          "Type": "uint8"
+        },
+        {
+          "Field": "activeVersion",
+          "ColumnName": "active_version",
+          "Type": "bool"
+        }
+      ]
+    },
+    {
+      "TableName": "agreements",
+      "Filter": "Log1Text = 'AN://agreements'",
+      "FieldMappings": [
+        {
+          "Field": "agreementAddress",
+          "ColumnName": "agreement_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address"
+        },
+        {
+          "Field": "creator",
+          "ColumnName": "creator",
+          "Type": "address"
+        },
+        {
+          "Field": "owner",
+          "ColumnName": "owner",
+          "Type": "address"
+        },
+        {
+          "Field": "isPrivate",
+          "ColumnName": "is_private",
+          "Type": "bool"
+        },
+        {
+          "Field": "legalState",
+          "ColumnName": "legal_state",
+          "Type": "uint8"
+        },
+        {
+          "Field": "maxEventCount",
+          "ColumnName": "max_event_count",
+          "Type": "uint32"
+        },
+        {
+          "Field": "formationProcessInstance",
+          "ColumnName": "formation_process_instance",
+          "Type": "address"
+        },
+        {
+          "Field": "executionProcessInstance",
+          "ColumnName": "execution_process_instance",
+          "Type": "address"
+        },
+        {
+          "Field": "privateParametersFileReference",
+          "ColumnName": "private_parameters_file_reference",
+          "Type": "string"
+        },
+        {
+          "Field": "eventLogFileReference",
+          "ColumnName": "event_log_file_reference",
+          "Type": "string"
+        },
+        {
+          "Field": "signatureLogFileReference",
+          "ColumnName": "signature_log_file_reference",
+          "Type": "string"
+        }
+      ],
+      "DeleteMarkerField": "__DELETE__"
+    },
+    {
+      "TableName": "agreement_collections",
+      "Filter": "Log1Text = 'AN://agreement-collections'",
+      "FieldMappings": [
+        {
+          "Field": "collectionId",
+          "ColumnName": "collection_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "author",
+          "ColumnName": "author",
+          "Type": "address"
+        },
+        {
+          "Field": "collectionType",
+          "ColumnName": "collection_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "packageId",
+          "ColumnName": "package_id",
+          "Type": "bytes32"
+        }
+      ]
+    },
+    {
+      "TableName": "agreement_to_party",
+      "Filter": "Log1Text = 'AN://agreement-to-party'",
+      "FieldMappings": [
+        {
+          "Field": "agreementAddress",
+          "ColumnName": "agreement_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "party",
+          "ColumnName": "party",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "signedBy",
+          "ColumnName": "signed_by",
+          "Type": "address"
+        },
+        {
+          "Field": "signatureTimestamp",
+          "ColumnName": "signature_timestamp",
+          "Type": "uint"
+        },
+        {
+          "Field": "canceledBy",
+          "ColumnName": "canceled_by",
+          "Type": "address"
+        },
+        {
+          "Field": "cancelationTimestamp",
+          "ColumnName": "cancelation_timestamp",
+          "Type": "uint"
+        }
+      ]
+    },
+    {
+      "TableName": "agreement_to_collection",
+      "Filter": "Log1Text = 'AN://agreement-to-collection'",
+      "FieldMappings": [
+        {
+          "Field": "collectionId",
+          "ColumnName": "collection_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "agreementAddress",
+          "ColumnName": "agreement_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ]
+    },
+    {
+      "TableName": "governing_agreements",
+      "Filter": "Log1Text = 'AN://governing-agreements'",
+      "FieldMappings": [
+        {
+          "Field": "agreementAddress",
+          "ColumnName": "agreement_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "governingAgreementAddress",
+          "ColumnName": "governing_agreement_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ]
+    },
+    {
+      "TableName": "entities_address_scopes",
+      "Filter": "Log1Text = 'AN://entities/address-scopes'",
+      "FieldMappings": [
+        {
+          "Field": "entityAddress",
+          "ColumnName": "entity_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "scopeAddress",
+          "ColumnName": "scope_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "scopeContext",
+          "ColumnName": "scope_context",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "fixedScope",
+          "ColumnName": "fixed_scope",
+          "Type": "bytes32"
+        },
+        {
+          "Field": "dataPath",
+          "ColumnName": "data_path",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "dataStorageId",
+          "ColumnName": "data_storage_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "dataStorage",
+          "ColumnName": "data_storage",
+          "Type": "address"
+        }
+      ]
+    },
+    {
+      "TableName": "archetypes",
+      "Filter": "Log1Text = 'AN://archetypes'",
+      "FieldMappings": [
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "price",
+          "ColumnName": "price",
+          "Type": "uint"
+        },
+        {
+          "Field": "author",
+          "ColumnName": "author",
+          "Type": "address"
+        },
+        {
+          "Field": "owner",
+          "ColumnName": "owner",
+          "Type": "address"
+        },
+        {
+          "Field": "active",
+          "ColumnName": "active",
+          "Type": "bool"
+        },
+        {
+          "Field": "isPrivate",
+          "ColumnName": "is_private",
+          "Type": "bool"
+        },
+        {
+          "Field": "successor",
+          "ColumnName": "successor",
+          "Type": "address"
+        },
+        {
+          "Field": "formationProcessDefinition",
+          "ColumnName": "formation_process_definition",
+          "Type": "address"
+        },
+        {
+          "Field": "executionProcessDefinition",
+          "ColumnName": "execution_process_definition",
+          "Type": "address"
+        }
+      ]
+    },
+    {
+      "TableName": "archetype_packages",
+      "Filter": "Log1Text = 'AN://archetype-packages'",
+      "FieldMappings": [
+        {
+          "Field": "packageId",
+          "ColumnName": "package_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "author",
+          "ColumnName": "author",
+          "Type": "address"
+        },
+        {
+          "Field": "isPrivate",
+          "ColumnName": "is_private",
+          "Type": "bool"
+        },
+        {
+          "Field": "active",
+          "ColumnName": "active",
+          "Type": "bool"
+        }
+      ]
+    },
+    {
+      "TableName": "archetype_to_package",
+      "Filter": "Log1Text = 'AN://archetype-to-package'",
+      "FieldMappings": [
+        {
+          "Field": "packageId",
+          "ColumnName": "package_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ]
+    },
+    {
+      "TableName": "archetype_parameters",
+      "Filter": "Log1Text = 'AN://archetypes/parameters'",
+      "FieldMappings": [
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "parameterName",
+          "ColumnName": "parameter_name",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "parameterType",
+          "ColumnName": "parameter_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "position",
+          "ColumnName": "position",
+          "Type": "uint256"
+        }
+      ]
+    },
+    {
+      "TableName": "archetype_documents",
+      "Filter": "Log1Text = 'AN://archetypes/documents'",
+      "FieldMappings": [
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "documentKey",
+          "ColumnName": "document_key",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "documentReference",
+          "ColumnName": "document_reference",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "TableName": "archetype_jurisdictions",
+      "Filter": "Log1Text = 'AN://archetypes/jurisdictions'",
+      "FieldMappings": [
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "country",
+          "ColumnName": "country",
+          "Type": "bytes2",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "region",
+          "ColumnName": "region",
+          "Type": "bytes32",
+          "Primary": true
+        }
+      ]
+    },
+    {
+      "TableName": "governing_archetypes",
+      "Filter": "Log1Text = 'AN://governing-archetypes'",
+      "FieldMappings": [
+        {
+          "Field": "archetypeAddress",
+          "ColumnName": "archetype_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "governingArchetypeAddress",
+          "ColumnName": "governing_archetype_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ]
+    },
+    {
+      "TableName": "activity_instances",
+      "Filter": "Log1Text = 'AN://activity-instances'",
+      "FieldMappings": [
+        {
+          "Field": "activityInstanceId",
+          "ColumnName": "activity_instance_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "activityId",
+          "ColumnName": "activity_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "processInstanceAddress",
+          "ColumnName": "process_instance_address",
+          "Type": "address"
+        },
+        {
+          "Field": "created",
+          "ColumnName": "created",
+          "Type": "uint"
+        },
+        {
+          "Field": "completed",
+          "ColumnName": "completed",
+          "Type": "uint"
+        },
+        {
+          "Field": "performer",
+          "ColumnName": "performer",
+          "Type": "address"
+        },
+        {
+          "Field": "completedBy",
+          "ColumnName": "completed_by",
+          "Type": "address"
+        },
+        {
+          "Field": "state",
+          "ColumnName": "state",
+          "Type": "uint8"
+        }
+      ]
+    },
+    {
+      "TableName": "process_instances",
+      "Filter": "Log1Text = 'AN://process-instances'",
+      "FieldMappings": [
+        {
+          "Field": "processInstanceAddress",
+          "ColumnName": "process_instance_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "processDefinitionAddress",
+          "ColumnName": "process_definition_address",
+          "Type": "address"
+        },
+        {
+          "Field": "state",
+          "ColumnName": "state",
+          "Type": "uint8"
+        },
+        {
+          "Field": "startedBy",
+          "ColumnName": "started_by",
+          "Type": "address"
+        }
+      ]
+    },
+    {
+      "TableName": "activity_definitions",
+      "Filter": "Log1Text = 'AN://activity-definitions'",
+      "FieldMappings": [
+        {
+          "Field": "activityId",
+          "ColumnName": "activity_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "processDefinitionAddress",
+          "ColumnName": "process_definition_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "activityType",
+          "ColumnName": "activity_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "taskType",
+          "ColumnName": "task_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "taskBehavior",
+          "ColumnName": "task_behavior",
+          "Type": "uint8"
+        },
+        {
+          "Field": "participantId",
+          "ColumnName": "participant_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "multiInstance",
+          "ColumnName": "multi_instance",
+          "Type": "bool"
+        },
+        {
+          "Field": "application",
+          "ColumnName": "application",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "subProcessModelId",
+          "ColumnName": "sub_process_model_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "subProcessPefinitionId",
+          "ColumnName": "sub_process_definition_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        }
+      ]
+    },
+    {
+      "TableName": "process_definitions",
+      "Filter": "Log1Text = 'AN://process-definitions'",
+      "FieldMappings": [
+        {
+          "Field": "processDefinitionAddress",
+          "ColumnName": "process_definition_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "id",
+          "ColumnName": "id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "interfaceId",
+          "ColumnName": "interface_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "modelId",
+          "ColumnName": "model_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "modelAddress",
+          "ColumnName": "model_address",
+          "Type": "address"
+        }
+      ]
+    },
+    {
+      "TableName": "process_models",
+      "Filter": "Log1Text = 'AN://process-models'",
+      "FieldMappings": [
+        {
+          "Field": "modelAddress",
+          "ColumnName": "model_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "id",
+          "ColumnName": "id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "versionMajor",
+          "ColumnName": "version_major",
+          "Type": "uint"
+        },
+        {
+          "Field": "versionMinor",
+          "ColumnName": "version_minor",
+          "Type": "uint"
+        },
+        {
+          "Field": "versionPatch",
+          "ColumnName": "version_patch",
+          "Type": "uint"
+        },
+        {
+          "Field": "author",
+          "ColumnName": "author",
+          "Type": "address"
+        },
+        {
+          "Field": "isPrivate",
+          "ColumnName": "is_private",
+          "Type": "bool"
+        },
+        {
+          "Field": "active",
+          "ColumnName": "active",
+          "Type": "bool"
+        },
+        {
+          "Field": "modelFileReference",
+          "ColumnName": "model_file_reference",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "TableName": "process_model_data",
+      "Filter": "Log1Text = 'AN://process-model-data'",
+      "FieldMappings": [
+        {
+          "Field": "dataId",
+          "ColumnName": "data_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "dataPath",
+          "ColumnName": "data_path",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "modelAddress",
+          "ColumnName": "model_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "parameterType",
+          "ColumnName": "parameter_type",
+          "Type": "uint"
+        }
+      ]
+    },
+    {
+      "TableName": "data_mappings",
+      "Filter": "Log1Text = 'AN://data-mappings'",
+      "FieldMappings": [
+        {
+          "Field": "processDefinitionAddress",
+          "ColumnName": "process_definition_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "activityId",
+          "ColumnName": "activity_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "dataMappingId",
+          "ColumnName": "data_mapping_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "dataPath",
+          "ColumnName": "data_path",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "dataStorageId",
+          "ColumnName": "data_storage_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "dataStorage",
+          "ColumnName": "data_storage",
+          "Type": "address"
+        },
+        {
+          "Field": "direction",
+          "ColumnName": "direction",
+          "Type": "uint",
+          "Primary": true
+        }
+      ]
+    },
+    {
+      "TableName": "applications",
+      "Filter": "Log1Text = 'AN://applications'",
+      "FieldMappings": [
+        {
+          "Field": "applicationId",
+          "ColumnName": "application_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "applicationType",
+          "ColumnName": "application_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "location",
+          "ColumnName": "location",
+          "Type": "address"
+        },
+        {
+          "Field": "method",
+          "ColumnName": "method",
+          "Type": "bytes4"
+        },
+        {
+          "Field": "webForm",
+          "ColumnName": "web_form",
+          "Type": "bytes32",
+          "BytesToString": true
+        }
+      ]
+    },
+    {
+      "TableName": "application_access_points",
+      "Filter": "Log1Text = 'AN://applications/access-points'",
+      "FieldMappings": [
+        {
+          "Field": "applicationId",
+          "ColumnName": "application_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "accessPointId",
+          "ColumnName": "access_point_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "dataType",
+          "ColumnName": "data_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "direction",
+          "ColumnName": "direction",
+          "Type": "uint8"
+        }
+      ]
+    },
+    {
+      "TableName": "data_storage",
+      "Filter": "Log1Text = 'AN://data-storage'",
+      "FieldMappings": [
+        {
+          "Field": "storageAddress",
+          "ColumnName": "storage_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "dataId",
+          "ColumnName": "data_id",
+          "Type": "bytes32",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "boolValue",
+          "ColumnName": "bool_value",
+          "Type": "bool"
+        },
+        {
+          "Field": "uintValue",
+          "ColumnName": "uint_value",
+          "Type": "uint"
+        },
+        {
+          "Field": "intValue",
+          "ColumnName": "int_value",
+          "Type": "int"
+        },
+        {
+          "Field": "bytes32Value",
+          "ColumnName": "bytes32_value",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "addressValue",
+          "ColumnName": "address_value",
+          "Type": "address"
+        },
+        {
+          "Field": "stringValue",
+          "ColumnName": "string_value",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "TableName": "countries",
+      "Filter": "Log1Text = 'AN://standards/countries'",
+      "FieldMappings": [
+        {
+          "Field": "name",
+          "ColumnName": "name",
+          "Type": "string",
+          "Primary": true
+        },
+        {
+          "Field": "alpha2",
+          "ColumnName": "alpha2",
+          "Type": "bytes2",
+          "BytesToString": true
+        },
+        {
+          "Field": "alpha3",
+          "ColumnName": "alpha3",
+          "Type": "bytes3",
+          "BytesToString": true
+        },
+        {
+          "Field": "m49",
+          "ColumnName": "m49",
+          "Type": "bytes3",
+          "BytesToString": true
+        }
+      ]
+    },
+    {
+      "TableName": "regions",
+      "Filter": "Log1Text = 'AN://standards/regions'",
+      "FieldMappings": [
+        {
+          "Field": "country",
+          "ColumnName": "country",
+          "Type": "bytes2",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "region",
+          "ColumnName": "region",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "code2",
+          "ColumnName": "code2",
+          "Type": "bytes2",
+          "BytesToString": true
+        },
+        {
+          "Field": "code3",
+          "ColumnName": "code3",
+          "Type": "bytes3",
+          "BytesToString": true
+        },
+        {
+          "Field": "name",
+          "ColumnName": "name",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "TableName": "currencies",
+      "Filter": "Log1Text = 'AN://standards/currencies'",
+      "FieldMappings": [
+        {
+          "Field": "alpha3",
+          "ColumnName": "alpha3",
+          "Type": "bytes3",
+          "Primary": true,
+          "BytesToString": true
+        },
+        {
+          "Field": "m49",
+          "ColumnName": "m49",
+          "Type": "bytes3",
+          "BytesToString": true
+        },
+        {
+          "Field": "name",
+          "ColumnName": "name",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "TableName": "parameter_types",
+      "Filter": "Log1Text = 'AN://parameter-types'",
+      "FieldMappings": [
+        {
+          "Field": "parameterType",
+          "ColumnName": "parameter_type",
+          "Type": "uint",
+          "Primary": true
+        },
+        {
+          "Field": "label",
+          "ColumnName": "label",
+          "Type": "string"
+        }
+      ]
+    },
+    {
+      "TableName": "user_accounts",
+      "Filter": "Log1Text = 'AN://user-accounts'",
+      "FieldMappings": [
+        {
+          "Field": "userAccountAddress",
+          "ColumnName": "user_account_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "owner",
+          "ColumnName": "owner",
+          "Type": "address"
+        }
+      ]
+    },
+    {
+      "TableName": "organization_accounts",
+      "Filter": "Log1Text = 'AN://organization-accounts'",
+      "FieldMappings": [
+        {
+          "Field": "organizationAddress",
+          "ColumnName": "organization_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "approverCount",
+          "ColumnName": "approver_count",
+          "Type": "uint"
+        },
+        {
+          "Field": "organizationId",
+          "ColumnName": "organization_id",
+          "Type": "bytes32"
+        }
+      ]
+    },
+    {
+      "TableName": "organization_approvers",
+      "Filter": "Log1Text = 'AN://organizations/approvers'",
+      "FieldMappings": [
+        {
+          "Field": "organizationAddress",
+          "ColumnName": "organization_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "approverAddress",
+          "ColumnName": "approver_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ],
+      "DeleteMarkerField": "__DELETE__"
+    },
+    {
+      "TableName": "organization_users",
+      "Filter": "Log1Text = 'AN://organizations/users'",
+      "FieldMappings": [
+        {
+          "Field": "organizationAddress",
+          "ColumnName": "organization_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "userAddress",
+          "ColumnName": "user_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ],
+      "DeleteMarkerField": "__DELETE__"
+    },
+    {
+      "TableName": "organization_departments",
+      "Filter": "Log1Text = 'AN://organizations/departments'",
+      "FieldMappings": [
+        {
+          "Field": "organizationAddress",
+          "ColumnName": "organization_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "departmentId",
+          "ColumnName": "department_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "userCount",
+          "ColumnName": "user_count",
+          "Type": "uint"
+        }
+      ],
+      "DeleteMarkerField": "__DELETE__"
+    },
+    {
+      "TableName": "department_users",
+      "Filter": "Log1Text = 'AN://departments/users'",
+      "FieldMappings": [
+        {
+          "Field": "organizationAddress",
+          "ColumnName": "organization_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "departmentId",
+          "ColumnName": "department_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "userAddress",
+          "ColumnName": "user_address",
+          "Type": "address",
+          "Primary": true
+        }
+      ],
+      "DeleteMarkerField": "__DELETE__"
+    }
+  ]
+  

@@ -276,6 +276,21 @@ export module ProcessInstance {
                 return Decode(this.client, exec).getArtifactVersionPatch();
             });
         }
+        getBoundaryEventDetails(_activityInstanceId: Buffer, _eventInstanceId: Buffer) {
+            const data = Encode(this.client).getBoundaryEventDetails(_activityInstanceId, _eventInstanceId);
+            return Call<Tx, {
+                state: number;
+                timerResolution: number;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getBoundaryEventDetails();
+            });
+        }
+        getBoundaryEventIdAtIndex(_activityInstanceId: Buffer, _idx: number) {
+            const data = Encode(this.client).getBoundaryEventIdAtIndex(_activityInstanceId, _idx);
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getBoundaryEventIdAtIndex();
+            });
+        }
         getDataIdAtIndex(_index: number) {
             const data = Encode(this.client).getDataIdAtIndex(_index);
             return Call<Tx, {
@@ -357,6 +372,12 @@ export module ProcessInstance {
                 return Decode(this.client, exec).getDataValueAsUintArray();
             });
         }
+        getIntermediaEventIdAtIndex(_idx: number) {
+            const data = Encode(this.client).getIntermediaEventIdAtIndex(_idx);
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getIntermediaEventIdAtIndex();
+            });
+        }
         getNumberOfActivityInstances() {
             const data = Encode(this.client).getNumberOfActivityInstances();
             return Call<Tx, {
@@ -365,10 +386,26 @@ export module ProcessInstance {
                 return Decode(this.client, exec).getNumberOfActivityInstances();
             });
         }
+        getNumberOfBoundaryEventInstances(_activityInstanceId: Buffer) {
+            const data = Encode(this.client).getNumberOfBoundaryEventInstances(_activityInstanceId);
+            return Call<Tx, {
+                size: number;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getNumberOfBoundaryEventInstances();
+            });
+        }
         getNumberOfData() {
             const data = Encode(this.client).getNumberOfData();
             return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getNumberOfData();
+            });
+        }
+        getNumberOfIntermediateEventInstances() {
+            const data = Encode(this.client).getNumberOfIntermediateEventInstances();
+            return Call<Tx, {
+                size: number;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getNumberOfIntermediateEventInstances();
             });
         }
         getProcessDefinition() {
@@ -485,6 +522,12 @@ export module ProcessInstance {
                 return Decode(this.client, exec).setAddressScope();
             });
         }
+        setBoundaryEventTimerTarget(_activityInstanceId: Buffer, _eventInstanceId: Buffer, _targetTime: number) {
+            const data = Encode(this.client).setBoundaryEventTimerTarget(_activityInstanceId, _eventInstanceId, _targetTime);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).setBoundaryEventTimerTarget();
+            });
+        }
         setDataValueAsAddress(_id: Buffer, _value: string) {
             const data = Encode(this.client).setDataValueAsAddress(_id, _value);
             return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
@@ -551,10 +594,28 @@ export module ProcessInstance {
                 return Decode(this.client, exec).setDataValueAsUintArray();
             });
         }
+        setIntermediateEventTimerTarget(_eventInstanceId: Buffer, _targetTime: number) {
+            const data = Encode(this.client).setIntermediateEventTimerTarget(_eventInstanceId, _targetTime);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).setIntermediateEventTimerTarget();
+            });
+        }
         transferOwnership(_newOwner: string) {
             const data = Encode(this.client).transferOwnership(_newOwner);
             return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).transferOwnership();
+            });
+        }
+        triggerBoundaryEvent(_activityInstanceId: Buffer, _eventInstanceId: Buffer) {
+            const data = Encode(this.client).triggerBoundaryEvent(_activityInstanceId, _eventInstanceId);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).triggerBoundaryEvent();
+            });
+        }
+        triggerIntermediateEvent(_eventInstanceId: Buffer, _service: string) {
+            const data = Encode(this.client).triggerIntermediateEvent(_eventInstanceId, _service);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).triggerIntermediateEvent();
             });
         }
     }
@@ -596,6 +657,8 @@ export module ProcessInstance {
         getArtifactVersionMajor: () => { return client.encode("57E0EBCA", []); },
         getArtifactVersionMinor: () => { return client.encode("7589ADB7", []); },
         getArtifactVersionPatch: () => { return client.encode("F085F6DD", []); },
+        getBoundaryEventDetails: (_activityInstanceId: Buffer, _eventInstanceId: Buffer) => { return client.encode("C516BF34", ["bytes32", "bytes32"], _activityInstanceId, _eventInstanceId); },
+        getBoundaryEventIdAtIndex: (_activityInstanceId: Buffer, _idx: number) => { return client.encode("9AA22E8E", ["bytes32", "uint256"], _activityInstanceId, _idx); },
         getDataIdAtIndex: (_index: number) => { return client.encode("374B7D22", ["uint256"], _index); },
         getDataType: (_id: Buffer) => { return client.encode("31502F13", ["bytes32"], _id); },
         getDataValueAsAddress: (_id: Buffer) => { return client.encode("F364E379", ["bytes32"], _id); },
@@ -609,8 +672,11 @@ export module ProcessInstance {
         getDataValueAsString: (_id: Buffer) => { return client.encode("D2E8A0FA", ["bytes32"], _id); },
         getDataValueAsUint: (_id: Buffer) => { return client.encode("35CE1BD1", ["bytes32"], _id); },
         getDataValueAsUintArray: (_id: Buffer) => { return client.encode("31185182", ["bytes32"], _id); },
+        getIntermediaEventIdAtIndex: (_idx: number) => { return client.encode("6380B16B", ["uint256"], _idx); },
         getNumberOfActivityInstances: () => { return client.encode("D8619D80", []); },
+        getNumberOfBoundaryEventInstances: (_activityInstanceId: Buffer) => { return client.encode("F895D327", ["bytes32"], _activityInstanceId); },
         getNumberOfData: () => { return client.encode("5666F9AC", []); },
+        getNumberOfIntermediateEventInstances: () => { return client.encode("8CE5C7C9", []); },
         getProcessDefinition: () => { return client.encode("FCFB0C58", []); },
         getStartedBy: () => { return client.encode("A0826E06", []); },
         getState: () => { return client.encode("1865C57D", []); },
@@ -629,6 +695,7 @@ export module ProcessInstance {
         setActivityOutDataAsString: (_activityInstanceId: Buffer, _dataMappingId: Buffer, _value: string) => { return client.encode("C6059FB1", ["bytes32", "bytes32", "string"], _activityInstanceId, _dataMappingId, _value); },
         setActivityOutDataAsUint: (_activityInstanceId: Buffer, _dataMappingId: Buffer, _value: number) => { return client.encode("2A819AF7", ["bytes32", "bytes32", "uint256"], _activityInstanceId, _dataMappingId, _value); },
         setAddressScope: (_address: string, _context: Buffer, _fixedScope: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string) => { return client.encode("6D73C8BC", ["address", "bytes32", "bytes32", "bytes32", "bytes32", "address"], _address, _context, _fixedScope, _dataPath, _dataStorageId, _dataStorage); },
+        setBoundaryEventTimerTarget: (_activityInstanceId: Buffer, _eventInstanceId: Buffer, _targetTime: number) => { return client.encode("FA8B2493", ["bytes32", "bytes32", "uint256"], _activityInstanceId, _eventInstanceId, _targetTime); },
         setDataValueAsAddress: (_id: Buffer, _value: string) => { return client.encode("68E78011", ["bytes32", "address"], _id, _value); },
         setDataValueAsAddressArray: (_id: Buffer, _value: string[]) => { return client.encode("641375AD", ["bytes32", "address[]"], _id, _value); },
         setDataValueAsBool: (_id: Buffer, _value: boolean) => { return client.encode("1CB35540", ["bytes32", "bool"], _id, _value); },
@@ -640,7 +707,10 @@ export module ProcessInstance {
         setDataValueAsString: (_id: Buffer, _value: string) => { return client.encode("1C5422D2", ["bytes32", "string"], _id, _value); },
         setDataValueAsUint: (_id: Buffer, _value: number) => { return client.encode("F3420D1A", ["bytes32", "uint256"], _id, _value); },
         setDataValueAsUintArray: (_id: Buffer, _value: number[]) => { return client.encode("94E38624", ["bytes32", "uint256[]"], _id, _value); },
-        transferOwnership: (_newOwner: string) => { return client.encode("F2FDE38B", ["address"], _newOwner); }
+        setIntermediateEventTimerTarget: (_eventInstanceId: Buffer, _targetTime: number) => { return client.encode("12CBCC5F", ["bytes32", "uint256"], _eventInstanceId, _targetTime); },
+        transferOwnership: (_newOwner: string) => { return client.encode("F2FDE38B", ["address"], _newOwner); },
+        triggerBoundaryEvent: (_activityInstanceId: Buffer, _eventInstanceId: Buffer) => { return client.encode("B3D0006D", ["bytes32", "bytes32"], _activityInstanceId, _eventInstanceId); },
+        triggerIntermediateEvent: (_eventInstanceId: Buffer, _service: string) => { return client.encode("79EA5A6E", ["bytes32", "address"], _eventInstanceId, _service); }
     }; };
     export const Decode = <Tx>(client: Provider<Tx>, data: Uint8Array) => { return {
         ERC165_ID_Address_Scopes: (): [Buffer] => { return client.decode(data, ["bytes4"]); },
@@ -748,6 +818,14 @@ export module ProcessInstance {
         getArtifactVersionMajor: (): [number] => { return client.decode(data, ["uint8"]); },
         getArtifactVersionMinor: (): [number] => { return client.decode(data, ["uint8"]); },
         getArtifactVersionPatch: (): [number] => { return client.decode(data, ["uint8"]); },
+        getBoundaryEventDetails: (): {
+            state: number;
+            timerResolution: number;
+        } => {
+            const [state, timerResolution] = client.decode(data, ["uint8", "uint256"]);
+            return { state: state, timerResolution: timerResolution };
+        },
+        getBoundaryEventIdAtIndex: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         getDataIdAtIndex: (): {
             error: number;
             id: Buffer;
@@ -767,13 +845,26 @@ export module ProcessInstance {
         getDataValueAsString: (): [string] => { return client.decode(data, ["string"]); },
         getDataValueAsUint: (): [number] => { return client.decode(data, ["uint256"]); },
         getDataValueAsUintArray: (): [number[]] => { return client.decode(data, ["uint256[]"]); },
+        getIntermediaEventIdAtIndex: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         getNumberOfActivityInstances: (): {
             size: number;
         } => {
             const [size] = client.decode(data, ["uint256"]);
             return { size: size };
         },
+        getNumberOfBoundaryEventInstances: (): {
+            size: number;
+        } => {
+            const [size] = client.decode(data, ["uint256"]);
+            return { size: size };
+        },
         getNumberOfData: (): [number] => { return client.decode(data, ["uint256"]); },
+        getNumberOfIntermediateEventInstances: (): {
+            size: number;
+        } => {
+            const [size] = client.decode(data, ["uint256"]);
+            return { size: size };
+        },
         getProcessDefinition: (): [string] => { return client.decode(data, ["address"]); },
         getStartedBy: (): [string] => { return client.decode(data, ["address"]); },
         getState: (): [number] => { return client.decode(data, ["uint8"]); },
@@ -804,6 +895,7 @@ export module ProcessInstance {
         setActivityOutDataAsString: (): void => { return; },
         setActivityOutDataAsUint: (): void => { return; },
         setAddressScope: (): void => { return; },
+        setBoundaryEventTimerTarget: (): void => { return; },
         setDataValueAsAddress: (): void => { return; },
         setDataValueAsAddressArray: (): void => { return; },
         setDataValueAsBool: (): void => { return; },
@@ -815,6 +907,9 @@ export module ProcessInstance {
         setDataValueAsString: (): void => { return; },
         setDataValueAsUint: (): void => { return; },
         setDataValueAsUintArray: (): void => { return; },
-        transferOwnership: (): void => { return; }
+        setIntermediateEventTimerTarget: (): void => { return; },
+        transferOwnership: (): void => { return; },
+        triggerBoundaryEvent: (): void => { return; },
+        triggerIntermediateEvent: (): void => { return; }
     }; };
 }

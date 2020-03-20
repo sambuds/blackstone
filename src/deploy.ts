@@ -318,24 +318,21 @@ async function RegisterAgreementClasses(client: Client,
     await doug.register(objectClassActiveAgreement, defaultActiveAgreementImplementationAddress);
 }
 
-async function DeployOne<Addr>(cli: Client, addr: Promise<Addr>, call: (client: Client, arg1: Addr) => Promise<Addr>): Promise<Addr> {
-    return await call(cli, await addr);
-}
-
-async function DeployTwo(cli: Client, addr1: Promise<string>, addr2: Promise<string>, call: (client: Client, arg1: string, arg2: string) => Promise<string>): Promise<string> {
-    return await call(cli, await addr1, await addr2);
+async function DeployLib(cli: Client, call: (client: Client, ...arg1: string[]) => Promise<string>, ...addr: Promise<string>[]): Promise<string> {
+    const addresses = await Promise.all(addr);
+    return call(cli, ...addresses);
 }
 
 export async function Deploy(client: Client) {
     const errorsLib = ErrorsLib.Deploy(client);
     const typeUtilsLib = TypeUtilsLib.Deploy(client);
     const arrayUtilsLib = ArrayUtilsLib.Deploy(client);
-    const mappingsLib = DeployTwo(client, arrayUtilsLib, typeUtilsLib, MappingsLib.Deploy)
-    const dataStorageUtils = DeployTwo(client, errorsLib, typeUtilsLib, DataStorageUtils.Deploy)
+    const mappingsLib = DeployLib(client, MappingsLib.Deploy, arrayUtilsLib, typeUtilsLib)
+    const dataStorageUtils = DeployLib(client, DataStorageUtils.Deploy, errorsLib, typeUtilsLib)
     const eRC165Utils = ERC165Utils.Deploy(client);
-    const bpmModelLib = DeployTwo(client, errorsLib, dataStorageUtils, BpmModelLib.Deploy)
-    const bpmRuntimeLib = DeployTwo(client, errorsLib, eRC165Utils, BpmRuntimeLib.Deploy)
-    const agreementsAPI = DeployOne(client, eRC165Utils, AgreementsAPI.Deploy)
+    const bpmModelLib = DeployLib(client, BpmModelLib.Deploy, errorsLib, dataStorageUtils)
+    const bpmRuntimeLib = DeployLib(client, BpmRuntimeLib.Deploy, errorsLib, dataStorageUtils, eRC165Utils, typeUtilsLib)
+    const agreementsAPI = DeployLib(client, AgreementsAPI.Deploy, eRC165Utils)
     const dataTypesAccess = DataTypesAccess.Deploy(client)
 
     const doug = await DeployDOUG(client, errorsLib, eRC165Utils);
@@ -353,8 +350,8 @@ export async function Deploy(client: Client) {
         RegisterProcessModelRepositoryClasses(client, doug, processModelRepository, bpmService, errorsLib, mappingsLib, arrayUtilsLib, bpmModelLib, typeUtilsLib),
         RegisterApplicationRepositoryClasses(client, doug, applicationRegistry, bpmService, errorsLib, bpmRuntimeLib, dataStorageUtils),
         RegisterAgreementClasses(client, doug, activeAgreementRegistry, archetypeRegistry, bpmService, errorsLib, mappingsLib, eRC165Utils, arrayUtilsLib, agreementsAPI, dataStorageUtils),
-        DeployOne(client, errorsLib, IsoCountries100.Deploy),
-        DeployOne(client, errorsLib, IsoCurrencies100.Deploy),
+        DeployLib(client, IsoCountries100.Deploy, errorsLib),
+        DeployLib(client, IsoCurrencies100.Deploy, errorsLib),
     ]);
     
     // Applications

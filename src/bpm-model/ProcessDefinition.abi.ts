@@ -60,6 +60,20 @@ export module ProcessDefinition {
                 return Decode(this.client, exec).EVENT_ID_PROCESS_DEFINITIONS();
             });
         }
+        addBoundaryEvent(_activityId: Buffer, _id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) {
+            const data = Encode(this.client).addBoundaryEvent(_activityId, _id, _eventType, _eventBehavior, _dataPath, _dataStorageId, _dataStorage, _timestampConstant, _durationConstant);
+            return Call<Tx, {
+                eventId: Buffer;
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).addBoundaryEvent();
+            });
+        }
+        addBoundaryEventAction(_id: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _fixedTarget: string, _actionFunction: string) {
+            const data = Encode(this.client).addBoundaryEventAction(_id, _dataPath, _dataStorageId, _dataStorage, _fixedTarget, _actionFunction);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).addBoundaryEventAction();
+            });
+        }
         addProcessInterfaceImplementation(_model: string, _interfaceId: Buffer) {
             const data = Encode(this.client).addProcessInterfaceImplementation(_model, _interfaceId);
             return Call<Tx, {
@@ -94,6 +108,12 @@ export module ProcessDefinition {
             const data = Encode(this.client).createGateway(_id, _type);
             return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createGateway();
+            });
+        }
+        createIntermediateEvent(_id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) {
+            const data = Encode(this.client).createIntermediateEvent(_id, _eventType, _eventBehavior, _dataPath, _dataStorageId, _dataStorage, _timestampConstant, _durationConstant);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).createIntermediateEvent();
             });
         }
         createTransition(_source: Buffer, _target: Buffer) {
@@ -178,6 +198,7 @@ export module ProcessDefinition {
             return Call<Tx, {
                 predecessor: Buffer;
                 successor: Buffer;
+                boundaryEventIds: Buffer[];
             }>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getActivityGraphDetails();
             });
@@ -204,6 +225,16 @@ export module ProcessDefinition {
             const data = Encode(this.client).getArtifactVersionPatch();
             return Call<Tx, [number]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getArtifactVersionPatch();
+            });
+        }
+        getBoundaryEventGraphDetails(_id: Buffer) {
+            const data = Encode(this.client).getBoundaryEventGraphDetails(_id);
+            return Call<Tx, {
+                eventType: number;
+                eventBehavior: number;
+                successor: Buffer;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getBoundaryEventGraphDetails();
             });
         }
         getElementType(_id: Buffer) {
@@ -260,6 +291,17 @@ export module ProcessDefinition {
             const data = Encode(this.client).getInDataMappingKeys(_activityId);
             return Call<Tx, [Buffer[]]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getInDataMappingKeys();
+            });
+        }
+        getIntermediateEventGraphDetails(_id: Buffer) {
+            const data = Encode(this.client).getIntermediateEventGraphDetails(_id);
+            return Call<Tx, {
+                eventType: number;
+                eventBehavior: number;
+                predecessor: Buffer;
+                successor: Buffer;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getIntermediateEventGraphDetails();
             });
         }
         getModel() {
@@ -334,6 +376,18 @@ export module ProcessDefinition {
                 return Decode(this.client, exec).getStartActivity();
             });
         }
+        getTimerEventDetails(_id: Buffer) {
+            const data = Encode(this.client).getTimerEventDetails(_id);
+            return Call<Tx, {
+                dataPath: Buffer;
+                dataStorageId: Buffer;
+                dataStorage: string;
+                timestampConstant: number;
+                durationConstant: string;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getTimerEventDetails();
+            });
+        }
         implementsProcessInterface(_model: string, _interfaceId: Buffer) {
             const data = Encode(this.client).implementsProcessInterface(_model, _interfaceId);
             return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -385,6 +439,8 @@ export module ProcessDefinition {
         EVENT_ID_ACTIVITY_DEFINITIONS: () => { return client.encode("AF201B90", []); },
         EVENT_ID_DATA_MAPPINGS: () => { return client.encode("6983067E", []); },
         EVENT_ID_PROCESS_DEFINITIONS: () => { return client.encode("BA840F64", []); },
+        addBoundaryEvent: (_activityId: Buffer, _id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) => { return client.encode("581654CE", ["bytes32", "bytes32", "uint8", "uint8", "bytes32", "bytes32", "address", "uint256", "string"], _activityId, _id, _eventType, _eventBehavior, _dataPath, _dataStorageId, _dataStorage, _timestampConstant, _durationConstant); },
+        addBoundaryEventAction: (_id: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _fixedTarget: string, _actionFunction: string) => { return client.encode("89A392E6", ["bytes32", "bytes32", "bytes32", "address", "address", "string"], _id, _dataPath, _dataStorageId, _dataStorage, _fixedTarget, _actionFunction); },
         addProcessInterfaceImplementation: (_model: string, _interfaceId: Buffer) => { return client.encode("F001897D", ["address", "bytes32"], _model, _interfaceId); },
         compareArtifactVersion: (_other: string, _version: [number, number, number]) => {
             if (typeof _other === "string")
@@ -395,6 +451,7 @@ export module ProcessDefinition {
         createActivityDefinition: (_id: Buffer, _activityType: number, _taskType: number, _behavior: number, _assignee: Buffer, _multiInstance: boolean, _application: Buffer, _subProcessModelId: Buffer, _subProcessDefinitionId: Buffer) => { return client.encode("BDE6EF58", ["bytes32", "uint8", "uint8", "uint8", "bytes32", "bool", "bytes32", "bytes32", "bytes32"], _id, _activityType, _taskType, _behavior, _assignee, _multiInstance, _application, _subProcessModelId, _subProcessDefinitionId); },
         createDataMapping: (_activityId: Buffer, _direction: number, _accessPath: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string) => { return client.encode("C5930E29", ["bytes32", "uint8", "bytes32", "bytes32", "bytes32", "address"], _activityId, _direction, _accessPath, _dataPath, _dataStorageId, _dataStorage); },
         createGateway: (_id: Buffer, _type: number) => { return client.encode("32D37781", ["bytes32", "uint8"], _id, _type); },
+        createIntermediateEvent: (_id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) => { return client.encode("D1CC1BDE", ["bytes32", "uint8", "uint8", "bytes32", "bytes32", "address", "uint256", "string"], _id, _eventType, _eventBehavior, _dataPath, _dataStorageId, _dataStorage, _timestampConstant, _durationConstant); },
         createTransition: (_source: Buffer, _target: Buffer) => { return client.encode("6C28E102", ["bytes32", "bytes32"], _source, _target); },
         createTransitionConditionForAddress: (_gatewayId: Buffer, _targetElementId: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _operator: number, _value: string) => { return client.encode("DD2F3E84", ["bytes32", "bytes32", "bytes32", "bytes32", "address", "uint8", "address"], _gatewayId, _targetElementId, _dataPath, _dataStorageId, _dataStorage, _operator, _value); },
         createTransitionConditionForBool: (_gatewayId: Buffer, _targetElementId: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _operator: number, _value: boolean) => { return client.encode("3D34113E", ["bytes32", "bytes32", "bytes32", "bytes32", "address", "uint8", "bool"], _gatewayId, _targetElementId, _dataPath, _dataStorageId, _dataStorage, _operator, _value); },
@@ -411,6 +468,7 @@ export module ProcessDefinition {
         getArtifactVersionMajor: () => { return client.encode("57E0EBCA", []); },
         getArtifactVersionMinor: () => { return client.encode("7589ADB7", []); },
         getArtifactVersionPatch: () => { return client.encode("F085F6DD", []); },
+        getBoundaryEventGraphDetails: (_id: Buffer) => { return client.encode("57CFEF6C", ["bytes32"], _id); },
         getElementType: (_id: Buffer) => { return client.encode("9C4AA334", ["bytes32"], _id); },
         getGatewayGraphDetails: (_id: Buffer) => { return client.encode("79238A10", ["bytes32"], _id); },
         getId: () => { return client.encode("5D1CA631", []); },
@@ -418,6 +476,7 @@ export module ProcessDefinition {
         getInDataMappingDetails: (_activityId: Buffer, _id: Buffer) => { return client.encode("E3621D20", ["bytes32", "bytes32"], _activityId, _id); },
         getInDataMappingIdAtIndex: (_activityId: Buffer, _idx: number) => { return client.encode("15064393", ["bytes32", "uint256"], _activityId, _idx); },
         getInDataMappingKeys: (_activityId: Buffer) => { return client.encode("3D9A2352", ["bytes32"], _activityId); },
+        getIntermediateEventGraphDetails: (_id: Buffer) => { return client.encode("48191A40", ["bytes32"], _id); },
         getModel: () => { return client.encode("A0BFA1E0", []); },
         getModelId: () => { return client.encode("361A5672", []); },
         getNumberOfActivities: () => { return client.encode("006129D9", []); },
@@ -428,6 +487,7 @@ export module ProcessDefinition {
         getOutDataMappingIdAtIndex: (_activityId: Buffer, _idx: number) => { return client.encode("3796D3A4", ["bytes32", "uint256"], _activityId, _idx); },
         getOutDataMappingKeys: (_activityId: Buffer) => { return client.encode("08A104AA", ["bytes32"], _activityId); },
         getStartActivity: () => { return client.encode("0F9C79E2", []); },
+        getTimerEventDetails: (_id: Buffer) => { return client.encode("20DE4E0A", ["bytes32"], _id); },
         implementsProcessInterface: (_model: string, _interfaceId: Buffer) => { return client.encode("77198ED4", ["address", "bytes32"], _model, _interfaceId); },
         initialize: (_id: Buffer, _model: string) => { return client.encode("6910E334", ["bytes32", "address"], _id, _model); },
         isValid: () => { return client.encode("BB5D40EB", []); },
@@ -441,6 +501,13 @@ export module ProcessDefinition {
         EVENT_ID_ACTIVITY_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         EVENT_ID_DATA_MAPPINGS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         EVENT_ID_PROCESS_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
+        addBoundaryEvent: (): {
+            eventId: Buffer;
+        } => {
+            const [eventId] = client.decode(data, ["bytes32"]);
+            return { eventId: eventId };
+        },
+        addBoundaryEventAction: (): void => { return; },
         addProcessInterfaceImplementation: (): {
             error: number;
         } => {
@@ -461,6 +528,7 @@ export module ProcessDefinition {
         },
         createDataMapping: (): void => { return; },
         createGateway: (): void => { return; },
+        createIntermediateEvent: (): void => { return; },
         createTransition: (): {
             error: number;
         } => {
@@ -492,14 +560,23 @@ export module ProcessDefinition {
         getActivityGraphDetails: (): {
             predecessor: Buffer;
             successor: Buffer;
+            boundaryEventIds: Buffer[];
         } => {
-            const [predecessor, successor] = client.decode(data, ["bytes32", "bytes32"]);
-            return { predecessor: predecessor, successor: successor };
+            const [predecessor, successor, boundaryEventIds] = client.decode(data, ["bytes32", "bytes32", "bytes32[]"]);
+            return { predecessor: predecessor, successor: successor, boundaryEventIds: boundaryEventIds };
         },
         getArtifactVersion: (): [[number, number, number]] => { return client.decode(data, ["uint8[3]"]); },
         getArtifactVersionMajor: (): [number] => { return client.decode(data, ["uint8"]); },
         getArtifactVersionMinor: (): [number] => { return client.decode(data, ["uint8"]); },
         getArtifactVersionPatch: (): [number] => { return client.decode(data, ["uint8"]); },
+        getBoundaryEventGraphDetails: (): {
+            eventType: number;
+            eventBehavior: number;
+            successor: Buffer;
+        } => {
+            const [eventType, eventBehavior, successor] = client.decode(data, ["uint8", "uint8", "bytes32"]);
+            return { eventType: eventType, eventBehavior: eventBehavior, successor: successor };
+        },
         getElementType: (): [number] => { return client.decode(data, ["uint8"]); },
         getGatewayGraphDetails: (): {
             inputs: Buffer[];
@@ -530,6 +607,15 @@ export module ProcessDefinition {
         },
         getInDataMappingIdAtIndex: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         getInDataMappingKeys: (): [Buffer[]] => { return client.decode(data, ["bytes32[]"]); },
+        getIntermediateEventGraphDetails: (): {
+            eventType: number;
+            eventBehavior: number;
+            predecessor: Buffer;
+            successor: Buffer;
+        } => {
+            const [eventType, eventBehavior, predecessor, successor] = client.decode(data, ["uint8", "uint8", "bytes32", "bytes32"]);
+            return { eventType: eventType, eventBehavior: eventBehavior, predecessor: predecessor, successor: successor };
+        },
         getModel: (): [string] => { return client.decode(data, ["address"]); },
         getModelId: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         getNumberOfActivities: (): [number] => { return client.decode(data, ["uint256"]); },
@@ -564,6 +650,16 @@ export module ProcessDefinition {
         getOutDataMappingIdAtIndex: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         getOutDataMappingKeys: (): [Buffer[]] => { return client.decode(data, ["bytes32[]"]); },
         getStartActivity: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
+        getTimerEventDetails: (): {
+            dataPath: Buffer;
+            dataStorageId: Buffer;
+            dataStorage: string;
+            timestampConstant: number;
+            durationConstant: string;
+        } => {
+            const [dataPath, dataStorageId, dataStorage, timestampConstant, durationConstant] = client.decode(data, ["bytes32", "bytes32", "address", "uint256", "string"]);
+            return { dataPath: dataPath, dataStorageId: dataStorageId, dataStorage: dataStorage, timestampConstant: timestampConstant, durationConstant: durationConstant };
+        },
         implementsProcessInterface: (): [boolean] => { return client.decode(data, ["bool"]); },
         initialize: (): void => { return; },
         isValid: (): [boolean] => { return client.decode(data, ["bool"]); },

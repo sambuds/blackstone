@@ -16,6 +16,10 @@ dotenv := $(shell grep -v '^\#' .env | sed 's/=/?=/')
 exp:=export
 $(foreach pair,$(dotenv),$(eval $(exp) $(pair)))
 
+.PHONY: build_contracts
+build_contracts:
+	cd src && burrow deploy build.yaml
+
 # Just run the dependency services in docker compose
 .PHONY: docker_run_deps
 docker_run_deps:
@@ -40,3 +44,8 @@ build_ci_image:
 .PHONY: push_ci_image
 push_ci_image: build_ci_image
 	docker push ${CI_IMAGE}
+
+.PHONY: publish
+publish: build_contracts
+	yarn build
+	yarn publish --new-version --access public

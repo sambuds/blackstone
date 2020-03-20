@@ -1,6 +1,6 @@
 {
   "name": "@monax/blackstone",
-  "version": "0.6.0-rc7",
+  "version": "0.6.0",
   "description": "Contract Suite for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,8 +10,8 @@
   "scripts": {
     "build:solidity": "pushd src && ts-node build.ts && popd",
     "build:compile": "rm -rf dist && tsc --build",
-    "build:static": "rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src/ dist/",
-    "build": "npm run build:solidity && npm run build:compile && npm run build:static",
+    "build:static": "rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src/ dist/ && cp -r src/bin dist/bin",
+    "build": "yarn run build:solidity && yarn run build:compile && yarn run build:static",
     "test": "mocha -r ts-node/register --file 'src/tests/before.ts' 'src/tests/*.test.ts'"
   },
   "license": "SEE LICENSE IN LICENSE.md",
@@ -22,13 +22,14 @@
     "@types/pg": "^7.14.1",
     "dotenv": "^8.2.0",
     "ethereumjs-abi": "^0.6.8",
+    "global": "^4.4.0",
     "google-protobuf": "^3.11.2",
     "grpc": "^1.24.2",
     "log4js": "^6.1.1",
     "pg": "^7.18.1",
     "sha3": "^2.1.1",
-    "ts-node": "^8.6.2",
-    "typescript": "^3.7.5"
+    "ts-node": "^8.7.0",
+    "typescript": "^3.8.3"
   },
   "repository": {
     "type": "git",
@@ -39,11 +40,11 @@
   },
   "homepage": "https://agreements.network",
   "devDependencies": {
-    "chai": "^4.2.0",
-    "chai-as-promised": "^7.1.1",
     "@types/chai": "^4.2.8",
     "@types/chai-as-promised": "^7.1.2",
     "@types/mocha": "^7.0.1",
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "nanoid": "^2.1.10",
     "random-id": "^1.0.3",
     "solc": "0.5.12",

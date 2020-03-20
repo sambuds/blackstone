@@ -1,12 +1,15 @@
 {
   "name": "@monax/blackstone",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "Contract Suite for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "mocha": {
     "bail": false
   },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build:solidity": "pushd src && ts-node build.ts && popd",
     "build:compile": "rm -rf dist && tsc --build",

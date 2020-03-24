@@ -74,10 +74,6 @@ jobs:
 #####
 
 # Addition
-- name: AdditionBuild
-  build:
-    contract: numbers-and-math/Addition.sol
-
 - name: Addition
   deploy:
     contract: Addition.bin
@@ -112,10 +108,6 @@ jobs:
     data: ["Numbers - Addition", "numberOut", 8, 1]
 
 # Subtraction
-- name: SubtractionBuild
-  build:
-    contract: numbers-and-math/Subtraction.sol
-
 - name: Subtraction
   deploy:
     contract: Subtraction.bin
@@ -150,10 +142,6 @@ jobs:
     data: ["Numbers - Subtraction", "numberOut", 8, 1]
 
 # Multiplication
-- name: MultiplicationBuild
-  build:
-    contract: numbers-and-math/Multiplication.sol
-
 - name: Multiplication
   deploy:
     contract: Multiplication.bin
@@ -188,10 +176,6 @@ jobs:
     data: ["Numbers - Multiplication", "numberOut", 8, 1]
 
 # Division
-- name: DivisionBuild
-  build:
-    contract: numbers-and-math/Division.sol
-
 - name: Division
   deploy:
     contract: Division.bin
@@ -226,10 +210,6 @@ jobs:
     data: ["Numbers - Division", "numberOut", 8, 1]
 
 # Zeroize
-- name: MakeZeroBuild
-  build:
-    contract: numbers-and-math/MakeZero.sol
-
 - name: MakeZero
   deploy:
     contract: MakeZero.bin
@@ -250,10 +230,6 @@ jobs:
     data: ["Numbers - Zeroize", "numberOut", 8, 1]
 
 # Increment
-- name: IncrementBuild
-  build:
-    contract: numbers-and-math/Increment.sol
-
 - name: Increment
   deploy:
     contract: Increment.bin
@@ -281,10 +257,6 @@ jobs:
     data: ["Numbers - Increment", "numberOut", 8, 1]
 
 # Decrement
-- name: DecrementBuild
-  build:
-    contract: numbers-and-math/Decrement.sol
-
 - name: Decrement
   deploy:
     contract: Decrement.bin
@@ -312,10 +284,6 @@ jobs:
     data: ["Numbers - Decrement", "numberOut", 8, 1]
 
 # IsEqual
-- name: IsEqualBuild
-  build:
-    contract: numbers-and-math/IsEqual.sol
-
 - name: IsEqual
   deploy:
     contract: IsEqual.bin
@@ -350,10 +318,6 @@ jobs:
     data: ["Numbers - IsEqual", "result", 1, 1]
 
 # IsNotEqual
-- name: IsNotEqualBuild
-  build:
-    contract: numbers-and-math/IsNotEqual.sol
-
 - name: IsNotEqual
   deploy:
     contract: IsNotEqual.bin
@@ -388,10 +352,6 @@ jobs:
     data: ["Numbers - IsNotEqual", "result", 1, 1]
 
 # GreaterThan
-- name: GreaterThanBuild
-  build:
-    contract: numbers-and-math/GreaterThan.sol
-
 - name: GreaterThan
   deploy:
     contract: GreaterThan.bin
@@ -426,10 +386,6 @@ jobs:
     data: ["Numbers - GreaterThan", "result", 1, 1]
 
 # GreaterThanEqual
-- name: GreaterThanEqualBuild
-  build:
-    contract: numbers-and-math/GreaterThanEqual.sol
-
 - name: GreaterThanEqual
   deploy:
     contract: GreaterThanEqual.bin
@@ -464,10 +420,6 @@ jobs:
     data: ["Numbers - GreaterThanEqual", "result", 1, 1]
 
 # LessThan
-- name: LessThanBuild
-  build:
-    contract: numbers-and-math/LessThan.sol
-
 - name: LessThan
   deploy:
     contract: LessThan.bin
@@ -502,10 +454,6 @@ jobs:
     data: ["Numbers - LessThan", "result", 1, 1]
 
 # LessThanEqual
-- name: LessThanEqualBuild
-  build:
-    contract: numbers-and-math/LessThanEqual.sol
-
 - name: LessThanEqual
   deploy:
     contract: LessThanEqual.bin

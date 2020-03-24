@@ -1,6 +1,6 @@
 {
   "name": "@monax/blackstone",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "description": "Contract Suite for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -12,7 +12,7 @@
   ],
   "scripts": {
     "build:solidity": "pushd src && ts-node build.ts && popd",
-    "build:compile": "rm -rf dist && tsc --build",
+    "build:compile": "tsc --build",
     "build:static": "rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src/ dist/ && cp -r src/bin dist/bin",
     "build": "yarn run build:solidity && yarn run build:compile && yarn run build:static",
     "test": "mocha -r ts-node/register --file 'src/tests/before.ts' 'src/tests/*.test.ts'"

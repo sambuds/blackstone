@@ -21,6 +21,10 @@ jobs:
   meta:
     file: deploy-module-Standards.yaml
 
+- name: Math
+  meta:
+    file: deploy-module-Math.yaml
+
 - name: Data
   meta:
     file: deploy-init-data.yaml

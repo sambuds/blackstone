@@ -16,6 +16,11 @@ dotenv := $(shell grep -v '^\#' .env | sed 's/=/?=/')
 exp:=export
 $(foreach pair,$(dotenv),$(eval $(exp) $(pair)))
 
+.PHONY: clean
+clean:
+	rm -rf dist
+	rm -rf src/bin
+
 .PHONY: build_contracts
 build_contracts:
 	cd src && burrow deploy build.yaml
@@ -46,6 +51,6 @@ push_ci_image: build_ci_image
 	docker push ${CI_IMAGE}
 
 .PHONY: publish
-publish: build_contracts
+publish: clean build_contracts
 	yarn build
-	yarn publish --new-version --access public
+	yarn publish --access public

@@ -301,3 +301,71 @@ jobs:
     bin: DOUG
     function: register
     data: [$ObjectClassProcessInstance, $DefaultProcessInstanceImplementation]
+
+# DeadlineOracle
+- name: DeadlineOracle
+  deploy:
+    contract: DeadlineOracle.bin
+    libraries: ErrorsLib:$ErrorsLib
+    data: [$BpmService]
+
+- name: registerDeadlineOracle
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["Deadline Oracle", 0, $DeadlineOracle, "", ""]
+
+- name: addDeadlineOracleDeadlineInAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["Deadline Oracle", "Deadline", 8, 0]
+
+- name: registerDeadlineOracleInDOUG
+  call:
+    destination: $DOUG
+    bin: DOUG
+    function: deploy
+    data: ["DeadlineOracle", $DeadlineOracle]
+
+- name: assertDeadlineOracleInDOUG
+  assert:
+    key: $registerDeadlineOracleInDOUG
+    relation: eq
+    val: "true"
+
+# WaitOracle
+- name: WaitOracle
+  deploy:
+    contract: WaitOracle.bin
+    libraries: ErrorsLib:$ErrorsLib
+    data: [$BpmService]
+
+- name: registerWaitOracle
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addApplication
+    data: ["WaitOracle", 0, $WaitOracle, "", ""]
+
+- name: addWaitOracleFrequencyInAccessPoint
+  call:
+    destination: $ApplicationRegistry
+    bin: ApplicationRegistry
+    function: addAccessPoint
+    data: ["WaitOracle", "Frequency", 2, 0]
+
+- name: registerWaitOracleInDOUG
+  call:
+    destination: $DOUG
+    bin: DOUG
+    function: deploy
+    data: ["WaitOracle", $WaitOracle]
+
+- name: assertWaitOracleInDOUG
+  assert:
+    key: $registerWaitOracleInDOUG
+    relation: eq
+    val: "true"

@@ -44,3 +44,9 @@ jobs:
   - name: BpmServiceDb
     build:
       contract: bpm-runtime/BpmServiceDb.sol
+  - name: DeadlineOracle
+    build:
+      contract: bpm-oracles/DeadlineOracle.sol
+  - name: WaitOracle
+    build:
+      contract: bpm-oracles/WaitOracle.sol

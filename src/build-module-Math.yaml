@@ -1,0 +1,66 @@
+jobs:
+
+# Addition
+- name: AdditionBuild
+  build:
+    contract: commons-math/Addition.sol
+
+# Subtraction
+- name: SubtractionBuild
+  build:
+    contract: commons-math/Subtraction.sol
+
+# Multiplication
+- name: MultiplicationBuild
+  build:
+    contract: commons-math/Multiplication.sol
+
+# Division
+- name: DivisionBuild
+  build:
+    contract: commons-math/Division.sol
+
+# Zeroize
+- name: MakeZeroBuild
+  build:
+    contract: commons-math/MakeZero.sol
+
+# Increment
+- name: IncrementBuild
+  build:
+    contract: commons-math/Increment.sol
+
+# Decrement
+- name: DecrementBuild
+  build:
+    contract: commons-math/Decrement.sol
+
+# IsEqual
+- name: IsEqualBuild
+  build:
+    contract: commons-math/IsEqual.sol
+
+# IsNotEqual
+- name: IsNotEqualBuild
+  build:
+    contract: commons-math/IsNotEqual.sol
+
+# GreaterThan
+- name: GreaterThanBuild
+  build:
+    contract: commons-math/GreaterThan.sol
+
+# GreaterThanEqual
+- name: GreaterThanEqualBuild
+  build:
+    contract: commons-math/GreaterThanEqual.sol
+
+# LessThan
+- name: LessThanBuild
+  build:
+    contract: commons-math/LessThan.sol
+
+# LessThanEqual
+- name: LessThanEqualBuild
+  build:
+    contract: commons-math/LessThanEqual.sol

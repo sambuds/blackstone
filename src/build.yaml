@@ -23,6 +23,10 @@ jobs:
   meta:
     file: build-module-Standards.yaml
 
+- name: module-Math
+  meta:
+    file: build-module-Math.yaml
+
 - name: test-agreements
   meta:
     file: build-test-agreements.yaml

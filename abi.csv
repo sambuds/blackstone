@@ -18,3 +18,5 @@ DataTypesAccess
 BpmRuntimeLib
 IsoCountries
 IsoCurrencies
+DeadlineOracle
+WaitOracle

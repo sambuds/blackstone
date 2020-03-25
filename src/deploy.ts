@@ -45,7 +45,7 @@ import { AgreementSignatureCheck } from './agreements/AgreementSignatureCheck.ab
 import { ApplicationRegistry } from './bpm-runtime/ApplicationRegistry.abi';
 import { TotalCounterCheck } from './active-agreements/TotalCounterCheck.abi';
 import { SetToNameRegistry } from './lib/utils';
-import { Contracts } from './lib/constants';
+import { Contracts, Libraries } from './lib/constants';
 import { CallTx } from '@hyperledger/burrow/proto/payload_pb';
 import { DeployDeadline, DeployWait } from './bpm-oracles/deploy';
 import { DeployNumbers } from './commons-math/deploy';
@@ -323,6 +323,11 @@ async function DeployLib(cli: Client, call: (client: Client, ...arg1: string[]) 
     return call(cli, ...addresses);
 }
 
+async function RegisterLib(doug: DOUG.Contract<CallTx>, id: string, lib: Promise<string>) {
+    const address = await lib;
+    await doug.register(id, address);
+}
+
 export async function Deploy(client: Client) {
     const errorsLib = ErrorsLib.Deploy(client);
     const typeUtilsLib = TypeUtilsLib.Deploy(client);
@@ -373,5 +378,17 @@ export async function Deploy(client: Client) {
         DeployDeadline(client, doug, bpmService, applicationRegistry, errorsLib),
         DeployWait(client, doug, bpmService, applicationRegistry, errorsLib),
         DeployNumbers(client, applicationRegistry),
+    ]);
+
+    await Promise.all([
+        RegisterLib(doug, Libraries.ErrorsLib, errorsLib),
+        RegisterLib(doug, Libraries.TypeUtilsLib, typeUtilsLib),
+        RegisterLib(doug, Libraries.ArrayUtilsLib, arrayUtilsLib),
+        RegisterLib(doug, Libraries.MappingsLib, mappingsLib),
+        RegisterLib(doug, Libraries.DataStorageUtils, dataStorageUtils),
+        RegisterLib(doug, Libraries.ERC165Utils, eRC165Utils),
+        RegisterLib(doug, Libraries.BpmModelLib, bpmModelLib),
+        RegisterLib(doug, Libraries.BpmRuntimeLib, bpmRuntimeLib),
+        RegisterLib(doug, Libraries.AgreementsAPI, agreementsAPI),
     ]);
 }

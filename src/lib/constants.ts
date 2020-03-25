@@ -9,6 +9,18 @@ export enum Contracts {
   BpmService = 'BpmService',
 }
 
+export enum Libraries {
+  ErrorsLib = 'ErrorsLib',
+  TypeUtilsLib = 'TypeUtilsLib',
+  ArrayUtilsLib= 'ArrayUtilsLib',
+  MappingsLib = 'MappingsLib',
+  DataStorageUtils = 'DataStorageUtils',
+  ERC165Utils = 'ERC165Utils',
+  BpmModelLib = 'BpmModelLib',
+  BpmRuntimeLib = 'BpmRuntimeLib',
+  AgreementsAPI = 'AgreementsAPI',
+}
+
 export enum Direction {
   IN = 0,
   OUT,

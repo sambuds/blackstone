@@ -50,7 +50,12 @@ build_ci_image:
 push_ci_image: build_ci_image
 	docker push ${CI_IMAGE}
 
-.PHONY: publish
-publish: clean build_contracts
+dist:
 	yarn build
+	rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src dist
+	cp -r src/bin dist
+	cp -r abi.csv dist
+
+.PHONY: publish
+publish: clean build_contracts dist
 	yarn publish --access public

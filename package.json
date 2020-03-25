@@ -1,6 +1,6 @@
 {
   "name": "@monax/blackstone",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Contract Suite for the Agreements Network",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -13,13 +13,12 @@
   "scripts": {
     "build:solidity": "pushd src && ts-node build.ts && popd",
     "build:compile": "tsc --build",
-    "build:static": "rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src/ dist/ && cp -r src/bin dist/bin",
-    "build": "yarn run build:solidity && yarn run build:compile && yarn run build:static",
+    "build": "yarn run build:solidity && yarn run build:compile",
     "test": "mocha -r ts-node/register --file 'src/tests/before.ts' 'src/tests/*.test.ts'"
   },
   "license": "SEE LICENSE IN LICENSE.md",
   "dependencies": {
-    "@hyperledger/burrow": "0.29.8-rc4",
+    "@hyperledger/burrow": "0.30.2",
     "@types/dotenv": "^8.2.0",
     "@types/node": "^13.1.8",
     "@types/pg": "^7.14.1",

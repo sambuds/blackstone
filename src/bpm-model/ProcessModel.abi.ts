@@ -34,6 +34,7 @@ export module ProcessModel {
         }
         LogProcessModelCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessModelCreation", this.address, callback); }
         LogProcessModelDataCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessModelDataCreation", this.address, callback); }
+        LogProcessModelFileReferenceUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessModelFileReferenceUpdate", this.address, callback); }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -270,6 +271,12 @@ export module ProcessModel {
                 return Decode(this.client, exec).isPrivate();
             });
         }
+        setModelFileReference(_modelFileReference: string) {
+            const data = Encode(this.client).setModelFileReference(_modelFileReference);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).setModelFileReference();
+            });
+        }
     }
     export const Encode = <Tx>(client: Provider<Tx>) => { return {
         ERC165_ID_VERSIONED_ARTIFACT: () => { return client.encode("E10533C6", []); },
@@ -317,7 +324,8 @@ export module ProcessModel {
         hasParticipant: (_id: Buffer) => { return client.encode("58F2A46D", ["bytes32"], _id); },
         hasProcessInterface: (_interfaceId: Buffer) => { return client.encode("7180F973", ["bytes32"], _interfaceId); },
         initialize: (_id: Buffer, _version: [number, number, number], _author: string, _isPrivate: boolean, _modelFileReference: string) => { return client.encode("37E9B161", ["bytes32", "uint8[3]", "address", "bool", "string"], _id, _version, _author, _isPrivate, _modelFileReference); },
-        isPrivate: () => { return client.encode("FAFF660E", []); }
+        isPrivate: () => { return client.encode("FAFF660E", []); },
+        setModelFileReference: (_modelFileReference: string) => { return client.encode("03FED10B", ["string"], _modelFileReference); }
     }; };
     export const Decode = <Tx>(client: Provider<Tx>, data: Uint8Array) => { return {
         ERC165_ID_VERSIONED_ARTIFACT: (): [Buffer] => { return client.decode(data, ["bytes4"]); },
@@ -399,6 +407,7 @@ export module ProcessModel {
         hasParticipant: (): [boolean] => { return client.decode(data, ["bool"]); },
         hasProcessInterface: (): [boolean] => { return client.decode(data, ["bool"]); },
         initialize: (): void => { return; },
-        isPrivate: (): [boolean] => { return client.decode(data, ["bool"]); }
+        isPrivate: (): [boolean] => { return client.decode(data, ["bool"]); },
+        setModelFileReference: (): void => { return; }
     }; };
 }

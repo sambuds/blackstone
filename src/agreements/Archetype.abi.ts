@@ -35,6 +35,7 @@ export module Archetype {
         LogArchetypeActivation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeActivation", this.address, callback); }
         LogArchetypeCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeCreation", this.address, callback); }
         LogArchetypeCreation_v1_1_0(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeCreation_v1_1_0", this.address, callback); }
+        LogArchetypeDocumentRemoval(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeDocumentRemoval", this.address, callback); }
         LogArchetypeDocumentUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeDocumentUpdate", this.address, callback); }
         LogArchetypeJurisdictionUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeJurisdictionUpdate", this.address, callback); }
         LogArchetypeOwnerUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogArchetypeOwnerUpdate", this.address, callback); }
@@ -118,6 +119,12 @@ export module Archetype {
                 position: number;
             }>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).addParameter();
+            });
+        }
+        clearDocuments() {
+            const data = Encode(this.client).clearDocuments();
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).clearDocuments();
             });
         }
         compareArtifactVersion(_other: string, _version: [number, number, number]) {
@@ -397,6 +404,7 @@ export module Archetype {
         addDocument: (_fileReference: string) => { return client.encode("F740E045", ["string"], _fileReference); },
         addJurisdiction: (_country: Buffer, _region: Buffer) => { return client.encode("083D0918", ["bytes2", "bytes32"], _country, _region); },
         addParameter: (_parameterType: number, _parameterName: Buffer) => { return client.encode("6F903388", ["uint8", "bytes32"], _parameterType, _parameterName); },
+        clearDocuments: () => { return client.encode("330C890B", []); },
         compareArtifactVersion: (_other: string, _version: [number, number, number]) => {
             if (typeof _other === "string")
                 return client.encode("5C030138", ["address"], _other);
@@ -471,6 +479,7 @@ export module Archetype {
             const [error, position] = client.decode(data, ["uint256", "uint256"]);
             return { error: error, position: position };
         },
+        clearDocuments: (): void => { return; },
         compareArtifactVersion: (): {
             result: number;
         } => {

@@ -14,7 +14,7 @@ import "agreements/AbstractActiveAgreement_v1_0_1.sol";
  * @dev Default implementation of the ActiveAgreement interface. This contract represents the latest "version" of the artifact by inheriting from past versions to guarantee the order
  * of storage variable declarations. It also inherits and instantiates AbstractVersionedArtifact.
  */
-contract DefaultActiveAgreement is AbstractVersionedArtifact(1,5,0), AbstractActiveAgreement_v1_0_1, AbstractPermissioned, ActiveAgreement {
+contract DefaultActiveAgreement is AbstractVersionedArtifact(1,6,0), AbstractActiveAgreement_v1_0_1, AbstractPermissioned, ActiveAgreement {
 
 	/**
 	 * @dev Legacy initialize function that is not supported anymore in this version of DefaultArchetype and will always revert.
@@ -276,5 +276,11 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,5,0), AbstractAct
         emit LogAgreementLegalStateUpdate(EVENT_ID_AGREEMENTS, address(this), uint8(legalState));
         emitEvent(EVENT_ID_STATE_CHANGED, address(this));
     }
+
+	function setPrivateParametersReference(string calldata _privateParametersFileReference) external {
+		// this temporarily removes this update restriction
+    	fileReferences.insertOrUpdate(fileKeyPrivateParameters, _privateParametersFileReference);
+    	emit LogAgreementPrivateParametersReference(EVENT_ID_AGREEMENTS, address(this), _privateParametersFileReference);
+	}
 
 }

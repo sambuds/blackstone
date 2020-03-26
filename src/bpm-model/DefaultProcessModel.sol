@@ -16,7 +16,7 @@ import "bpm-model/DefaultProcessDefinition.sol";
  * @title DefaultProcessModel
  * @dev Default implementation of the ProcessModel interface 
  */
-contract DefaultProcessModel is AbstractVersionedArtifact(1,0,0), AbstractDelegateTarget, AbstractVersioned, ProcessModel {
+contract DefaultProcessModel is AbstractVersionedArtifact(1,1,0), AbstractDelegateTarget, AbstractVersioned, ProcessModel {
 
 	using MappingsLib for Mappings.Bytes32AddressMap;
 	using MappingsLib for Mappings.Bytes32UintMap;
@@ -97,6 +97,18 @@ contract DefaultProcessModel is AbstractVersionedArtifact(1,0,0), AbstractDelega
 	 */
 	function getModelFileReference() external view returns (string memory) {
 		return modelFileReference;
+	}
+
+	/**
+	 * @dev Sets the file reference for the model
+	 */
+	function setModelFileReference(string calldata _modelFileReference) external {
+		modelFileReference = _modelFileReference;
+		emit LogProcessModelFileReferenceUpdate(
+			EVENT_ID_PROCESS_MODELS,
+			address(this),
+			_modelFileReference
+		);
 	}
 
 	/**

@@ -1,0 +1,86 @@
+jobs:
+
+#####
+# Retrieve DOUG
+#####
+- name: DOUG
+  query-name:
+      name: DOUG
+      field: data
+
+#####
+# Retrieve Library Addresses
+#####
+- name: ErrorsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ErrorsLib]
+
+- name: MappingsLib
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [MappingsLib]
+
+#####
+# ProcessModel Upgrade
+#####
+- name: ProcessModelRepository
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [ProcessModelRepository]
+
+- name: ObjectClassProcessModel
+  query-contract:
+    destination: $ProcessModelRepository
+    bin: ProcessModelRepository
+    function: OBJECT_CLASS_PROCESS_MODEL
+
+- name: ProcessModelImplementationCurrentLookup
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [$ObjectClassProcessModel]
+
+- name: ProcessModelVersionBeforeUpgrade
+  query-contract:
+    destination: $ProcessModelImplementationCurrentLookup
+    bin: ProcessModel
+    function: getArtifactVersion
+
+- name: ProcessModelImplementationUpgrade
+  deploy:
+    contract: DefaultProcessModel.bin
+    libraries: ErrorsLib:$ErrorsLib, MappingsLib:$MappingsLib
+
+- name: RegisterProcessModelObjectClass
+  call:
+    destination: $DOUG
+    bin: DOUG
+    function: register
+    data: [$ObjectClassProcessModel, $ProcessModelImplementationUpgrade]
+
+- name: ProcessModelImplementationUpgradeLookup
+  query-contract:
+    destination: $DOUG
+    bin: DOUG
+    function: lookup
+    data: [$ObjectClassProcessModel]
+
+- name: ProcessModelVersionAfterUpgrade
+  query-contract:
+    destination: $ProcessModelImplementationUpgradeLookup
+    bin: ProcessModel
+    function: getArtifactVersion
+
+- name: AssertProcessModelUpgradeRegistered
+  assert:
+    key: $ProcessModelImplementationUpgradeLookup
+    relation: eq
+    val: $ProcessModelImplementationUpgrade

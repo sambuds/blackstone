@@ -72,7 +72,7 @@ contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes
 		address governingAgreementAddress
 	);
 
-  event LogAgreementPrivateParametersReference(
+  	event LogAgreementPrivateParametersReference(
 		bytes32 indexed eventId,
 		address agreementAddress,
 		string privateParametersFileReference

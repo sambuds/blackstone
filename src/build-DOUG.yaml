@@ -35,6 +35,9 @@ jobs:
   - name: DougProxy
     build:
       contract: commons-management/DougProxy.sol
+  - name: DOUG
+    build:
+      contract: commons-management/DOUG.sol
   - name: OwnedDelegateUnstructuredProxy
     build:
       contract: commons-management/OwnedDelegateUnstructuredProxy.sol

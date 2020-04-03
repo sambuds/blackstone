@@ -74,7 +74,7 @@ export class Contracts {
         const isPrivate = agreement.isPrivate || false;
         this.log.debug(`REQUEST: Create agreement with following data: ${JSON.stringify(agreement)}`);
         return this.manager.ActiveAgreementRegistry
-            .createAgreement(archetype, creator, owner, privateParametersFileReference, isPrivate, parties, BytesFromString(collectionId), governingAgreements)
+            .createAgreement(archetype, creator, owner, privateParametersFileReference, isPrivate, parties, DecodeHex(collectionId), governingAgreements)
             .then(data => {
                 this.log.info(`SUCCESS: Created agreement by ${creator} at address ${data.activeAgreement}`);
                 return data.activeAgreement;
@@ -109,7 +109,7 @@ export class Contracts {
         const agreement = new ActiveAgreement.Contract(this.client, agreementAddress);
 
         const promises = parameters.map(async ({ name, value, scope }) => {
-            return agreement.setAddressScope(value, BytesFromString(name), BytesFromString(scope), BytesFromString(''), BytesFromString(''), '0x0')
+            return agreement.setAddressScope(value, BytesFromString(name), DecodeHex(scope), BytesFromString(''), BytesFromString(''), '0x0')
         });
         await Promise.all(promises);
         this.log.info(`SUCCESS: Added scopes to agreement ${agreementAddress} parameters`);
@@ -135,7 +135,7 @@ export class Contracts {
         this.log.debug(`REQUEST: Create agreement collection by ${author} with type ${collectionType} ` +
             `and packageId ${packageId} created by user at ${author}`);
         return this.manager.ActiveAgreementRegistry
-            .createAgreementCollection(author, collectionType, BytesFromString(packageId))
+            .createAgreementCollection(author, collectionType, DecodeHex(packageId))
             .then(data => {
                 if (data.error !== 1) throw new Error(`Error code adding agreement collection by ${author}: ${data.error}`);
                 this.log.info(`SUCCESS: Created new agreement collection by ${author} with id ${data.id}`);
@@ -146,7 +146,7 @@ export class Contracts {
     async addAgreementToCollection(collectionId: string, agreement: string) {
         this.log.debug(`REQUEST: Add agreement at ${agreement} to collection ${collectionId}`);
         return this.manager.ActiveAgreementRegistry
-            .addAgreementToCollection(BytesFromString(collectionId), agreement);
+            .addAgreementToCollection(DecodeHex(collectionId), agreement);
     }
 
     async signAgreement(actingUserAddress: string, agreementAddress: string) {
@@ -212,7 +212,7 @@ export class Contracts {
         const isPrivate = archetype.isPrivate || false;
         this.log.debug(`REQUEST: Create archetype with: ${JSON.stringify(archetype)}`);
         return this.manager.ArchetypeRegistry
-            .createArchetype(price, isPrivate, active, author, owner, formationProcess, executionProcess, BytesFromString(packageId), governingArchetypes)
+            .createArchetype(price, isPrivate, active, author, owner, formationProcess, executionProcess, DecodeHex(packageId), governingArchetypes)
             .then(data => data.archetype);
     }
 
@@ -317,19 +317,19 @@ export class Contracts {
     async activateArchetypePackage(packageId: string, userAccount: string) {
         this.log.debug(`REQUEST: Activate archetype package with id ${packageId} by user at ${userAccount}`);
         return this.manager.ArchetypeRegistry
-            .activatePackage(BytesFromString(packageId), userAccount);
+            .activatePackage(DecodeHex(packageId), userAccount);
     }
     
     async deactivateArchetypePackage(packageId: string, userAccount: string) {
         this.log.debug(`REQUEST: Deactivate archetype package with id ${packageId} by user at ${userAccount}`);
         return this.manager.ArchetypeRegistry
-            .deactivatePackage(BytesFromString(packageId), userAccount);
+            .deactivatePackage(DecodeHex(packageId), userAccount);
     }
 
     async addArchetypeToPackage(packageId: string, archetype: string) {
         this.log.debug(`REQUEST: Add archetype at ${archetype} to package ${packageId}`);
         return this.manager.ArchetypeRegistry
-            .addArchetypeToPackage(BytesFromString(packageId), archetype);
+            .addArchetypeToPackage(DecodeHex(packageId), archetype);
     }
 
     async addJurisdictions(address: string, jurisdictions: Array<{ country: string, regions: Array<string>}>) {

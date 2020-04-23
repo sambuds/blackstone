@@ -19,8 +19,9 @@ export async function DeployDeadline(
     
     const applicationRegistry = await registry;
     return Promise.all([
-        applicationRegistry.addApplication(Buffer.from("Deadline Oracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')),
-        applicationRegistry.addAccessPoint(Buffer.from("Deadline Oracle"), Buffer.from("Deadline"), 8, 0),
+        applicationRegistry.addApplication(Buffer.from("Deadline Oracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')).then((res) => {
+          return applicationRegistry.addAccessPoint(Buffer.from("Deadline Oracle"), Buffer.from("Deadline"), 8, 0).then(() => res);
+        }),
         doug.deploy("DeadlineOracle", oracleAddress),
     ]);
 }
@@ -38,8 +39,9 @@ export async function DeployWait(
     
     const applicationRegistry = await registry;
     return Promise.all([
-        applicationRegistry.addApplication(Buffer.from("WaitOracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')),
-        applicationRegistry.addAccessPoint(Buffer.from("WaitOracle"), Buffer.from("Frequency"), 2, 0),
+        applicationRegistry.addApplication(Buffer.from("WaitOracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')).then((res) => {
+          return applicationRegistry.addAccessPoint(Buffer.from("WaitOracle"), Buffer.from("Frequency"), 2, 0).then(() => res);
+        }),
         doug.deploy("WaitOracle", oracleAddress),
     ]);
 }

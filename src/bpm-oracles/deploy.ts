@@ -18,12 +18,11 @@ export async function DeployDeadline(
     const oracleAddress = await DeadlineOracle.Deploy(client, errorsLibAddress, bpmService.address)
     
     const applicationRegistry = await registry;
-    return Promise.all([
-        applicationRegistry.addApplication(Buffer.from("Deadline Oracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')).then((res) => {
-          return applicationRegistry.addAccessPoint(Buffer.from("Deadline Oracle"), Buffer.from("Deadline"), 8, 0).then(() => res);
-        }),
+    await Promise.all([
+        applicationRegistry.addApplication(Buffer.from("Deadline Oracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')),
         doug.deploy("DeadlineOracle", oracleAddress),
     ]);
+    await applicationRegistry.addAccessPoint(Buffer.from("Deadline Oracle"), Buffer.from("Deadline"), 8, 0);
 }
 
 export async function DeployWait(
@@ -38,10 +37,9 @@ export async function DeployWait(
     const oracleAddress = await WaitOracle.Deploy(client, errorsLibAddress, bpmService.address)
     
     const applicationRegistry = await registry;
-    return Promise.all([
-        applicationRegistry.addApplication(Buffer.from("WaitOracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')).then((res) => {
-          return applicationRegistry.addAccessPoint(Buffer.from("WaitOracle"), Buffer.from("Frequency"), 2, 0).then(() => res);
-        }),
+    await Promise.all([
+        applicationRegistry.addApplication(Buffer.from("WaitOracle"), 0, oracleAddress, Buffer.from(''), Buffer.from('')),
         doug.deploy("WaitOracle", oracleAddress),
     ]);
+    await applicationRegistry.addAccessPoint(Buffer.from("WaitOracle"), Buffer.from("Frequency"), 2, 0);
 }

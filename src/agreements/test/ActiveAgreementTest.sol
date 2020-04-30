@@ -32,6 +32,7 @@ contract ActiveAgreementTest {
   string newPrivateParametersFileRef = "{json new grant}";
 	uint maxNumberOfEvents = 5;
 	bytes32 DATA_FIELD_AGREEMENT_PARTIES = "AGREEMENT_PARTIES";
+	bytes32 DATA_FIELD_AGREEMENT_EFFECTIVE_DATE = "Agreement Effective Date";
 
 	bytes32 bogusId = "bogus";
 	UserAccount signer1;
@@ -228,6 +229,7 @@ contract ActiveAgreementTest {
 		if (timestamp != 0) return "Signature timestamp for signer1 should be 0 before signing";
 		if (AgreementsAPI.isFullyExecuted(address(agreement))) return "AgreementsAPI.isFullyExecuted should be false before signing";
 		if (agreement.getLegalState() == uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should NOT be EXECUTED";
+    if (agreement.getDataValueAsUint(DATA_FIELD_AGREEMENT_EFFECTIVE_DATE) != 0) return "Agreement effective date should not be set";
 
 		// Signing with Signer1 as party
 		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
@@ -237,6 +239,7 @@ contract ActiveAgreementTest {
 		if (timestamp == 0) return "Signature timestamp for signer1 should be set after signing";
 		if (AgreementsAPI.isFullyExecuted(address(agreement))) return "AgreementsAPI.isFullyExecuted should be false after signer1";
 		if (agreement.getLegalState() == uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should NOT be EXECUTED after signer1";
+    if (agreement.getDataValueAsUint(DATA_FIELD_AGREEMENT_EFFECTIVE_DATE) != 0) return "Agreement effective date should not be set after signer1";
 
 		// Signing with Signer2 via the organization
 		signer2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
@@ -247,15 +250,18 @@ contract ActiveAgreementTest {
 		if (timestamp == 0) return "Signature timestamp for org1 should be set after signing";
 		if (!AgreementsAPI.isFullyExecuted(address(agreement))) return "AgreementsAPI.isFullyExecuted should be true after signer2";
 		if (agreement.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should be EXECUTED after signer2";
+    if (agreement.getDataValueAsUint(DATA_FIELD_AGREEMENT_EFFECTIVE_DATE) == 0) return "Agreement effective date should be set after signer2";
 
 		// test external legal state control in combination with signing
 		agreement = new DefaultActiveAgreement();
 		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
 		agreement.initializeObjectAdministrator(address(this));
 		agreement.grantPermission(agreement.ROLE_ID_LEGAL_STATE_CONTROLLER(), address(signer1));
+    agreement.setDataValueAsUint(DATA_FIELD_AGREEMENT_EFFECTIVE_DATE, 1);
 		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
 		signer2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSign));
 		if (!AgreementsAPI.isFullyExecuted(address(agreement))) return "AgreementsAPI.isFullyExecuted should be true after both signatures were applied even with external legal state control";
+    if (agreement.getDataValueAsUint(DATA_FIELD_AGREEMENT_EFFECTIVE_DATE) != 1) return "Agreement effective date should not be set if original value existed";
 		if (agreement.getLegalState() != uint8(Agreements.LegalState.FORMULATED)) return "Agreement legal state should still be FORMULATED with external legal state control";
 		// externally change the legal state
 		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.EXECUTED)));

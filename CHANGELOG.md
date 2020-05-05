@@ -2,6 +2,7 @@
 
 ## Release History
 
+- Version [1.0.0](#v1.0.0)
 - Version [0.10.0](#v0.10.0)
 - Version [0.9.1](#v0.9.1)
 - Version [0.9.0](#v0.9.0)
@@ -11,6 +12,39 @@
 - Version [0.6.0](#v0.6.0)
 - Version [0.5.2](#v0.5.2)
 - Version [0.5.1](#v0.5.1)
+
+## <a name="v1.0.0">Release 1.0.0</a>
+
+### Features / Changes / Bug Fixes
+
+#### solts
+
+##### Build
+In order to bridge Solidity with Typescript, we not rely on a custom code-gen library named solts. In src/build.ts we use solc to compile our contracts, providing abis and bytecode to solts. This generates special contract classes which takes a client interface satisfied by src/lib/client.ts for burrow. Executing npm run build in the root of this repository will ensure that the typescript library is up-to-date - this should always be run before publishing, as it will also compile and copy over the static assets.
+
+##### Deploy
+Instead of burrow deploy, the contract suite can now be deployed through src/deploy.ts which uses promise chaining to ensure all dependencies are met, without slowing the process. We still require our 'playbooks' until vent can be adapted to use on-chain ABIs or we can provide additional support through code-gen.
+
+##### Other
+There are now several typescript types corresponding to the Solidity equivalent, though we have no way to ensure synchronicity through code-gen currently.
+
+#### Agreement Redaction
+Added an additional agreement legal state (REDACTED) and support for moving the legal state of a canceled agreement to redacted.
+
+#### Timers
+Added support for defining BPMN intermediate and boundary events in the ProcessModel and execution support for these constructs in the runtime.
+
+#### yarn
+Moved from npm to yarn.
+
+### Compatibility
+
+This release was tested with the following software and versions:
+
+|                    |        |
+| :----------------- | :----- |
+| Hyperledger Burrow | 0.30.2 |
+| Solc               | 0.5.12 |
 
 ## <a name="v0.10.0">Release 0.10.0</a>
 

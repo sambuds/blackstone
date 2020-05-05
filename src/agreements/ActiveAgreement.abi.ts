@@ -56,6 +56,12 @@ export module ActiveAgreement {
         LogDataStorageUpdateUintArray(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataStorageUpdateUintArray", this.address, callback); }
         LogEntityAddressScopeUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogEntityAddressScopeUpdate", this.address, callback); }
         LogGoverningAgreementUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogGoverningAgreementUpdate", this.address, callback); }
+        DATA_FIELD_AGREEMENT_EFFECTIVE_DATE() {
+            const data = Encode(this.client).DATA_FIELD_AGREEMENT_EFFECTIVE_DATE();
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).DATA_FIELD_AGREEMENT_EFFECTIVE_DATE();
+            });
+        }
         DATA_FIELD_AGREEMENT_PARTIES() {
             const data = Encode(this.client).DATA_FIELD_AGREEMENT_PARTIES();
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -627,6 +633,7 @@ export module ActiveAgreement {
         }
     }
     export const Encode = <Tx>(client: Provider<Tx>) => { return {
+        DATA_FIELD_AGREEMENT_EFFECTIVE_DATE: () => { return client.encode("1314CF66", []); },
         DATA_FIELD_AGREEMENT_PARTIES: () => { return client.encode("80C86BA7", []); },
         ERC165_ID_Address_Scopes: () => { return client.encode("BD9E0660", []); },
         ERC165_ID_VERSIONED_ARTIFACT: () => { return client.encode("E10533C6", []); },
@@ -738,6 +745,7 @@ export module ActiveAgreement {
         transferPermission: (_permission: Buffer, _newHolder: string) => { return client.encode("EC9CB2CE", ["bytes32", "address"], _permission, _newHolder); }
     }; };
     export const Decode = <Tx>(client: Provider<Tx>, data: Uint8Array) => { return {
+        DATA_FIELD_AGREEMENT_EFFECTIVE_DATE: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         DATA_FIELD_AGREEMENT_PARTIES: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         ERC165_ID_Address_Scopes: (): [Buffer] => { return client.decode(data, ["bytes4"]); },
         ERC165_ID_VERSIONED_ARTIFACT: (): [Buffer] => { return client.decode(data, ["bytes4"]); },

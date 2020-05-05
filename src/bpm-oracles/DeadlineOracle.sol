@@ -17,7 +17,7 @@ contract DeadlineOracle is Application {
         address piAddress,
         address performer,
         uint currentTime,
-        uint deadline,
+        int deadline,
         bool completed
     );
 
@@ -56,7 +56,7 @@ contract DeadlineOracle is Application {
      * @param _txPerformer the address which started the process transaction
      */
     function complete(address _piAddress, bytes32 _activityInstanceId, bytes32, address _txPerformer) public {
-        uint deadline = ProcessInstance(_piAddress).getActivityInDataAsUint(_activityInstanceId, MAPPING_ID_DEADLINE);
+        int deadline = ProcessInstance(_piAddress).getActivityInDataAsInt(_activityInstanceId, MAPPING_ID_DEADLINE);
         eventLog[_activityInstanceId] = _piAddress;
         emit LogDeadlineStarted(EVENT_ID_DEADLINE_ORACLE, _activityInstanceId, address(this), address(bpmService), _piAddress, _txPerformer, block.timestamp, deadline, false);
     }

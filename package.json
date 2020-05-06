@@ -11,7 +11,7 @@
     "dist"
   ],
   "scripts": {
-    "build:solidity": "pushd src && ts-node build.ts && popd",
+    "build:solidity": "cd src && ts-node build.ts && cd ..",
     "build:compile": "tsc --build",
     "build": "yarn run build:solidity && yarn run build:compile",
     "test": "mocha -r ts-node/register --file 'src/tests/before.ts' 'src/tests/*.test.ts'"

@@ -19,6 +19,7 @@ jobs:
       run: |
         git config --global user.email "${GITHUB_ACTOR}"
         git config --global user.name "${GITHUB_ACTOR}"
+        git fetch --prune --unshallow
         npm install
         npm run build
         npm version from-git

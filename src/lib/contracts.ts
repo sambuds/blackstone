@@ -1,23 +1,25 @@
-import { Client } from './client';
-import { Manager, NewManager } from './manager';
-import { GetFromNameRegistry, SetToNameRegistry, DecodeHex } from './utils';
-import { BytesFromString, BytesToString, CallOnBehalfOf } from './utils'
-import { ActiveAgreement } from '../agreements/ActiveAgreement.abi';
-import { Archetype } from '../agreements/Archetype.abi';
-import { ProcessModel } from '../bpm-model/ProcessModel.abi';
-import { ProcessDefinition } from '../bpm-model/ProcessDefinition.abi';
-import { ProcessInstance }from '../bpm-runtime/ProcessInstance.abi';
-import { Direction, ErrorCode } from './constants';
-import { CallTx } from '@hyperledger/burrow/proto/payload_pb';
-import { Ecosystem_v1_0_1 as Ecosystem } from '../commons-auth/Ecosystem_v1_0_1.abi';
-import { Organization } from '../commons-auth/Organization.abi';
+import {Client} from './client';
+import {Manager, NewManager} from './manager';
 import {
-    Agreement as agreement,
-    Archetype as archetype,
-    Parameter,
-    DataType,
-} from './types';
-import { Logger, getLogger } from 'log4js';
+  BytesFromString,
+  BytesToString,
+  CallOnBehalfOf,
+  DecodeHex,
+  GetFromNameRegistry,
+  SetToNameRegistry
+} from './utils';
+import {ActiveAgreement} from '../agreements/ActiveAgreement.abi';
+import {Archetype} from '../agreements/Archetype.abi';
+import {ProcessModel} from '../bpm-model/ProcessModel.abi';
+import {ProcessDefinition} from '../bpm-model/ProcessDefinition.abi';
+import {ProcessInstance} from '../bpm-runtime/ProcessInstance.abi';
+import {Direction, ErrorCode} from './constants';
+import {CallTx} from '@hyperledger/burrow/proto/payload_pb';
+import {Ecosystem_v1_0_1 as Ecosystem} from '../commons-auth/Ecosystem_v1_0_1.abi';
+import {Organization} from '../commons-auth/Organization.abi';
+import {Agreement as agreement, Archetype as archetype, DataType, Parameter,} from './types';
+import {getLogger, Logger} from 'log4js';
+import {VentListener, Watcher} from "./vent";
 
 export async function RegisterEcosystem(client: Client, manager: Manager, account: string, name: string) {
     const address = await manager.EcosystemRegistry
@@ -48,7 +50,7 @@ export class Contracts {
         this.log.debug(`REQUEST: Get from name registry: ${name}`);
         return GetFromNameRegistry(this.client, name);
     }
-    
+
     async setToNameRegistry(name: string, value: string) {
         this.log.debug(`REQUEST: Set to name registry: ${JSON.stringify({ name, value })}`);
         return SetToNameRegistry(this.client, name, value);
@@ -80,7 +82,7 @@ export class Contracts {
                 return data.activeAgreement;
             });
     }
-    
+
     async setLegalState(agreementAddress: string, legalState: number) {
         this.log.debug(`REQUEST: Set legal state of agreement ${agreementAddress} to ${legalState}`);
         const agreement = new ActiveAgreement.Contract(this.client, agreementAddress);
@@ -90,7 +92,7 @@ export class Contracts {
         await agreement.setLegalState(legalState);
         await agreement.revokePermission(permissionId, this.account);
     }
-    
+
     async initializeObjectAdministrator(agreementAddress: string) {
         this.log.debug(`REQUEST: Initializing agreement admin role for agreement: ${agreementAddress}`);
         const agreement = new ActiveAgreement.Contract(this.client, agreementAddress);
@@ -238,20 +240,20 @@ export class Contracts {
         await this.callOnBehalfOf(userAccount, archetypeAddress, payload);
         this.log.info(`SUCCESS: Archetype at ${archetypeAddress} activated by user at ${userAccount}`);
     }
-    
+
     async deactivateArchetype(archetypeAddress: string, userAccount: string) {
         this.log.debug(`REQUEST: Deactivate archetype at ${archetypeAddress} by user at ${userAccount}`);
         const payload = Archetype.Encode(this.client).deactivate();
         await this.callOnBehalfOf(userAccount, archetypeAddress, payload);
         this.log.info(`SUCCESS: Archetype at ${archetypeAddress} deactivated by user at ${userAccount}`);
     }
-    
+
     async setArchetypeSuccessor(archetypeAddress: string, successorAddress: string, userAccount: string) {
         this.log.debug(`REQUEST: Set successor to ${successorAddress} for archetype at ${archetypeAddress} by user at ${userAccount}`);
         const payload = Archetype.Encode(this.client).setSuccessor(successorAddress);
         await this.callOnBehalfOf(userAccount, archetypeAddress, payload);
     }
-    
+
     async getArchetypeSuccessor(archetypeAddress: string) {
         this.log.debug(`REQUEST: Get successor for archetype at ${archetypeAddress}`);
         return this.manager.ArchetypeRegistry
@@ -275,13 +277,13 @@ export class Contracts {
                 else this.log.info(`SUCCESS: Added parameters ${parameters.map(({ name }) => name)} to archetype at ${address}`);
             });
     }
-    
+
     async addArchetypeDocument(address: string, fileReference: string) {
         this.log.debug(`REQUEST: Add document to archetype at ${address}`);
         return this.manager.ArchetypeRegistry
             .addDocument(address, fileReference);
     }
-    
+
     async addArchetypeDocuments(archetypeAddress: string, documents: Array<{ grant: string, name: string }>) {
         const names = documents.map(doc => doc.name).join(', ');
         this.log.debug(`REQUEST: Add archetype documents to archetype at ${archetypeAddress}: ${names}`);
@@ -291,7 +293,7 @@ export class Contracts {
         }));
         return resolvedDocs;
     }
-    
+
     async setArchetypePrice(address: string, price: number) {
         this.log.debug(`REQUEST: Set price to ${price} for archetype at ${address}`);
         const priceInCents = Math.floor(price * 100); // monetary unit conversion to cents which is the recorded unit on chain
@@ -313,13 +315,13 @@ export class Contracts {
                 else return data.id;
             })
       }
-    
+
     async activateArchetypePackage(packageId: string, userAccount: string) {
         this.log.debug(`REQUEST: Activate archetype package with id ${packageId} by user at ${userAccount}`);
         return this.manager.ArchetypeRegistry
             .activatePackage(DecodeHex(packageId), userAccount);
     }
-    
+
     async deactivateArchetypePackage(packageId: string, userAccount: string) {
         this.log.debug(`REQUEST: Deactivate archetype package with id ${packageId} by user at ${userAccount}`);
         return this.manager.ArchetypeRegistry
@@ -394,7 +396,7 @@ export class Contracts {
             .then(data => {
                 // interfaceId already registered to model
                 if (data.error === 1002) return;
-                else if (data.error !== 1) throw new Error(`Error code while adding process interface ${interfaceId} to model at ${pmAddress}: ${data[0]}`);  
+                else if (data.error !== 1) throw new Error(`Error code while adding process interface ${interfaceId} to model at ${pmAddress}: ${data[0]}`);
                 this.log.info(`SUCCESS: Interface ${interfaceId} added to Process Model at ${pmAddress}`);
             });
     }
@@ -417,7 +419,7 @@ export class Contracts {
     async createProcessDefinition(modelAddress: string, processDefnId: string) {
         this.log.debug(`REQUEST: Create process definition with Id ${processDefnId} for process model ${modelAddress}`);
         return this.manager.ProcessModelRepository
-                .createProcessDefinition(modelAddress, BytesFromString(processDefnId)) 
+                .createProcessDefinition(modelAddress, BytesFromString(processDefnId))
                 .then(value => value.newAddress);
     }
 
@@ -432,8 +434,8 @@ export class Contracts {
             });
     }
 
-    async createActivityDefinition(processAddress: string, activityId: string, activityType: number, 
-        taskType: number, behavior: number, assignee: string, multiInstance: boolean, application: string, 
+    async createActivityDefinition(processAddress: string, activityId: string, activityType: number,
+        taskType: number, behavior: number, assignee: string, multiInstance: boolean, application: string,
         subProcessModelId: string, subProcessDefinitionId: string) {
 
         this.log.debug(`REQUEST: Create activity definition with data: ${JSON.stringify({
@@ -451,13 +453,13 @@ export class Contracts {
 
         await new ProcessDefinition.Contract(this.client, processAddress)
             .createActivityDefinition(
-                BytesFromString(activityId), 
-                activityType, 
-                taskType, 
+                BytesFromString(activityId),
+                activityType,
+                taskType,
                 behavior,
-                BytesFromString(assignee), 
-                multiInstance, 
-                BytesFromString(application), 
+                BytesFromString(assignee),
+                multiInstance,
+                BytesFromString(application),
                 BytesFromString(subProcessModelId),
                 BytesFromString(subProcessDefinitionId))
             .then(data => {
@@ -466,7 +468,7 @@ export class Contracts {
             });
     }
 
-    async createDataMapping(processAddress: string, id: string, direction: number, accessPath: string, 
+    async createDataMapping(processAddress: string, id: string, direction: number, accessPath: string,
         dataPath: string, dataStorageId: string, dataStorage: string) {
         this.log.debug(`REQUEST: Create data mapping with data: ${JSON.stringify({
             processAddress,
@@ -520,9 +522,9 @@ export class Contracts {
             operator,
             value,
         })}`);
-        
+
         const processDefinition = new ProcessDefinition.Contract(this.client, processAddress);
-        
+
         switch (dataType) {
             case DataType.BOOLEAN:
                 await processDefinition.createTransitionConditionForBool(
@@ -614,21 +616,21 @@ export class Contracts {
         const response = await this.callOnBehalfOf(userAddr, piAddress, payload);
         return ProcessInstance.Decode(this.client, DecodeHex(response)).getActivityInDataAsBool()[0];
     };
-    
+
     async getActivityInDataAsString(userAddr: string, activityInstanceId: string, dataMappingId: string) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).getActivityInDataAsString(DecodeHex(activityInstanceId), BytesFromString(dataMappingId));
         const response = await this.callOnBehalfOf(userAddr, piAddress, payload);
         return ProcessInstance.Decode(this.client, DecodeHex(response)).getActivityInDataAsString()[0];
     };
-    
+
     async getActivityInDataAsBytes32(userAddr: string, activityInstanceId: string, dataMappingId: string) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).getActivityInDataAsBytes32(DecodeHex(activityInstanceId), BytesFromString(dataMappingId));
         const response = await this.callOnBehalfOf(userAddr, piAddress, payload);
         return ProcessInstance.Decode(this.client, DecodeHex(response)).getActivityInDataAsBytes32()[0];
     };
-    
+
     async getActivityInDataAsUint(userAddr: string, activityInstanceId: string, dataMappingId: string) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).getActivityInDataAsUint(DecodeHex(activityInstanceId), BytesFromString(dataMappingId));
@@ -655,39 +657,39 @@ export class Contracts {
         const payload = ProcessInstance.Encode(this.client).setActivityOutDataAsBool(DecodeHex(activityInstanceId), BytesFromString(dataMappingId), value);
         await this.callOnBehalfOf(userAddr, piAddress, payload);
     };
-    
+
     async setActivityOutDataAsString(userAddr: string, activityInstanceId: string, dataMappingId: string, value: string) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).setActivityOutDataAsString(DecodeHex(activityInstanceId), BytesFromString(dataMappingId), value);
         await this.callOnBehalfOf(userAddr, piAddress, payload);
     };
-    
+
     async setActivityOutDataAsBytes32(userAddr: string, activityInstanceId: string, dataMappingId: string, value: Buffer) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).setActivityOutDataAsBytes32(DecodeHex(activityInstanceId), BytesFromString(dataMappingId), value);
         await this.callOnBehalfOf(userAddr, piAddress, payload);
     };
-    
+
     async setActivityOutDataAsUint(userAddr: string, activityInstanceId: string, dataMappingId: string, value: number) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).setActivityOutDataAsUint(DecodeHex(activityInstanceId), BytesFromString(dataMappingId), value);
         await this.callOnBehalfOf(userAddr, piAddress, payload);
     };
-    
+
     async setActivityOutDataAsInt(userAddr: string, activityInstanceId: string, dataMappingId: string, value: number) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).setActivityOutDataAsInt(DecodeHex(activityInstanceId), BytesFromString(dataMappingId), value);
         await this.callOnBehalfOf(userAddr, piAddress, payload);
     };
-    
+
     async setActivityOutDataAsAddress(userAddr: string, activityInstanceId: string, dataMappingId: string, value: string) {
         const piAddress = await this.getProcessInstanceForActivity(activityInstanceId);
         const payload = ProcessInstance.Encode(this.client).setActivityOutDataAsString(DecodeHex(activityInstanceId), BytesFromString(dataMappingId), value);
         await this.callOnBehalfOf(userAddr, piAddress, payload);
     };
-    
+
     async getDataMappingKeys(processDefinition: ProcessDefinition.Contract<CallTx>, activityId: string, direction: Direction): Promise<string[]> {
-        this.log.debug(`REQUEST: Get data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}`);        
+        this.log.debug(`REQUEST: Get data mapping keys for process definition at ${processDefinition}, activity ${activityId} and direction ${direction}`);
         const countPromise = direction === Direction.IN ?
             processDefinition.getInDataMappingKeys :
             processDefinition.getOutDataMappingKeys;
@@ -711,7 +713,7 @@ export class Contracts {
             accessPath: Buffer;
             dataPath: Buffer;
             dataStorageId: Buffer;
-            dataStorage: string;        
+            dataStorage: string;
         }>[] = [];
         dataMappingIds.forEach((dataMappingId) => {
             const getter = direction === Direction.IN ?
@@ -723,7 +725,7 @@ export class Contracts {
 
     async getDataMappingDetailsForActivity(pdAddress: string, activityId: string, dataMappingIds: Array<string>, direction: Direction) {
         this.log.debug(`REQUEST: Get ${direction ? 'out-' : 'in-'}data mapping details for activity ${activityId} in process definition at ${pdAddress}`);
-        
+
         const processDefinition = new ProcessDefinition.Contract(this.client, pdAddress)
         // NOTE: activityId are hex converted inside getDataMappingKeys and not here
         const keys = dataMappingIds || (await this.getDataMappingKeys(processDefinition, activityId, direction));
@@ -754,9 +756,9 @@ export class Contracts {
     // TODO: type guard value
     async completeActivity(actingUserAddress: string, activityInstanceId: string, dataMappingId?: string | null, dataType?: DataType, value?: boolean | string | Buffer | number) {
         this.log.debug(`REQUEST: Complete task ${activityInstanceId} by user ${actingUserAddress}`);
-        
+
         const activityInstanceID = DecodeHex(activityInstanceId);
-        
+
         const piAddress = await this.manager.BpmService
             .getProcessInstanceForActivity(activityInstanceID)
             .then(data => data[0]);
@@ -949,11 +951,43 @@ export class Contracts {
 export async function NewContracts(url: string, account: string, ecosystemName: string): Promise<Contracts> {
     const client = new Client(url, account);
     const manager = await NewManager(client);
-    
+
     let ecosystemAddress = await GetFromNameRegistry(client, ecosystemName);
     if (!ecosystemAddress) {
         ecosystemAddress = await RegisterEcosystem(client, manager, account, ecosystemName);
     }
-    
+
     return new Contracts(client, manager, ecosystemAddress);
+}
+
+export class SyncContracts extends Contracts {
+  vent: VentListener;
+  watch: Watcher;
+
+  constructor(contracts: Contracts, vent: VentListener) {
+    super(contracts.client, contracts.manager, contracts.ecosystem);
+
+    this.vent = vent;
+    this.watch = this.vent.NewWatcher();
+
+    this.client.interceptor = async (data) => {
+      this.watch.update(data);
+      return data;
+    };
+  }
+
+  async do<T>(func: (contracts: this) => Promise<T>): Promise<T> {
+    const result = await func(this);
+    await this.sync();
+    return result;
+  }
+
+  async sync() {
+    return this.watch.wait();
+  }
+}
+
+export async function NewSync(contracts: Contracts, vent: VentListener) {
+  await vent.listen();
+  return new SyncContracts(contracts, vent);
 }

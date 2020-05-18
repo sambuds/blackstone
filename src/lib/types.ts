@@ -54,6 +54,9 @@ export enum ParameterType {
     DOCUMENT,
     LARGE_TEXT,
     POSITIVE_NUMBER,
+    TIME_DURATION,
+    TIME_CYCLE,
+    REPRESENTATIVES
 };
   
 export type Parameter = {

@@ -99,6 +99,7 @@ contract DataTypesAccess {
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.POSITIVE_NUMBER), "Positive Number");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.DURATION), "Time Duration");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.CYCLE), "Time Cycle");
+        emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.REPRESENTATIVES), "Representatives");
     }
 
 }

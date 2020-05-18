@@ -6,7 +6,24 @@ pragma solidity ^0.5;
  */
 library DataTypes {
 
-  enum ParameterType {BOOLEAN, STRING, NUMBER, DATE, DATETIME, MONETARY_AMOUNT, USER_ORGANIZATION, CONTRACT_ADDRESS, SIGNING_PARTY, BYTES32, DOCUMENT, LARGE_TEXT, POSITIVE_NUMBER, DURATION, CYCLE}
+  enum ParameterType {
+    BOOLEAN,
+    STRING,
+    NUMBER,
+    DATE,
+    DATETIME,
+    MONETARY_AMOUNT,
+    USER_ORGANIZATION,
+    CONTRACT_ADDRESS,
+    SIGNING_PARTY,
+    BYTES32,
+    DOCUMENT,
+    LARGE_TEXT,
+    POSITIVE_NUMBER,
+    DURATION,
+    CYCLE,
+    REPRESENTATIVES
+  }
   
   // ************************* BOOL ********************************
   // Values: 1

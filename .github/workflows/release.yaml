@@ -10,6 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+      with:
+        path: blackstone
+    - uses: actions/checkout@v2
+      with:
+        repository: hyperledger/burrow
+        path: burrow
     - uses: actions/setup-node@v1
       with:
         node-version: '13.x'
@@ -17,9 +23,13 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
+        cd burrow
+        make install
+        cd ../blackstone
         git config --global user.email "${GITHUB_ACTOR}"
         git config --global user.name "${GITHUB_ACTOR}"
         git fetch --prune --unshallow
         npm version --no-git-tag-version $(git describe --tags)
         npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+        yarn install
         make publish .

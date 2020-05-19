@@ -20,8 +20,6 @@ jobs:
         git config --global user.email "${GITHUB_ACTOR}"
         git config --global user.name "${GITHUB_ACTOR}"
         git fetch --prune --unshallow
-        npm install
-        npm run build
         npm version --no-git-tag-version $(git describe --tags)
         npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-        npm publish --access public .
+        make publish .

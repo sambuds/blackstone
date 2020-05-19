@@ -54,6 +54,10 @@ export enum ParameterType {
     DOCUMENT,
     LARGE_TEXT,
     POSITIVE_NUMBER,
+    DURATION,
+    CYCLE,
+    REPRESENTATIVES,
+    APPROVER
 };
   
 export type Parameter = {

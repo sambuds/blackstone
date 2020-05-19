@@ -100,6 +100,7 @@ contract DataTypesAccess {
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.DURATION), "Time Duration");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.CYCLE), "Time Cycle");
         emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.REPRESENTATIVES), "Representatives");
+        emit LogParameterType("AN://parameter-types", uint(DataTypes.ParameterType.APPROVER), "Approver");
     }
 
 }

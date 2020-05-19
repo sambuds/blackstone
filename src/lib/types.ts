@@ -56,7 +56,8 @@ export enum ParameterType {
     POSITIVE_NUMBER,
     TIME_DURATION,
     TIME_CYCLE,
-    REPRESENTATIVES
+    REPRESENTATIVES,
+    APPROVER
 };
   
 export type Parameter = {

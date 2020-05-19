@@ -22,7 +22,8 @@ library DataTypes {
     POSITIVE_NUMBER,
     DURATION,
     CYCLE,
-    REPRESENTATIVES
+    REPRESENTATIVES,
+    APPROVER
   }
   
   // ************************* BOOL ********************************

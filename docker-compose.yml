@@ -2,7 +2,7 @@ version: "3.7"
 services:
 
   postgres:
-    image: postgres:9-alpine
+    image: postgres:12-alpine
     ports:
     - "5432:5432"
     environment:
@@ -12,7 +12,7 @@ services:
 
   vent:
     image: hyperledger/burrow:0.29.5
-    restart: always
+    restart: on-failure
     command:
     - vent
     - start

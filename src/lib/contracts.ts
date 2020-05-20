@@ -19,7 +19,7 @@ import {Ecosystem_v1_0_1 as Ecosystem} from '../commons-auth/Ecosystem_v1_0_1.ab
 import {Organization} from '../commons-auth/Organization.abi';
 import {Agreement as agreement, Archetype as archetype, DataType, Parameter,} from './types';
 import {getLogger, Logger} from 'log4js';
-import {VentListener, Watcher} from "./vent";
+import {VentListener, BurrowWatcher} from "./vent";
 
 export async function RegisterEcosystem(client: Client, manager: Manager, account: string, name: string) {
     const address = await manager.EcosystemRegistry
@@ -962,7 +962,7 @@ export async function NewContracts(url: string, account: string, ecosystemName: 
 
 export class SyncContracts extends Contracts {
   vent: VentListener;
-  watch: Watcher;
+  watch: BurrowWatcher;
 
   constructor(contracts: Contracts, vent: VentListener) {
     super(contracts.client, contracts.manager, contracts.ecosystem);

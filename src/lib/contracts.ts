@@ -529,7 +529,7 @@ export class Contracts {
             case DataType.BOOLEAN:
                 await processDefinition.createTransitionConditionForBool(
                     BytesFromString(gatewayId), BytesFromString(activityId), BytesFromString(dataPath),
-                    BytesFromString(dataStorageId), dataStorage, operator, Boolean(value)
+                    BytesFromString(dataStorageId), dataStorage, operator, value === 'true'
                 );
                 break
             case DataType.STRING:

@@ -13,7 +13,7 @@ copied to the ~/.monax/bundles local bundle cache by the create_release.sh scrip
 - `doc/` - Contains the public documentation for the SDK, including auto-generated API doc.
 - `src/` - The source code for Contract Bundles with folder names reflecting the bundle name.
 - `LICENSE.md` - The Monax SDK license
-- `package.json` - The SDK descriptor in the form of a NPM package.json. This file dictates the release version of the SDK. It also specifies JavaScript dependencies and is used to provide shortcut commands like (`npm test` or `npm run build`).
+- `package.json` - The SDK descriptor in the form of a NPM package.json. This file dictates the release version of the SDK. It also specifies JavaScript dependencies and is used to provide shortcut commands like (`yarn test` or `yarn run build`).
 - `README.md` - The repository landing page
 - `ReleaseNotes.md` - The SDK's latest Release Notes
 
@@ -38,13 +38,13 @@ Each bundle typically contains the following (see below for further details on s
 
 Example:
 ```
-docker run --rm -it -v `pwd`:/app -v $HOME/.config/gcloud:/root/.config/gcloud -v $HOME/.monax:/root/.monax --workdir /app quay.io/monax/monax:0.19.6-platform_deployer npm test
+docker run --rm -it -v `pwd`:/app -v $HOME/.config/gcloud:/root/.config/gcloud -v $HOME/.monax:/root/.monax --workdir /app quay.io/monax/monax:0.19.6-platform_deployer yarn test
 ```
 
 
 ### Initial Project Setup
 
-Execute `npm install` after a fresh checkout of an SDK repository
+Execute `yarn install` after a fresh checkout of an SDK repository
 
 ### Dependency Management
 
@@ -97,7 +97,7 @@ There are two options for building:
 
 #### 1. NPM Script (recommended)
 
-From the SDK root run `npm run build` to execute the pre-configured "build" task in `package.json` that will include all bundles of the src/ folder.
+From the SDK root run `yarn run build` to execute the pre-configured "build" task in `package.json` that will include all bundles of the src/ folder.
 
 #### 2. Manual Parameterization
 
@@ -117,9 +117,9 @@ There are two options to execute the SDK tests. Both options support running onl
 
 #### 1. NPM Script (recommended)
 
-From the SDK root run `npm test` to test all bundles or a subset with options, for example:
+From the SDK root run `yarn test` to test all bundles or a subset with options, for example:
 ```
-npm test -- commons-base,commons-management --skip-keys --skip-chain --skip-build
+yarn test -- commons-base,commons-management --skip-keys --skip-chain --skip-build
 ```
 
 #### 2. Manual Invocation
@@ -140,7 +140,7 @@ To test bundle XYZ, from the SDK root directory execute:
 
 ```
 $> monax chains start bundles-test --init-dir build/chain/chain_full_000/
-$> npm run build
+$> yarn run build
 $> cd src/XYZ
 $> monax pkgs do -c bundles-test -a <PK-of-full_000-account>
 ```

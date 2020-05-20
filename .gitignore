@@ -24,7 +24,6 @@ test-contracts*.log
 
 # node stuff
 node_modules
-npm-debug.log
 
 # contracts stuff
 public-abi

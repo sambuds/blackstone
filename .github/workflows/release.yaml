@@ -6,20 +6,10 @@ on:
 
 jobs:
   release:
-    name: npm
     runs-on: ubuntu-latest
     steps:
-    - name: Setup Go
-      uses: actions/setup-go@v2-beta
-      with:
-        go-version: '^1.14.2'
     - uses: actions/checkout@v2
-      with:
-        path: blackstone
-    - uses: actions/checkout@v2
-      with:
-        repository: hyperledger/burrow
-        path: burrow
+    - run: git fetch --prune --unshallow
     - uses: actions/setup-node@v1
       with:
         node-version: '13.x'
@@ -27,14 +17,9 @@ jobs:
       env:
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       run: |
-        cd burrow
-        make install
-        cd ../blackstone
         git config --global user.email "${GITHUB_ACTOR}"
         git config --global user.name "${GITHUB_ACTOR}"
-        git fetch --prune --unshallow
-        npm version --no-git-tag-version $(git describe --tags)
-        npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-        brew install https://raw.githubusercontent.com/ethereum/homebrew-ethereum/4d13060698e7f0cdac9ec24627b6485122b8f1b6/solidity.rb
         yarn install
-        make publish .
+        yarn version --no-git-tag-version $(git describe --tags)
+        yarn config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+        make publish

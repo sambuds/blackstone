@@ -20,6 +20,6 @@ jobs:
         git config --global user.email "${GITHUB_ACTOR}"
         git config --global user.name "${GITHUB_ACTOR}"
         yarn install
-        yarn version --no-git-tag-version $(git describe --tags)
+        yarn version --no-git-tag-version --new-version $(git describe --tags)
         yarn config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
         make publish

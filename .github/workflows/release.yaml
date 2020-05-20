@@ -35,6 +35,6 @@ jobs:
         git fetch --prune --unshallow
         npm version --no-git-tag-version $(git describe --tags)
         npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
-        npm install --global solc@0.5.12
+        brew install https://raw.githubusercontent.com/ethereum/homebrew-ethereum/4d13060698e7f0cdac9ec24627b6485122b8f1b6/solidity.rb
         yarn install
         make publish .

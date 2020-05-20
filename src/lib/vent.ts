@@ -1,8 +1,7 @@
-import { Client as PGClient, Notification } from 'pg';
-import { EventEmitter } from 'events';
-import { TxExecution, TxHeader } from '@hyperledger/burrow/proto/exec_pb';
-import { Logger, getLogger } from 'log4js';
-import { Contracts } from './contracts';
+import {EventEmitter} from 'events';
+import {TxExecution, TxHeader} from '@hyperledger/burrow/proto/exec_pb';
+import {getLogger, Logger} from 'log4js';
+import createPostgresSubscriber, {Subscriber} from "pg-listen";
 
 export type Watcher = {
   update(result: TxExecution): TxExecution;
@@ -20,7 +19,7 @@ export class VentListener {
   maxWaitTime: number;
   high_water: number;
   emitter: EventEmitter;
-  client: PGClient;
+  subscriber: Subscriber<Record<'height', { '_height': string }>>;
   log: Logger;
 
   constructor(connection: string, maxWaitTime: number) {
@@ -29,6 +28,9 @@ export class VentListener {
     this.high_water = 0;
     this.emitter = new EventEmitter();
     this.log = getLogger('vent-listener');
+    this.subscriber = createPostgresSubscriber(
+      {connectionString: this.connection},
+      {retryTimeout: Infinity});
   }
 
   NewWatcher(): Watcher {
@@ -41,7 +43,7 @@ export class VentListener {
       update: (result: TxExecution) => {
         const height = heightFromResult(result);
         if (height !== undefined) {
-          if (height > capture.getHeader().getHeight()) {     
+          if (height > capture.getHeader().getHeight()) {
             capture.getHeader().setHeight(height);
           }
         }
@@ -51,33 +53,30 @@ export class VentListener {
     };
   }
 
-  private handleHeight(msg: Notification) {
-    if (msg.channel === 'height') {
-      // Extract height from notification payload
-      const payload = JSON.parse(msg.payload);
-      const height = Number.parseInt(payload._height, 10);
-      // Conditionally update high water mark and emit event
-      if (height > this.high_water) {
-        this.high_water = height;
-        this.emitter.emit('height', this.high_water);
-        this.log.trace(`Updated high_water to height: [ ${this.high_water} ]`);
-      }
+  private handleHeight(height: number) {
+    // Conditionally update high water mark and emit event
+    if (height > this.high_water) {
+      this.high_water = height;
+      this.emitter.emit('height', this.high_water);
+      this.log.trace(`Updated high_water to height: [ ${this.high_water} ]`);
     }
   }
 
   async listen() {
-    this.client = new PGClient({ connectionString: this.connection });
-    await this.client.connect();
-    this.client.on('error', (err) => {
-      this.log.error(`Encountered VentHelper pg client error: ${err.stack}`);
-    });
-    this.client.on('end', () => {
-      // Emitted when the client disconnects from the PostgreSQL server
-      this.log.info('VentHelper pg client disconnected. Creating a new client and resuming listening for height notifications...');
-      this.listen();
-    });
-    this.client.on('notification', msg => this.handleHeight(msg));
-    this.client.query('LISTEN height');
+    this.subscriber.notifications.on("height", msg => this.handleHeight(Number(msg._height)));
+
+    this.subscriber.events.on("error", (error) => {
+      // With our retry option this _should_ never happen (pg-listen only errs if retry limit or timeout is exceeded) so
+      // we m
+      console.error("Fatal database connection error from VentListener (this should not happen - we should reconnect indefinitely):", error)
+      process.exit(1)
+    })
+
+    process.on("exit", () => {
+      this.subscriber.close()
+    })
+
+    await this.subscriber.connect();
   }
 }
 
@@ -121,36 +120,4 @@ export function WaitForVent(vent: VentListener) {
       return null;
     });
   };
-}
-
-export class Synched extends Contracts {
-  vent: VentListener;
-  watch: Watcher;
-
-  constructor(contracts: Contracts, vent: VentListener) {
-    super(contracts.client, contracts.manager, contracts.ecosystem);
-
-    this.vent = vent;
-    this.watch = this.vent.NewWatcher();
-
-    this.client.interceptor = async (data) => {
-      this.watch.update(data);
-      return data;
-    };
-  }
-
-  async do<T>(func: (contracts: this) => Promise<T>): Promise<T> {
-    const result = await func(this);
-    await this.sync();
-    return result;
-  }
-
-  async sync() {
-    return this.watch.wait();
-  }
-}
-
-export async function NewSynched(contracts: Contracts, vent: VentListener) {
-  await vent.listen();
-  return new Synched(contracts, vent);
 }

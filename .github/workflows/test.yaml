@@ -14,8 +14,8 @@ jobs:
         node-version: '13.x'
     - uses: actions/checkout@v2
     - run: make docker_run_chain
-    - run: npm install
-    - run: npm test
+    - run: yarn install
+    - run: yarn test
 
   solidity:
     runs-on: ubuntu-latest

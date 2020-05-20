@@ -7,4 +7,3 @@ build_file="build.yaml"
 
 cd src
 burrow deploy "$build_file"
-cp ../abi.csv ./bin/.

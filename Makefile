@@ -21,8 +21,8 @@ clean:
 	rm -rf dist
 	rm -rf src/bin
 
-.PHONY: build_contracts
-build_contracts:
+.PHONY: build_contracts_burrow
+build_contracts_burrow:
 	cd src && burrow deploy build.yaml
 
 # Just run the dependency services in docker compose
@@ -50,12 +50,11 @@ build_ci_image:
 push_ci_image: build_ci_image
 	docker push ${CI_IMAGE}
 
-dist:
+dist: src/build.ts $(shell find src -name '*.sol')
 	yarn build
 	rsync -avzC --include='*/' --include='*.sol' --include='*.yaml' --exclude='*' src dist
 	cp -r src/bin dist
-	cp -r abi.csv dist
 
 .PHONY: publish
-publish: clean build_contracts dist
+publish: clean dist
 	yarn publish --access public

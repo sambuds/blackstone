@@ -35,5 +35,6 @@ jobs:
         git fetch --prune --unshallow
         npm version --no-git-tag-version $(git describe --tags)
         npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+        npm install --global solc@0.5.12
         yarn install
         make publish .

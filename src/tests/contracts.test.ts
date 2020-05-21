@@ -1,20 +1,18 @@
-import { Contracts } from '../lib/contracts';
-import { Archetype, Agreement, Model } from '../lib/types';
-import rid = require('random-id');
 import * as chai from 'chai';
 import chaiAsPromised from 'chai-as-promised';
-import { SHA3 } from '../lib/utils';
-import { load } from './before';
+import {Contracts, NewSync, SyncContracts} from '../lib/contracts';
+import {Agreement, Archetype, Model} from '../lib/types';
+import {SHA3} from '../lib/utils';
+import {VentListener} from "../lib/vent";
+import {load} from './before';
+import rid = require('random-id');
+
 chai.use(chaiAsPromised);
-const { expect, assert } = chai;
+const {expect, assert} = chai;
 
-let contracts: Contracts;
+const bd = 'blackstone_development'
 
-before(function (done) {
-  this.timeout(99999999);
-  load().then(loaded => { contracts = loaded; done(); })
-        .catch(error => done(error));
-});
+const connectionString = `postgres://${process.env.POSTGRES_DB_USER || bd}:${process.env.POSTGRES_DB_PASSWORD || bd}@${process.env.POSTGRES_DB_HOST || 'localhost'}:${process.env.POSTGRES_DB_PORT || 5432}/${process.env.POSTGRES_DB_DATABASE || bd}`;
 
 describe('CONTRACTS', () => {
   let pmAddress: string;
@@ -24,13 +22,13 @@ describe('CONTRACTS', () => {
   let agrAddress: string;
   const formationInterface = 'Agreement Formation';
   const executionInterface = 'Agreement Execution';
-  const model: Model = { 
-    id: rid(16, 'aA0'), 
+  const model: Model = {
+    id: rid(16, 'aA0'),
     version: [1, 0, 0],
     address: '',
   };
-  const formationProcess = { id: 'testProcessDefn1', name: 'Formation Process' };
-  const executionProcess = { id: 'testProcessDefn2', name: 'Execution Process' };
+  const formationProcess = {id: 'testProcessDefn1', name: 'Formation Process'};
+  const executionProcess = {id: 'testProcessDefn2', name: 'Execution Process'};
   const pAccount = {
     id: 'participantAcct',
     address: '',
@@ -113,6 +111,21 @@ describe('CONTRACTS', () => {
     governingAgreements: [],
   };
 
+  let contracts: Contracts;
+  let vent: VentListener;
+  let syncContracts: SyncContracts;
+
+  before(async () => {
+    contracts = await load()
+    vent = new VentListener(connectionString, 5000)
+    syncContracts = await NewSync(contracts, vent)
+  });
+
+  after(async () => {
+    await vent.close()
+  })
+
+
   it('Should create a user', async () => {
     const res = await contracts.createUser({
       username: SHA3(rid(16, 'aA0'))
@@ -126,55 +139,58 @@ describe('CONTRACTS', () => {
     agreement.owner = pAccount.address;
     agreement.creator = pAccount.address;
     agreement.parties = [pAccount.address];
-  }).timeout(10000);
+  });
 
-  it('Should create a process model', async () => {
-    const res = await contracts.createProcessModel(model.id, model.version, archetype.author, false, 'hoard-grant');
-    expect(res).to.match(/[0-9A-Fa-f]{40}/);
-    pmAddress = res;
-  }).timeout(10000);
+  it('Should create a process model (and sync with VentListener)', async () => {
+    // Smoke test for vent listener
+    await syncContracts.do(async c => {
+      const res = await c.createProcessModel(model.id, model.version, archetype.author, false, 'hoard-grant');
+      expect(res).to.match(/[0-9A-Fa-f]{40}/);
+      pmAddress = res;
+    });
+  });
 
   it('Should add process interface implementations', async () => {
     await contracts.addProcessInterface(pmAddress, formationInterface);
     await contracts.addProcessInterface(pmAddress, executionInterface);
-  }).timeout(10000);
+  });
 
   it('Should create a formation process definition', async () => {
     const res = await contracts.createProcessDefinition(pmAddress, formationProcess.id);
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
     pdFormAddress = res;
     archetype.formationProcess = pdFormAddress;
-  }).timeout(10000);
+  });
 
   it('Should create a execution process definition', async () => {
     const res = await contracts.createProcessDefinition(pmAddress, executionProcess.id);
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
     pdExecAddress = res;
     archetype.executionProcess = pdExecAddress;
-  }).timeout(10000);
+  });
 
   it('Should add formation process interface implementation', () => {
     return assert.isFulfilled(contracts.addProcessInterfaceImplementation(pmAddress, pdFormAddress, formationInterface));
-  }).timeout(10000);
+  });
 
   it('Should add execution process interface implementation', () => {
     return assert.isFulfilled(contracts.addProcessInterfaceImplementation(pmAddress, pdExecAddress, executionInterface));
-  }).timeout(10000);
+  });
 
   it('Should add a participant with account address', async () => {
     await assert.isFulfilled(contracts.addParticipant(pmAddress, pAccount.id, pAccount.address, '', '', ''));
-  }).timeout(10000);
+  });
 
   it('Should add a conditional performer', () => {
     return assert.isFulfilled(contracts.addParticipant(
-          pmAddress,
-          pConditional.id,
-          "",
-          pConditional.dataPath,
-          pConditional.dataStorageId,
-          ""
+      pmAddress,
+      pConditional.id,
+      "",
+      pConditional.dataPath,
+      pConditional.dataStorageId,
+      ""
     ));
-  }).timeout(10000);
+  });
 
   // // it('Should create first activity definition', () => {
   // //   return assert.isFulfilled(contracts.createActivityDefinition(
@@ -189,7 +205,7 @@ describe('CONTRACTS', () => {
   // //         userTask1.subProcessModelId,
   // //         userTask1.subProcessDefinitionId
   // //   ));
-  // // }).timeout(10000);
+  // // });
 
   // // it('Should create second activity definition', () => {
   // //   return assert.isFulfilled(contracts.createActivityDefinition(
@@ -204,7 +220,7 @@ describe('CONTRACTS', () => {
   // //         userTask2.subProcessModelId,
   // //         userTask2.subProcessDefinitionId
   // //   ));
-  // // }).timeout(10000);
+  // // });
 
   it('Should create first activity definition', async () => {
     await assert.isFulfilled(
@@ -221,7 +237,7 @@ describe('CONTRACTS', () => {
         dummyTask1.subProcessDefinitionId,
       ),
     );
-  }).timeout(10000);
+  });
 
   it('Should create second activity definition', async () => {
     await assert.isFulfilled(
@@ -238,40 +254,40 @@ describe('CONTRACTS', () => {
         dummyTask2.subProcessDefinitionId,
       ),
     );
-  }).timeout(10000);
+  });
 
   // // it('Should create data mapping', () => {
   // //   return assert.isFulfilled(
   // //     contracts.createDataMapping(pdAddress, dataMapping.activityId,
   // //       dataMapping.direction, dataMapping.accessPath, dataMapping.dataPath,
   // //       dataMapping.dataStorageId, dataMapping.dataStorage));
-  // // }).timeout(10000);
+  // // });
 
   // // it('Should create a transition', () => {
   // //   return assert.isFulfilled(
   // //     contracts.createTransition(pdAddress, userTask1.id, userTask2.id));
-  // // }).timeout(10000);
+  // // });
 
   it('Should validate formation process', async () => {
     await expect(contracts.isValidProcess(pdFormAddress)).to.eventually.equal(true);
-  }).timeout(10000);
+  });
 
   it('Should validate execution process', async () => {
     await expect(contracts.isValidProcess(pdExecAddress)).to.eventually.equal(true);
-  }).timeout(10000);
+  });
 
   it('Should get formation start activity', async () => {
     await expect(contracts.getStartActivity(pdFormAddress)).to.eventually.equal('dummyTask1');
-  }).timeout(10000);
+  });
 
   it('Should get execution start activity', async () => {
     await expect(contracts.getStartActivity(pdExecAddress)).to.eventually.equal('dummyTask2');
-  }).timeout(10000);
+  });
 
   it('Should fail to create archetype with fake package id', async () => {
     archetype.packageId = 'abc123';
     await assert.isRejected(contracts.createArchetype(archetype));
-  }).timeout(10000);
+  });
 
   // it('Should create a package', async () => {
   //   archetype.packageId = await contracts.createArchetypePackage(
@@ -281,7 +297,7 @@ describe('CONTRACTS', () => {
   //   );
   //   expect(archetype.packageId).to.exist;
   //   await contracts.activateArchetypePackage(archetype.packageId, archetype.author);
-  // }).timeout(10000);
+  // });
 
   it('Should create an archetype', async () => {
     archetype.packageId = '';
@@ -289,33 +305,33 @@ describe('CONTRACTS', () => {
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
     archAddress = res;
     agreement.archetype = archAddress;
-  }).timeout(10000);
+  });
 
   it('Should create an agreement', async () => {
     const res = await contracts.createAgreement(agreement);
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
     agrAddress = res;
-  }).timeout(10000);
+  });
 
   // it('Should get agreement name', async () => {
   //   let name = await contracts.getDataFromAgreement(agrAddress);
   //   expect(name).to.equal(agreement.name);
-  // }).timeout(10000);
+  // });
 
   it('Should create a process instance from agreement', async () => {
     const res = await contracts.startProcessFromAgreement(agrAddress);
     expect(res).to.match(/[0-9A-Fa-f]{40}/);
-  }).timeout(10000);
+  });
 
   it('Should update the event log hoard reference of an agreement', async () => {
     await assert.isFulfilled(contracts.updateAgreementFileReference('EventLog', agrAddress, 'hoard-grant'));
-  }).timeout(10000);
+  });
 
   it('Should update the signature log hoard reference of an agreement', async () => {
     await assert.isFulfilled(contracts.updateAgreementFileReference('SignatureLog', agrAddress, 'hoard-grant'));
-  }).timeout(10000);
+  });
 
   // it('Should cancel an agreement', async () => {
   //   await assert.isFulfilled(contracts.cancelAgreement(pAccount.address, agrAddress));
-  // }).timeout(10000);
+  // });
 });

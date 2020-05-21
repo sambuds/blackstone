@@ -5,7 +5,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "mocha": {
-    "bail": false
+    "bail": false,
+    "exit": true,
+    "timeout": 10000
   },
   "files": [
     "dist"
@@ -45,7 +47,7 @@
   "devDependencies": {
     "@types/chai": "^4.2.8",
     "@types/chai-as-promised": "^7.1.2",
-    "@types/mocha": "^7.0.1",
+    "@types/mocha": "^7.0.2",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "nanoid": "^2.1.10",

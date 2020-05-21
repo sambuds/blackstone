@@ -92,6 +92,14 @@ const contracts = [
 
 const binPath = 'bin';
 
+
+/**
+ * This is our Solidity -> Typesciprt, it:
+ *  - Compiles Solidity source
+ *  - Generates typescript code wrapping the Solidity contracts and functions that calls Burrow
+ *  - Generates typescript code to deploy the contracts
+ *  - Outputs the ABI files into bin to be later included in the distribution (for Vent and other ABI-consuming services)
+ */
 function main() {
   fs.mkdirSync(binPath, {recursive: true})
   const input = solts.EncodeInput(solts.InputDescriptionFromFiles(...contracts));
@@ -114,6 +122,8 @@ function main() {
     }
     const target = filename.replace(/\.[^/.]+$/, '.abi.ts');
     const basename = path.basename(filename, '.sol');
+    // Write the ABIs emitted for each file to the name of that file without extension. We flatten into a single
+    // directory because that's what burrow deploy has always done. 
     fs.writeFileSync(path.join(binPath, basename + '.bin'), JSON.stringify(solidity[basename]))
     fs.writeFileSync(target, solts.Print(...solts.NewFile(compiled)));
   }

@@ -6,15 +6,16 @@ on:
     - master
 
 jobs:
-  mocha:
+  js:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-node@v1
       with:
         node-version: '13.x'
     - uses: actions/checkout@v2
-    - run: make docker_run_chain
     - run: yarn install
+    - run: yarn build
+    - run: make docker_run_deps
     - run: yarn test
 
   solidity:

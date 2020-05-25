@@ -468,6 +468,46 @@ export class Contracts {
             });
     }
 
+    async createIntermediateEvent(
+        processAddress: string,
+        eventId: string,
+        eventType: number,
+        eventBehavior: number,
+        dataPath: string,
+        dataStorageId: string,
+        dataStorage: string,
+        timestampConstant: number,
+        durationConstant: string
+    ) {
+        this.log.debug(`REQUEST: Created intermediate event with data: ${JSON.stringify({
+            processAddress,
+            eventId,
+            eventType,
+            eventBehavior,
+            dataPath,
+            dataStorageId,
+            dataStorage,
+            timestampConstant,
+            durationConstant
+        })}`);
+
+        try {
+            await new ProcessDefinition.Contract(this.client, processAddress)
+                .createIntermediateEvent(
+                    BytesFromString(eventId),
+                    eventType,
+                    eventBehavior,
+                    BytesFromString(dataPath),
+                    BytesFromString(dataStorageId),
+                    dataStorage,
+                    timestampConstant,
+                    durationConstant
+                );
+        } catch (err) {
+            this.log.error(`Failed to create intermediate event: ${err.stack} \n ${err.message}`);
+        }
+    }
+
     async createDataMapping(processAddress: string, id: string, direction: number, accessPath: string,
         dataPath: string, dataStorageId: string, dataStorage: string) {
         this.log.debug(`REQUEST: Create data mapping with data: ${JSON.stringify({

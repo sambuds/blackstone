@@ -204,7 +204,16 @@ contract DefaultProcessDefinition is AbstractVersionedArtifact(1,0,0), AbstractD
 	 * @param _timestampConstant a fixed value for timer based events representing either a datetime or a duration in secs
 	 * @param _durationConstant a fixed value for timer-based events representing a duration in secs
 	 */
-	function createIntermediateEvent(bytes32 _id, BpmModel.EventType _eventType, BpmModel.IntermediateEventBehavior _eventBehavior, bytes32 _dataPath, bytes32 _dataStorageId, address _dataStorage, uint256 _timestampConstant, string calldata _durationConstant)
+	function createIntermediateEvent(
+		bytes32 _id, 
+		BpmModel.EventType _eventType,
+		BpmModel.IntermediateEventBehavior _eventBehavior,
+		bytes32 _dataPath,
+		bytes32 _dataStorageId,
+		address _dataStorage,
+		uint256 _timestampConstant,
+		string calldata _durationConstant
+	)
 		external
 		pre_invalidate
 	{
@@ -234,6 +243,18 @@ contract DefaultProcessDefinition is AbstractVersionedArtifact(1,0,0), AbstractD
 			graphElements.rows[_id].intermediateEvent.timerStorage.dataStorage = _dataStorage;
 		}
 		graphElements.rows[_id].exists = true;
+		emit LogTimerEventDefinitionCreation(
+			EVENT_ID_TIMER_EVENT_DEFINITIONS,
+			address(this),
+			_id,
+			uint8(_eventType),
+			uint8(_eventBehavior),
+			_dataPath,
+			_dataStorageId,
+			_dataStorage,
+			_timestampConstant,
+			_durationConstant
+		);
 	}
 
 	/**

@@ -42,11 +42,24 @@ contract ProcessDefinition is VersionedArtifact, Bytes32Identifiable {
 		bytes32 subProcessDefinitionId
 	);
 
+	event LogTimerEventDefinitionCreation(
+		bytes32 indexed eventId,
+		address processDefinitionAddress,
+		bytes32 timerEventId,
+		uint8 timerEventType,
+		uint8 timerEventBehavior,
+		bytes32 dataPath,
+		bytes32 dataStorageId,
+		address dataStorage,
+		uint256 timestampConstant,
+		string durationConstant
+	);
+
 	event LogDataMappingCreation(
 		bytes32 indexed eventId,
 		address processDefinitionAddress,
 		bytes32 activityId,
-    	bytes32 dataMappingId,
+    bytes32 dataMappingId,
 		bytes32 dataPath,
 		bytes32 dataStorageId,
 		address dataStorage,
@@ -55,6 +68,7 @@ contract ProcessDefinition is VersionedArtifact, Bytes32Identifiable {
 
 	bytes32 public constant EVENT_ID_PROCESS_DEFINITIONS = "AN://process-definitions";
 	bytes32 public constant EVENT_ID_ACTIVITY_DEFINITIONS = "AN://activity-definitions";
+	bytes32 public constant EVENT_ID_TIMER_EVENT_DEFINITIONS = "AN://timer-event-definitions";
 	bytes32 public constant EVENT_ID_DATA_MAPPINGS = "AN://data-mappings";
 
 	/**

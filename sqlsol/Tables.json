@@ -494,6 +494,71 @@
       ]
     },
     {
+      "TableName": "timer_event_instances",
+      "Filter": "Log1Text = 'AN://timer-event-instances'",
+      "FieldMappings": [
+        {
+          "Field": "timerEventInstanceId",
+          "ColumnName": "timer_event_instance_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "timerEventId",
+          "ColumnName": "timer_event_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "processInstanceAddress",
+          "ColumnName": "process_instance_address",
+          "Type": "address"
+        },
+        {
+          "Field": "timerEventType",
+          "ColumnName": "timer_event_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "timerEventBehavior",
+          "ColumnName": "timer_event_behavior",
+          "Type": "uint8"
+        },
+        {
+          "Field": "created",
+          "ColumnName": "created",
+          "Type": "uint"
+        },
+        {
+          "Field": "state",
+          "ColumnName": "state",
+          "Type": "uint8"
+        }
+      ]
+    },
+    {
+      "TableName": "timer_event_wait_until",
+      "Filter": "Log1Text = 'AN://timer-event-wait-until'",
+      "FieldMappings": [
+        {
+          "Field": "timerEventInstanceId",
+          "ColumnName": "timer_event_instance_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "timerTarget",
+          "ColumnName": "timer_target",
+          "Type": "uint"
+        },
+        {
+          "Field": "timerDuration",
+          "ColumnName": "timer_duration",
+          "Type": "string"
+        }
+      ]
+    },
+    {
       "TableName": "process_instances",
       "Filter": "Log1Text = 'AN://process-instances'",
       "FieldMappings": [
@@ -580,6 +645,61 @@
           "ColumnName": "sub_process_definition_id",
           "Type": "bytes32",
           "BytesToString": true
+        }
+      ]
+    },
+    {
+      "TableName": "timer_event_definitions",
+      "Filter": "Log1Text = 'AN://timer-event-definitions'",
+      "FieldMappings": [
+        {
+          "Field": "timerEventId",
+          "ColumnName": "timer_event_id",
+          "Type": "bytes32",
+          "Primary": true
+        },
+        {
+          "Field": "processDefinitionAddress",
+          "ColumnName": "process_definition_address",
+          "Type": "address",
+          "Primary": true
+        },
+        {
+          "Field": "timerEventType",
+          "ColumnName": "timer_event_type",
+          "Type": "uint8"
+        },
+        {
+          "Field": "timerEventBehavior",
+          "ColumnName": "timer_event_behavior",
+          "Type": "uint8"
+        },
+        {
+          "Field": "dataPath",
+          "ColumnName": "data_path",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "dataStorageId",
+          "ColumnName": "data_storage_id",
+          "Type": "bytes32",
+          "BytesToString": true
+        },
+        {
+          "Field": "dataStorage",
+          "ColumnName": "data_storage",
+          "Type": "address"
+        },
+        {
+          "Field": "timestampConstant",
+          "ColumnName": "timestamp_constant",
+          "Type": "uint256"
+        },
+        {
+          "Field": "durationConstant",
+          "ColumnName": "duration_constant",
+          "Type": "string"
         }
       ]
     },

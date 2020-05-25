@@ -36,6 +36,7 @@ export module ProcessDefinition {
         LogDataMappingCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataMappingCreation", this.address, callback); }
         LogProcessDefinitionCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessDefinitionCreation", this.address, callback); }
         LogProcessDefinitionInterfaceIdUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessDefinitionInterfaceIdUpdate", this.address, callback); }
+        LogTimerEventDefinitionCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogTimerEventDefinitionCreation", this.address, callback); }
         ERC165_ID_VERSIONED_ARTIFACT() {
             const data = Encode(this.client).ERC165_ID_VERSIONED_ARTIFACT();
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -58,6 +59,12 @@ export module ProcessDefinition {
             const data = Encode(this.client).EVENT_ID_PROCESS_DEFINITIONS();
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_PROCESS_DEFINITIONS();
+            });
+        }
+        EVENT_ID_TIMER_EVENT_DEFINITIONS() {
+            const data = Encode(this.client).EVENT_ID_TIMER_EVENT_DEFINITIONS();
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).EVENT_ID_TIMER_EVENT_DEFINITIONS();
             });
         }
         addBoundaryEvent(_activityId: Buffer, _id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) {
@@ -439,6 +446,7 @@ export module ProcessDefinition {
         EVENT_ID_ACTIVITY_DEFINITIONS: () => { return client.encode("AF201B90", []); },
         EVENT_ID_DATA_MAPPINGS: () => { return client.encode("6983067E", []); },
         EVENT_ID_PROCESS_DEFINITIONS: () => { return client.encode("BA840F64", []); },
+        EVENT_ID_TIMER_EVENT_DEFINITIONS: () => { return client.encode("9CB85F60", []); },
         addBoundaryEvent: (_activityId: Buffer, _id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) => { return client.encode("581654CE", ["bytes32", "bytes32", "uint8", "uint8", "bytes32", "bytes32", "address", "uint256", "string"], _activityId, _id, _eventType, _eventBehavior, _dataPath, _dataStorageId, _dataStorage, _timestampConstant, _durationConstant); },
         addBoundaryEventAction: (_id: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _fixedTarget: string, _actionFunction: string) => { return client.encode("89A392E6", ["bytes32", "bytes32", "bytes32", "address", "address", "string"], _id, _dataPath, _dataStorageId, _dataStorage, _fixedTarget, _actionFunction); },
         addProcessInterfaceImplementation: (_model: string, _interfaceId: Buffer) => { return client.encode("F001897D", ["address", "bytes32"], _model, _interfaceId); },
@@ -501,6 +509,7 @@ export module ProcessDefinition {
         EVENT_ID_ACTIVITY_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         EVENT_ID_DATA_MAPPINGS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         EVENT_ID_PROCESS_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
+        EVENT_ID_TIMER_EVENT_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         addBoundaryEvent: (): {
             eventId: Buffer;
         } => {

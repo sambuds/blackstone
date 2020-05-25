@@ -44,14 +44,20 @@ library BpmRuntimeLib {
         uint8 state
     );
 
-    event LogIntermediateEventInstanceCreation(
+    event LogTimerEventInstanceCreation(
         bytes32 indexed eventURN,
-        bytes32 eventInstanceId,
-        bytes32 eventId,
+        bytes32 timerEventInstanceId,
+        bytes32 timerEventId,
         address processInstanceAddress,
-        BpmModel.EventType eventType,
-        BpmModel.IntermediateEventBehavior eventBehavior,
+        BpmModel.EventType timerEventType,
+        BpmModel.IntermediateEventBehavior timerEventBehavior,
         uint created,
+        BpmRuntime.ActivityInstanceState state
+    );
+
+    event LogTimerEventInstanceStateUpdate(
+        bytes32 indexed eventURN,
+        bytes32 timerEventInstanceId,
         BpmRuntime.ActivityInstanceState state
     );
 
@@ -99,9 +105,9 @@ library BpmRuntimeLib {
         uint8 state
     );
 
-    event LogIntermediateEventTimerActivation(
+    event LogTimerEventTimerActivation(
 		bytes32 indexed eventURN,
-        bytes32 eventInstanceId,
+        bytes32 timerEventInstanceId,
         uint uintValue,
         string stringValue
     );
@@ -123,7 +129,8 @@ library BpmRuntimeLib {
     bytes32 public constant EVENT_ID_ACTIVITY_INSTANCES = "AN://activity-instances";
     // NOTE: EVENT_ID_PROCESS_INSTANCES is also defined in ProcessInstance.sol as similar events can generate from within the PI
 	bytes32 public constant EVENT_ID_PROCESS_INSTANCES = "AN://process-instances";
-	bytes32 public constant EVENT_ID_INTERMEDIATE_EVENTS = "AN://intermediate-events";
+	bytes32 public constant EVENT_ID_TIMER_EVENT_INSTANCES = "AN://timer-event-instances";
+	bytes32 public constant EVENT_ID_TIMER_EVENT_WAIT_UNTIL = "AN://timer-event-wait-until";
     bytes32 public constant EVENT_ID_BOUNDARY_EVENTS = "AN://boundary-events";
     bytes32 public constant EVENT_ID_TIMER_EVENTS = "AN://timer-events";
 
@@ -524,8 +531,8 @@ library BpmRuntimeLib {
 
             _eventInstance.timerTarget = timerTarget;
 
-            emit LogIntermediateEventTimerActivation(
-                EVENT_ID_TIMER_EVENTS,
+            emit LogTimerEventTimerActivation(
+                EVENT_ID_TIMER_EVENT_WAIT_UNTIL,
                 _eventInstance.id,
                 timerTarget,
                 timerDuration
@@ -538,8 +545,8 @@ library BpmRuntimeLib {
                 timerDuration = DataStorage(dataStorageAddress).getDataValueAsString(dataPath);
             }
 
-            emit LogIntermediateEventTimerActivation(
-                EVENT_ID_TIMER_EVENTS,
+            emit LogTimerEventTimerActivation(
+                EVENT_ID_TIMER_EVENT_WAIT_UNTIL,
                 _eventInstance.id,
                 timerTarget,
                 timerDuration
@@ -554,6 +561,11 @@ library BpmRuntimeLib {
         } else {
             _eventInstance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
         }
+        emit LogTimerEventInstanceStateUpdate (
+            EVENT_ID_TIMER_EVENT_INSTANCES,
+            _eventInstance.id,
+            _eventInstance.state
+        );
     }
 
     /**
@@ -1070,8 +1082,8 @@ library BpmRuntimeLib {
 
         (BpmModel.EventType eventType, BpmModel.IntermediateEventBehavior eventBehavior, , ) = _processInstance.processDefinition.getIntermediateEventGraphDetails(_eventId);
 
-        emit LogIntermediateEventInstanceCreation(
-            EVENT_ID_INTERMEDIATE_EVENTS,
+        emit LogTimerEventInstanceCreation(
+            EVENT_ID_TIMER_EVENT_INSTANCES,
             iei.id,
             iei.eventId,
             iei.processInstance,

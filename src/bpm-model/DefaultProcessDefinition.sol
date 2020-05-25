@@ -204,7 +204,16 @@ contract DefaultProcessDefinition is AbstractVersionedArtifact(1,0,0), AbstractD
 	 * @param _timestampConstant a fixed value for timer based events representing either a datetime or a duration in secs
 	 * @param _durationConstant a fixed value for timer-based events representing a duration in secs
 	 */
-	function createIntermediateEvent(bytes32 _id, BpmModel.EventType _eventType, BpmModel.IntermediateEventBehavior _eventBehavior, bytes32 _dataPath, bytes32 _dataStorageId, address _dataStorage, uint256 _timestampConstant, string calldata _durationConstant)
+	function createIntermediateEvent(
+		bytes32 _id, 
+		BpmModel.EventType _eventType,
+		BpmModel.IntermediateEventBehavior _eventBehavior,
+		bytes32 _dataPath,
+		bytes32 _dataStorageId,
+		address _dataStorage,
+		uint256 _timestampConstant,
+		string calldata _durationConstant
+	)
 		external
 		pre_invalidate
 	{
@@ -234,6 +243,103 @@ contract DefaultProcessDefinition is AbstractVersionedArtifact(1,0,0), AbstractD
 			graphElements.rows[_id].intermediateEvent.timerStorage.dataStorage = _dataStorage;
 		}
 		graphElements.rows[_id].exists = true;
+		emit LogIntermediateEventDefinitionCreation(
+			EVENT_ID_INTERM_EVENT_DEFINITIONS,
+			address(this),
+			_id,
+			uint8(_eventType),
+			uint8(_eventBehavior),
+			_dataPath,
+			_dataStorageId,
+			_dataStorage,
+			_timestampConstant,
+			_durationConstant
+		);
+	}
+
+	/**
+	 * Configures a datetime conditional data and offset conditional data for the given intermediate event.
+	 * These two can be used together to determine the timer target from a datetime + offset pair stored in
+	 * a data storage. For example the agreement can have two data storage params: expiryDate and numDaysBeforeExpiry.
+	 * If you want to configure the intermediate timer event to use those to determine its timer target,
+	 * then you would set:
+	 * 		`_datetimeDataPath`: `expiryDate`
+	 * 		`_datetimeDataStorageId`: `agreement`
+	 * 		`_offsetDataPath`: `numDaysBeforeExpiry`
+	 * 		`_offsetDataStorageId`: `agreement`
+	 * REVERTS if:
+	 * - the ID does not exist as a model element
+	 * @param _id the ID under which to register the element
+	 * @param _datetimeDataPath dataPath for a datetime param at a given data storage
+	 * @param _datetimeDataStorageId dataStorageId that references by a key the actual data storage address
+	 * @param _datetimeDataStorage dataStorage that identifies a data storage directly
+	 * @param _offsetDataPath dataPath for a datetime param at a given data storage
+	 * @param _offsetDataStorageId dataStorageId that references by a key the actual data storage address
+	 * @param _offsetDataStorage dataStorage that identifies a data storage directly
+	 */
+	function setIntermediateEventDatetimeAndOffset(
+		bytes32 _id,
+		bytes32 _datetimeDataPath,
+		bytes32 _datetimeDataStorageId,
+		address _datetimeDataStorage,
+		bytes32 _offsetDataPath,
+		bytes32 _offsetDataStorageId,
+		address _offsetDataStorage
+	)
+		external
+		pre_invalidate
+	{
+		ErrorsLib.revertIf(!graphElements.rows[_id].exists,
+			ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessDefinition.setIntermediateEventDatetimeAndOffset", "Graph element with _id not found");
+		
+		graphElements.rows[_id].intermediateEvent.datetimeStorage.dataPath = _datetimeDataPath;
+		graphElements.rows[_id].intermediateEvent.datetimeStorage.dataStorageId = _datetimeDataStorageId;
+		graphElements.rows[_id].intermediateEvent.datetimeStorage.dataStorage = _datetimeDataStorage;
+		graphElements.rows[_id].intermediateEvent.datetimeStorage.exists = true;
+
+		graphElements.rows[_id].intermediateEvent.offsetStorage.dataPath = _offsetDataPath;
+		graphElements.rows[_id].intermediateEvent.offsetStorage.dataStorageId = _offsetDataStorageId;
+		graphElements.rows[_id].intermediateEvent.offsetStorage.dataStorage = _offsetDataStorage;
+		graphElements.rows[_id].intermediateEvent.offsetStorage.exists = true;
+	}
+
+	/**
+	 * @dev Returns intermediate event datetime and offset Conditional Data details
+	 * @param _id the intermediate event Id
+	 * @return datetimeDataPath dataPath for a datetime param at a given data storage
+	 * @return datetimeDataStorageId dataStorageId that references by a key the actual data storage address
+	 * @return datetimeDataStorage dataStorage that identifies a data storage directly
+	 * @return offsetDataPath dataPath for a datetime param at a given data storage
+	 * @return offsetDataStorageId dataStorageId that references by a key the actual data storage address
+	 * @return offsetDataStorage dataStorage that identifies a data storage directly
+	 */
+	function getIntermediateEventDatetimeAndOffset(
+		bytes32 _id
+	)
+		external
+		returns (
+			bytes32 datetimeDataPath,
+			bytes32 datetimeDataStorageId,
+			address datetimeDataStorage,
+			bytes32 offsetDataPath,
+			bytes32 offsetDataStorageId,
+			address offsetDataStorage
+		)
+	{
+		ErrorsLib.revertIf(!graphElements.rows[_id].exists,
+			ErrorsLib.RESOURCE_NOT_FOUND(), "ProcessDefinition.getIntermediateEventDatetimeAndOffset", "Graph element with _id not found");
+
+		if (graphElements.rows[_id].intermediateEvent.datetimeStorage.exists) {
+			datetimeDataPath = graphElements.rows[_id].intermediateEvent.datetimeStorage.dataPath;
+			datetimeDataStorageId	= graphElements.rows[_id].intermediateEvent.datetimeStorage.dataStorageId;
+			datetimeDataStorage = graphElements.rows[_id].intermediateEvent.datetimeStorage.dataStorage;
+		}
+
+		if (graphElements.rows[_id].intermediateEvent.offsetStorage.exists) {
+			offsetDataPath = graphElements.rows[_id].intermediateEvent.offsetStorage.dataPath;
+			offsetDataStorageId	= graphElements.rows[_id].intermediateEvent.offsetStorage.dataStorageId;
+			offsetDataStorage = graphElements.rows[_id].intermediateEvent.offsetStorage.dataStorage;
+		}
 	}
 
 	/**

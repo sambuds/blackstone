@@ -19,6 +19,9 @@ const contracts = [
   'agreements/DefaultArchetype.sol',
   'agreements/DefaultActiveAgreement.sol',
   'agreements/AgreementSignatureCheck.sol',
+  'agreements/RenewalWindowManager.sol',
+  'agreements/RenewalInitializer.sol',
+  'agreements/RenewalEvaluator.sol',
 
   'bpm-model/ProcessModelRepositoryDb.sol',
   'bpm-model/DefaultProcessModelRepository.sol',

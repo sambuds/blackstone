@@ -39,10 +39,10 @@ contract ActiveAgreementRegistry is ObjectFactory, Upgradeable, ProcessStateChan
 		address agreementAddress
 	);
 
-    string public constant OBJECT_CLASS_AGREEMENT = "agreements.ActiveAgreement";
+  string public constant OBJECT_CLASS_AGREEMENT = "agreements.ActiveAgreement";
 
 	bytes32 public constant DATA_ID_AGREEMENT = "agreement";
-
+	bytes32 public constant DATA_ID_RENEWAL_LOOP_BACK = "renewalLoopBack";
 	bytes32 public constant EVENT_ID_AGREEMENT_COLLECTIONS = "AN://agreement-collections";
 	bytes32 public constant EVENT_ID_AGREEMENT_COLLECTION_MAP = "AN://agreement-to-collection";
 

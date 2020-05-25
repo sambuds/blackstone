@@ -7,12 +7,13 @@ import "documents-commons/Signable.sol";
 import "commons-management/VersionedArtifact.sol";
 
 import "agreements/Agreements.sol";
+import "agreements/Renewable.sol";
 
 /**
  * @title ActiveAgreement Interface v1.0.1
  * @dev Legacy version of the ActiveAgreement interface that was separated out to secure backwards compatibility by versionizing a snapshot of the interface and allowing future versions to extend it.
  */
-contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes, Signable, EventEmitter {
+contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes, Signable, EventEmitter, Renewable {
 
 	event LogAgreementCreation(
 		bytes32 indexed eventId,
@@ -105,7 +106,7 @@ contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes
 		address[] calldata _parties, 
 		address[] calldata _governingAgreements)
 		external;
-		
+
 	/**
 	 * @dev Returns the number governing agreements for this agreement
 	 * @return the number of governing agreements
@@ -232,11 +233,11 @@ contract ActiveAgreement_v1_0_1 is VersionedArtifact, DataStorage, AddressScopes
 	 */
 	function isSignedBy(address _signee) external view returns (bool);
 
-    /**
-     * @dev Sets the legal state of this agreement
-     * @param _legalState the Agreements.LegalState
-     */
-    function setLegalState(Agreements.LegalState _legalState) external;
+	/**
+		* @dev Sets the legal state of this agreement
+		* @param _legalState the Agreements.LegalState
+		*/
+	function setLegalState(Agreements.LegalState _legalState) external;
 
 	/**
 	 * @dev Returns the legal state of this agreement

@@ -63,6 +63,7 @@ export enum ParameterType {
 export type Parameter = {
     name: string
     type: ParameterType
+    value?: any
 };
 
 // ProcessInstanceState reflects enum in BpmRuntime.sol contract

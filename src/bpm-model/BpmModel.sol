@@ -136,9 +136,14 @@ library BpmModel {
         Primitive timerValue;
         // If the timerValue.uintValue is 0 and timerValue.stringValue is "", then the timer is in storage
         DataStorageUtils.ConditionalData timerStorage;
+        // datetimeStorage and offsetStorage are meant to be used together to point to two values
+        // in a DataStorage (typically the agreement) - 
+        // one is a timestamp, and the other is a positive or negative offset
+        // represented as a string in the ISO 8601 format
+        DataStorageUtils.ConditionalData datetimeStorage;
+        DataStorageUtils.ConditionalData offsetStorage;
         bytes32 predecessor;
         bytes32 successor;
-
         //TODO do we need data-mappings on events? I think so ... in order for Lair to deliver the configured data similar to user tasks
     }
 

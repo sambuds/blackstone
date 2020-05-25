@@ -28,6 +28,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     using BpmRuntimeLib for BpmRuntime.ActivityInstanceMap;
     using BpmRuntimeLib for BpmRuntime.ActivityInstance;
     using BpmRuntimeLib for BpmRuntime.BoundaryEventInstance;
+    using BpmRuntimeLib for BpmRuntime.IntermediateEventInstance;
 
     BpmRuntime.ProcessInstance self;
 
@@ -219,8 +220,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
         ErrorsLib.revertIf(instance.timerTarget > block.timestamp,
                 ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "Attempt to fire intermediate event before timer expired");
 
-        instance.state = BpmRuntime.ActivityInstanceState.COMPLETED;
-        instance.completed = block.timestamp;
+        instance.completeIntermediateEventInstance();
 
         // mark activity as completed.
         self.graph.activities[instance.eventId].instancesCompleted = 1;
@@ -630,14 +630,27 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
         ErrorsLib.revertIf(_targetTime == 0,
             ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(), "DefaultProcessInstance.setIntermediateEventTimerTarget", "The target time parameter must be greater zero");
         ErrorsLib.revertIf(!self.intermediateEvents.rows[_eventInstanceId].exists,
-            ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.setIntermediateEventTimerTarget", "The specified ActivityInstance cannot be found");
+            ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.setIntermediateEventTimerTarget", "The specified IntermediateEventInstance cannot be found");
 
         BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
 
         ErrorsLib.revertIf(instance.timerTarget != 0,
             ErrorsLib.OVERWRITE_NOT_ALLOWED(), "DefaultProcessInstance.setIntermediateEventTimerTarget", "The specified target IntermediateEventInstance already has timer set");
+            
+        instance.updateIntermediateEventTimerTarget(_targetTime);
+    }
 
-        instance.timerTarget = _targetTime;
+    /**
+	 * @dev Returns the timer timer target for the given intermediate event instance id
+     * @param _eventInstanceId - the event instance ID
+	 * @return uint timerTarget
+	 */
+    function getIntermediateEventTimerTarget(bytes32 _eventInstanceId) public returns (uint timerTarget) {
+        ErrorsLib.revertIf(!self.intermediateEvents.rows[_eventInstanceId].exists,
+            ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.getIntermediateEventTimerTarget", "The specified IntermediateEventInstance cannot be found");
+        
+        BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
+        return instance.timerTarget;
     }
 
 	/**

@@ -214,6 +214,9 @@ contract DefaultActiveAgreementRegistry is AbstractVersionedArtifact(1,1,0), Abs
 		processInstance = BpmService(serviceAddress).createDefaultProcessInstance(pd, msg.sender, bytes32(""));
 		processInstance.addProcessStateChangeListener(this);
 		processInstance.setDataValueAsAddress(DATA_ID_AGREEMENT, address(_agreement));
+		// If agreement has renewal obligation defined, then set the loop_back value
+		// for the formation process to false
+		processInstance.setDataValueAsBool(DATA_ID_RENEWAL_LOOP_BACK, false);
 		transferAddressScopes(processInstance);
 		emit LogAgreementFormationProcessUpdate(_agreement.EVENT_ID_AGREEMENTS(), address(_agreement), address(processInstance));
 	}

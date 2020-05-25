@@ -42,6 +42,12 @@ export module ActiveAgreement {
         LogAgreementOwnerUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementOwnerUpdate", this.address, callback); }
         LogAgreementPrivateParametersReference(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementPrivateParametersReference", this.address, callback); }
         LogAgreementRedaction(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRedaction", this.address, callback); }
+        LogAgreementRenewalExpirationDateUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalExpirationDateUpdate", this.address, callback); }
+        LogAgreementRenewalFranchiseeUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalFranchiseeUpdate", this.address, callback); }
+        LogAgreementRenewalResultUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalResultUpdate", this.address, callback); }
+        LogAgreementRenewalTermsDefined(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalTermsDefined", this.address, callback); }
+        LogAgreementRenewalVoteCast(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalVoteCast", this.address, callback); }
+        LogAgreementRenewalWindowStateUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalWindowStateUpdate", this.address, callback); }
         LogAgreementSignatureLogReference(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementSignatureLogReference", this.address, callback); }
         LogDataStorageUpdateAddress(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataStorageUpdateAddress", this.address, callback); }
         LogDataStorageUpdateAddressArray(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataStorageUpdateAddressArray", this.address, callback); }
@@ -164,6 +170,18 @@ export module ActiveAgreement {
                 return Decode(this.client, exec).cancel();
             });
         }
+        castRenewalVote(_renew: boolean) {
+            const data = Encode(this.client).castRenewalVote(_renew);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).castRenewalVote();
+            });
+        }
+        closeRenewalWindow() {
+            const data = Encode(this.client).closeRenewalWindow();
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).closeRenewalWindow();
+            });
+        }
         compareArtifactVersion(_other: string, _version: [number, number, number]) {
             const data = Encode(this.client).compareArtifactVersion(_other, _version);
             return Call<Tx, {
@@ -176,6 +194,12 @@ export module ActiveAgreement {
             const data = Encode(this.client).createPermission(_permission, _multiHolder, _revocable, _transferable);
             return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).createPermission();
+            });
+        }
+        defineRenewalTerms(_franchisees: string[], _threshold: number, _expirationDate: number, _opensAtOffset: string, _closesAtOffset: string, _extensionOffset: string) {
+            const data = Encode(this.client).defineRenewalTerms(_franchisees, _threshold, _expirationDate, _opensAtOffset, _closesAtOffset, _extensionOffset);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).defineRenewalTerms();
             });
         }
         getAddressScopeDetails(_address: string, _context: Buffer) {
@@ -385,6 +409,14 @@ export module ActiveAgreement {
                 return Decode(this.client, exec).getNumberOfParties();
             });
         }
+        getNumberOfRenewalFranchisees() {
+            const data = Encode(this.client).getNumberOfRenewalFranchisees();
+            return Call<Tx, {
+                size: number;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getNumberOfRenewalFranchisees();
+            });
+        }
         getOwner() {
             const data = Encode(this.client).getOwner();
             return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -415,6 +447,42 @@ export module ActiveAgreement {
             const data = Encode(this.client).getPrivateParametersReference();
             return Call<Tx, [string]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).getPrivateParametersReference();
+            });
+        }
+        getRenewalFranchiseeAtIndex(_index: number) {
+            const data = Encode(this.client).getRenewalFranchiseeAtIndex(_index);
+            return Call<Tx, {
+                franchisee: string;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getRenewalFranchiseeAtIndex();
+            });
+        }
+        getRenewalState() {
+            const data = Encode(this.client).getRenewalState();
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getRenewalState();
+            });
+        }
+        getRenewalTerms() {
+            const data = Encode(this.client).getRenewalTerms();
+            return Call<Tx, {
+                renewalThreshold: number;
+                agreementExpirationDate: number;
+                renewalOpensAtOffset: string;
+                renewalClosesAtOffset: string;
+                renewalExtensionOffset: string;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getRenewalTerms();
+            });
+        }
+        getRenewalVoteDetails(_franchisee: string) {
+            const data = Encode(this.client).getRenewalVoteDetails(_franchisee);
+            return Call<Tx, {
+                renewalVoter: string;
+                renewVote: boolean;
+                voteTimestamp: number;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getRenewalVoteDetails();
             });
         }
         getSignatureDetails(_party: string) {
@@ -475,10 +543,24 @@ export module ActiveAgreement {
                 return Decode(this.client, exec).isPrivate();
             });
         }
+        isRenewalWindowOpen() {
+            const data = Encode(this.client).isRenewalWindowOpen();
+            return Call<Tx, {
+                isWindowOpen: boolean;
+            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).isRenewalWindowOpen();
+            });
+        }
         isSignedBy(_signee: string) {
             const data = Encode(this.client).isSignedBy(_signee);
             return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isSignedBy();
+            });
+        }
+        openRenewalWindow() {
+            const data = Encode(this.client).openRenewalWindow();
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).openRenewalWindow();
             });
         }
         redact() {
@@ -499,6 +581,12 @@ export module ActiveAgreement {
                 return Decode(this.client, exec).removeEventListener();
             });
         }
+        resetRenewalVotes() {
+            const data = Encode(this.client).resetRenewalVotes();
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).resetRenewalVotes();
+            });
+        }
         resolveAddressScope(_address: string, _context: Buffer, _dataStorage: string) {
             const data = Encode(this.client).resolveAddressScope(_address, _context, _dataStorage);
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -515,6 +603,12 @@ export module ActiveAgreement {
             const data = Encode(this.client).setAddressScope(_address, _context, _fixedScope, _dataPath, _dataStorageId, _dataStorage);
             return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
                 return Decode(this.client, exec).setAddressScope();
+            });
+        }
+        setCurrentExpirationDate(_expirationDate: number) {
+            const data = Encode(this.client).setCurrentExpirationDate(_expirationDate);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).setCurrentExpirationDate();
             });
         }
         setDataValueAsAddress(_id: Buffer, _value: string) {
@@ -607,6 +701,12 @@ export module ActiveAgreement {
                 return Decode(this.client, exec).setMaxNumberOfEvents();
             });
         }
+        setNextExpirationDate(_expirationDate: number) {
+            const data = Encode(this.client).setNextExpirationDate(_expirationDate);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).setNextExpirationDate();
+            });
+        }
         setPrivateParametersReference(_privateParametersFileReference: string) {
             const data = Encode(this.client).setPrivateParametersReference(_privateParametersFileReference);
             return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
@@ -656,6 +756,8 @@ export module ActiveAgreement {
                 return client.encode("6EA1944B", ["bytes32"], _event);
         },
         cancel: () => { return client.encode("EA8A1AF0", []); },
+        castRenewalVote: (_renew: boolean) => { return client.encode("B20BA337", ["bool"], _renew); },
+        closeRenewalWindow: () => { return client.encode("C0647C2E", []); },
         compareArtifactVersion: (_other: string, _version: [number, number, number]) => {
             if (typeof _other === "string")
                 return client.encode("5C030138", ["address"], _other);
@@ -663,6 +765,7 @@ export module ActiveAgreement {
                 return client.encode("78BC0B0D", ["uint8[3]"], _version);
         },
         createPermission: (_permission: Buffer, _multiHolder: boolean, _revocable: boolean, _transferable: boolean) => { return client.encode("94FEB152", ["bytes32", "bool", "bool", "bool"], _permission, _multiHolder, _revocable, _transferable); },
+        defineRenewalTerms: (_franchisees: string[], _threshold: number, _expirationDate: number, _opensAtOffset: string, _closesAtOffset: string, _extensionOffset: string) => { return client.encode("0130B3E0", ["address[]", "uint256", "int256", "string", "string", "string"], _franchisees, _threshold, _expirationDate, _opensAtOffset, _closesAtOffset, _extensionOffset); },
         getAddressScopeDetails: (_address: string, _context: Buffer) => { return client.encode("9561AA32", ["address", "bytes32"], _address, _context); },
         getAddressScopeDetailsForKey: (_key: Buffer) => { return client.encode("FE3C84B2", ["bytes32"], _key); },
         getAddressScopeKeys: () => { return client.encode("70A9C997", []); },
@@ -694,10 +797,15 @@ export module ActiveAgreement {
         getNumberOfData: () => { return client.encode("5666F9AC", []); },
         getNumberOfGoverningAgreements: () => { return client.encode("0D9BFA80", []); },
         getNumberOfParties: () => { return client.encode("7F809381", []); },
+        getNumberOfRenewalFranchisees: () => { return client.encode("D779C8A1", []); },
         getOwner: () => { return client.encode("893D20E8", []); },
         getPartyAtIndex: (_index: number) => { return client.encode("79CE3CB2", ["uint256"], _index); },
         getPermissionDetails: (_permission: Buffer) => { return client.encode("63A84C04", ["bytes32"], _permission); },
         getPrivateParametersReference: () => { return client.encode("9F75DFD9", []); },
+        getRenewalFranchiseeAtIndex: (_index: number) => { return client.encode("6A78A815", ["uint256"], _index); },
+        getRenewalState: () => { return client.encode("04FCE015", []); },
+        getRenewalTerms: () => { return client.encode("40514A1A", []); },
+        getRenewalVoteDetails: (_franchisee: string) => { return client.encode("84A6CD4D", ["address"], _franchisee); },
         getSignatureDetails: (_party: string) => { return client.encode("F4B9D96E", ["address"], _party); },
         getSignatureLogReference: () => { return client.encode("0CB61B34", []); },
         getSignatureTimestamp: (_party: string) => { return client.encode("D39C4FAA", ["address"], _party); },
@@ -712,7 +820,9 @@ export module ActiveAgreement {
         },
         initializeObjectAdministrator: (_admin: string) => { return client.encode("859360F5", ["address"], _admin); },
         isPrivate: () => { return client.encode("FAFF660E", []); },
+        isRenewalWindowOpen: () => { return client.encode("8AAEFF8C", []); },
         isSignedBy: (_signee: string) => { return client.encode("7F91FB7D", ["address"], _signee); },
+        openRenewalWindow: () => { return client.encode("8C2A4DAE", []); },
         redact: () => { return client.encode("91BEC712", []); },
         removeData: (_id: Buffer) => { return client.encode("47DD48E0", ["bytes32"], _id); },
         removeEventListener: (_event: Buffer | Buffer, _listener: string) => {
@@ -721,9 +831,11 @@ export module ActiveAgreement {
             if (typeof _event === "string")
                 return client.encode("586CA7AB", ["bytes32"], _event);
         },
+        resetRenewalVotes: () => { return client.encode("72EA1826", []); },
         resolveAddressScope: (_address: string, _context: Buffer, _dataStorage: string) => { return client.encode("3C0E5245", ["address", "bytes32", "address"], _address, _context, _dataStorage); },
         revokePermission: (_permission: Buffer, _holder: string) => { return client.encode("A6A8F17B", ["bytes32", "address"], _permission, _holder); },
         setAddressScope: (_address: string, _context: Buffer, _fixedScope: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string) => { return client.encode("6D73C8BC", ["address", "bytes32", "bytes32", "bytes32", "bytes32", "address"], _address, _context, _fixedScope, _dataPath, _dataStorageId, _dataStorage); },
+        setCurrentExpirationDate: (_expirationDate: number) => { return client.encode("CFDC4942", ["int256"], _expirationDate); },
         setDataValueAsAddress: (_id: Buffer, _value: string) => { return client.encode("68E78011", ["bytes32", "address"], _id, _value); },
         setDataValueAsAddressArray: (_id: Buffer, _value: string[]) => { return client.encode("641375AD", ["bytes32", "address[]"], _id, _value); },
         setDataValueAsBool: (_id: Buffer, _value: boolean) => { return client.encode("1CB35540", ["bytes32", "bool"], _id, _value); },
@@ -739,6 +851,7 @@ export module ActiveAgreement {
         setFulfilled: () => { return client.encode("C3F0A895", []); },
         setLegalState: (_legalState: number) => { return client.encode("58892B86", ["uint8"], _legalState); },
         setMaxNumberOfEvents: (_maxNumberOfEvents: number) => { return client.encode("130C5985", ["uint32"], _maxNumberOfEvents); },
+        setNextExpirationDate: (_expirationDate: number) => { return client.encode("C6E8DFD0", ["int256"], _expirationDate); },
         setPrivateParametersReference: (_privateParametersFileReference: string) => { return client.encode("4773F6FC", ["string"], _privateParametersFileReference); },
         setSignatureLogReference: (_signatureLogFileReference: string) => { return client.encode("F8D660D3", ["string"], _signatureLogFileReference); },
         sign: () => { return client.encode("2CA15122", []); },
@@ -763,6 +876,8 @@ export module ActiveAgreement {
         ROLE_ID_OWNER: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         addEventListener: (): void => { return; },
         cancel: (): void => { return; },
+        castRenewalVote: (): void => { return; },
+        closeRenewalWindow: (): void => { return; },
         compareArtifactVersion: (): {
             result: number;
         } => {
@@ -770,6 +885,7 @@ export module ActiveAgreement {
             return { result: result };
         },
         createPermission: (): void => { return; },
+        defineRenewalTerms: (): void => { return; },
         getAddressScopeDetails: (): {
             fixedScope: Buffer;
             dataPath: Buffer;
@@ -840,6 +956,12 @@ export module ActiveAgreement {
             const [size] = client.decode(data, ["uint256"]);
             return { size: size };
         },
+        getNumberOfRenewalFranchisees: (): {
+            size: number;
+        } => {
+            const [size] = client.decode(data, ["uint256"]);
+            return { size: size };
+        },
         getOwner: (): [string] => { return client.decode(data, ["address"]); },
         getPartyAtIndex: (): {
             party: string;
@@ -858,6 +980,31 @@ export module ActiveAgreement {
             return { exists: exists, multiHolder: multiHolder, revocable: revocable, transferable: transferable, holderSize: holderSize };
         },
         getPrivateParametersReference: (): [string] => { return client.decode(data, ["string"]); },
+        getRenewalFranchiseeAtIndex: (): {
+            franchisee: string;
+        } => {
+            const [franchisee] = client.decode(data, ["address"]);
+            return { franchisee: franchisee };
+        },
+        getRenewalState: (): [boolean] => { return client.decode(data, ["bool"]); },
+        getRenewalTerms: (): {
+            renewalThreshold: number;
+            agreementExpirationDate: number;
+            renewalOpensAtOffset: string;
+            renewalClosesAtOffset: string;
+            renewalExtensionOffset: string;
+        } => {
+            const [renewalThreshold, agreementExpirationDate, renewalOpensAtOffset, renewalClosesAtOffset, renewalExtensionOffset] = client.decode(data, ["uint256", "int256", "string", "string", "string"]);
+            return { renewalThreshold: renewalThreshold, agreementExpirationDate: agreementExpirationDate, renewalOpensAtOffset: renewalOpensAtOffset, renewalClosesAtOffset: renewalClosesAtOffset, renewalExtensionOffset: renewalExtensionOffset };
+        },
+        getRenewalVoteDetails: (): {
+            renewalVoter: string;
+            renewVote: boolean;
+            voteTimestamp: number;
+        } => {
+            const [renewalVoter, renewVote, voteTimestamp] = client.decode(data, ["address", "bool", "uint256"]);
+            return { renewalVoter: renewalVoter, renewVote: renewVote, voteTimestamp: voteTimestamp };
+        },
         getSignatureDetails: (): [string, number] => { return client.decode(data, ["address", "uint256"]); },
         getSignatureLogReference: (): [string] => { return client.decode(data, ["string"]); },
         getSignatureTimestamp: (): {
@@ -877,13 +1024,22 @@ export module ActiveAgreement {
         initialize: (): void => { return; },
         initializeObjectAdministrator: (): void => { return; },
         isPrivate: (): [boolean] => { return client.decode(data, ["bool"]); },
+        isRenewalWindowOpen: (): {
+            isWindowOpen: boolean;
+        } => {
+            const [isWindowOpen] = client.decode(data, ["bool"]);
+            return { isWindowOpen: isWindowOpen };
+        },
         isSignedBy: (): [boolean] => { return client.decode(data, ["bool"]); },
+        openRenewalWindow: (): void => { return; },
         redact: (): [number] => { return client.decode(data, ["uint8"]); },
         removeData: (): void => { return; },
         removeEventListener: (): void => { return; },
+        resetRenewalVotes: (): void => { return; },
         resolveAddressScope: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         revokePermission: (): void => { return; },
         setAddressScope: (): void => { return; },
+        setCurrentExpirationDate: (): void => { return; },
         setDataValueAsAddress: (): void => { return; },
         setDataValueAsAddressArray: (): void => { return; },
         setDataValueAsBool: (): void => { return; },
@@ -899,6 +1055,7 @@ export module ActiveAgreement {
         setFulfilled: (): void => { return; },
         setLegalState: (): void => { return; },
         setMaxNumberOfEvents: (): void => { return; },
+        setNextExpirationDate: (): void => { return; },
         setPrivateParametersReference: (): void => { return; },
         setSignatureLogReference: (): void => { return; },
         sign: (): void => { return; },

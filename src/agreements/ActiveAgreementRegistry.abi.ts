@@ -42,6 +42,12 @@ export module ActiveAgreementRegistry {
                 return Decode(this.client, exec).DATA_ID_AGREEMENT();
             });
         }
+        DATA_ID_RENEWAL_LOOP_BACK() {
+            const data = Encode(this.client).DATA_ID_RENEWAL_LOOP_BACK();
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).DATA_ID_RENEWAL_LOOP_BACK();
+            });
+        }
         ERC165_ID_ObjectFactory() {
             const data = Encode(this.client).ERC165_ID_ObjectFactory();
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
@@ -340,6 +346,7 @@ export module ActiveAgreementRegistry {
     }
     export const Encode = <Tx>(client: Provider<Tx>) => { return {
         DATA_ID_AGREEMENT: () => { return client.encode("506DBA55", []); },
+        DATA_ID_RENEWAL_LOOP_BACK: () => { return client.encode("08E3CA75", []); },
         ERC165_ID_ObjectFactory: () => { return client.encode("54AF67B7", []); },
         ERC165_ID_Upgradeable: () => { return client.encode("B21C815F", []); },
         ERC165_ID_VERSIONED_ARTIFACT: () => { return client.encode("E10533C6", []); },
@@ -387,6 +394,7 @@ export module ActiveAgreementRegistry {
     }; };
     export const Decode = <Tx>(client: Provider<Tx>, data: Uint8Array) => { return {
         DATA_ID_AGREEMENT: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
+        DATA_ID_RENEWAL_LOOP_BACK: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         ERC165_ID_ObjectFactory: (): [Buffer] => { return client.decode(data, ["bytes4"]); },
         ERC165_ID_Upgradeable: (): [Buffer] => { return client.decode(data, ["bytes4"]); },
         ERC165_ID_VERSIONED_ARTIFACT: (): [Buffer] => { return client.decode(data, ["bytes4"]); },

@@ -72,7 +72,7 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,6,0), AbstractAct
 
 		validateGoverningAgreements(_governingAgreements, Archetype(_archetype).getGoverningArchetypes());
 
-    	addInterfaceSupport(ERC165_ID_Address_Scopes);
+    addInterfaceSupport(ERC165_ID_Address_Scopes);
 
 		archetype = _archetype;
 		creator = _creator;
@@ -104,7 +104,7 @@ contract DefaultActiveAgreement is AbstractVersionedArtifact(1,6,0), AbstractAct
 			address(this),
 			_archetype,
 			_creator,
-      		_owner,
+      _owner,
 			_privateParametersFileReference,
 			"",
 			_isPrivate,

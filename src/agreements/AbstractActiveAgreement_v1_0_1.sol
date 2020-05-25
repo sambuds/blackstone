@@ -14,13 +14,14 @@ import "agreements/Agreements.sol";
 import "agreements/AgreementsAPI.sol";
 import "agreements/Archetype.sol";
 import "agreements/ActiveAgreement_v1_0_1.sol";
+import "agreements/AbstractRenewable.sol";
 
 /**
  * @title Abstract ActiveAgreement v1.0.1
  * @dev Legacy version of the DefaultActiveAgreement implementation that was separated out to secure backwards compatibility by versionizing a snapshot of the contract and allowing future versions to extend it.
  * Note that this legacy version is an abstract contract due to not inheriting AbstractVersionedArtifact which must be inherited and initialized with a version at the current DefaultActiveAgreement contract.
  */
-contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataStorage, AbstractAddressScopes, DefaultEventEmitter, ActiveAgreement_v1_0_1 {
+contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataStorage, AbstractAddressScopes, DefaultEventEmitter, ActiveAgreement_v1_0_1, AbstractRenewable {
 	
 	using ArrayUtilsLib for address[];
 	using TypeUtilsLib for bytes32;
@@ -172,7 +173,7 @@ contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataS
 		ErrorsLib.revertIf(_governingArchetypes.length > 0 && verifiedArchetypesCount != _governingArchetypes.length,
 			ErrorsLib.INVALID_INPUT(), "DefaultActiveAgreement.validateGoverningAgreements", 
 				"The provided governing agreements do not match all of the governing archetypes required by the archetype of this agreement");
- 	}
+	}
 
 	/**
 	 * @dev Returns the number governing agreements for this agreement
@@ -208,7 +209,7 @@ contract AbstractActiveAgreement_v1_0_1 is AbstractDelegateTarget, AbstractDataS
 		if (_index < parties.length)
 			return parties[_index];
 	}
-
+	
 	/**
 	 * @dev Returns the archetype
 	 * @return the archetype address 

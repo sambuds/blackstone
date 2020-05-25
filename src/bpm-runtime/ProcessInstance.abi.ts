@@ -378,6 +378,14 @@ export module ProcessInstance {
                 return Decode(this.client, exec).getIntermediaEventIdAtIndex();
             });
         }
+        getIntermediateEventTimerTarget(_eventInstanceId: Buffer) {
+            const data = Encode(this.client).getIntermediateEventTimerTarget(_eventInstanceId);
+            return Call<Tx, {
+                timerTarget: number;
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getIntermediateEventTimerTarget();
+            });
+        }
         getNumberOfActivityInstances() {
             const data = Encode(this.client).getNumberOfActivityInstances();
             return Call<Tx, {
@@ -673,6 +681,7 @@ export module ProcessInstance {
         getDataValueAsUint: (_id: Buffer) => { return client.encode("35CE1BD1", ["bytes32"], _id); },
         getDataValueAsUintArray: (_id: Buffer) => { return client.encode("31185182", ["bytes32"], _id); },
         getIntermediaEventIdAtIndex: (_idx: number) => { return client.encode("6380B16B", ["uint256"], _idx); },
+        getIntermediateEventTimerTarget: (_eventInstanceId: Buffer) => { return client.encode("0AB8E5BD", ["bytes32"], _eventInstanceId); },
         getNumberOfActivityInstances: () => { return client.encode("D8619D80", []); },
         getNumberOfBoundaryEventInstances: (_activityInstanceId: Buffer) => { return client.encode("F895D327", ["bytes32"], _activityInstanceId); },
         getNumberOfData: () => { return client.encode("5666F9AC", []); },
@@ -846,6 +855,12 @@ export module ProcessInstance {
         getDataValueAsUint: (): [number] => { return client.decode(data, ["uint256"]); },
         getDataValueAsUintArray: (): [number[]] => { return client.decode(data, ["uint256[]"]); },
         getIntermediaEventIdAtIndex: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
+        getIntermediateEventTimerTarget: (): {
+            timerTarget: number;
+        } => {
+            const [timerTarget] = client.decode(data, ["uint256"]);
+            return { timerTarget: timerTarget };
+        },
         getNumberOfActivityInstances: (): {
             size: number;
         } => {

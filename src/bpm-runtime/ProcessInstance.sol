@@ -235,23 +235,23 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	 */
 	function setActivityOutDataAsAddress(bytes32 _activityInstanceId, bytes32 _dataMappingId, address _value) public;
 
-    /**
-     * @dev Resolves the target storage location for the specified IN data mapping in the context of the given activity instance.
-     * @param _activityInstanceId the ID of an activity instance
-     * @param _dataMappingId the ID of a data mapping defined for the activity
-     * @return dataStorage - the address of a DataStorage
-     * @return dataPath - the dataPath under which to find data mapping value
-     */
-    function resolveInDataLocation(bytes32 _activityInstanceId, bytes32 _dataMappingId) public view returns (address dataStorage, bytes32 dataPath);
+	/**
+		* @dev Resolves the target storage location for the specified IN data mapping in the context of the given activity instance.
+		* @param _activityInstanceId the ID of an activity instance
+		* @param _dataMappingId the ID of a data mapping defined for the activity
+		* @return dataStorage - the address of a DataStorage
+		* @return dataPath - the dataPath under which to find data mapping value
+		*/
+	function resolveInDataLocation(bytes32 _activityInstanceId, bytes32 _dataMappingId) public view returns (address dataStorage, bytes32 dataPath);
 
-    /**
-     * @dev Resolves the target storage location for the specified OUT data mapping in the context of the given activity instance.
-     * @param _activityInstanceId the ID of an activity instance
-     * @param _dataMappingId the ID of a data mapping defined for the activity
-     * @return dataStorage - the address of a DataStorage
-     * @return dataPath - the dataPath under which to find data mapping value
-     */
-    function resolveOutDataLocation(bytes32 _activityInstanceId, bytes32 _dataMappingId) public view returns (address dataStorage, bytes32 dataPath);
+	/**
+		* @dev Resolves the target storage location for the specified OUT data mapping in the context of the given activity instance.
+		* @param _activityInstanceId the ID of an activity instance
+		* @param _dataMappingId the ID of a data mapping defined for the activity
+		* @return dataStorage - the address of a DataStorage
+		* @return dataPath - the dataPath under which to find data mapping value
+		*/
+	function resolveOutDataLocation(bytes32 _activityInstanceId, bytes32 _dataMappingId) public view returns (address dataStorage, bytes32 dataPath);
 
 	/**
 	 * @dev boundary and intermediate events should fire after a specific duration, which can be set as a string, e.g. "3 weeks". The conversion
@@ -261,7 +261,14 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	 * @param _eventInstanceId - the event instance Id
 	 * @param _targetTime - the unix epoch (or blocktime) at which the time should fire
 	 */
-    function setIntermediateEventTimerTarget(bytes32 _eventInstanceId, uint _targetTime) public;
+  function setIntermediateEventTimerTarget(bytes32 _eventInstanceId, uint _targetTime) public;
+
+	/**
+	 * @dev Returns the timer timer target for the given intermediate event instance id
+	 * @param _eventInstanceId - the event instance ID
+	 * @return uint timerTarget
+	 */
+	function getIntermediateEventTimerTarget(bytes32 _eventInstanceId) public returns (uint timerTarget);
 
 	/**
 	 * @dev Boundary events should fire after a specific duration, which can be set as a string, e.g. "3 weeks". The conversion
@@ -272,7 +279,7 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	 * @param _eventInstanceId - the event instance ID
 	 * @param _targetTime - the unix epoch (or blocktime) at which the event should fire
 	 */
-    function setBoundaryEventTimerTarget(bytes32 _activityInstanceId, bytes32 _eventInstanceId, uint _targetTime) public;
+  function setBoundaryEventTimerTarget(bytes32 _activityInstanceId, bytes32 _eventInstanceId, uint _targetTime) public;
 
 	/**
 	 * @dev Returns the process definition on which this instance is based.
@@ -286,11 +293,11 @@ contract ProcessInstance is VersionedArtifact, DataStorage, AddressScopes, Owner
 	 */
 	function getState() external view returns (uint8);
 
-    /**
-     * @dev Returns the account that started this process instance
-     * @return the address registered when creating the process instance
-     */
-    function getStartedBy() external view returns (address);
+	/**
+		* @dev Returns the account that started this process instance
+		* @return the address registered when creating the process instance
+		*/
+	function getStartedBy() external view returns (address);
 
 	/**
 	 * @dev Returns the number of intermediate event instances currently contained in this ProcessInstance.

@@ -34,6 +34,7 @@ export module ProcessDefinition {
         }
         LogActivityDefinitionCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogActivityDefinitionCreation", this.address, callback); }
         LogDataMappingCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataMappingCreation", this.address, callback); }
+        LogIntermediateEventDefinitionCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogIntermediateEventDefinitionCreation", this.address, callback); }
         LogProcessDefinitionCreation(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessDefinitionCreation", this.address, callback); }
         LogProcessDefinitionInterfaceIdUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogProcessDefinitionInterfaceIdUpdate", this.address, callback); }
         ERC165_ID_VERSIONED_ARTIFACT() {
@@ -52,6 +53,12 @@ export module ProcessDefinition {
             const data = Encode(this.client).EVENT_ID_DATA_MAPPINGS();
             return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).EVENT_ID_DATA_MAPPINGS();
+            });
+        }
+        EVENT_ID_INTERM_EVENT_DEFINITIONS() {
+            const data = Encode(this.client).EVENT_ID_INTERM_EVENT_DEFINITIONS();
+            return Call<Tx, [Buffer]>(this.client, this.address, data, true, (exec: Uint8Array) => {
+                return Decode(this.client, exec).EVENT_ID_INTERM_EVENT_DEFINITIONS();
             });
         }
         EVENT_ID_PROCESS_DEFINITIONS() {
@@ -293,6 +300,19 @@ export module ProcessDefinition {
                 return Decode(this.client, exec).getInDataMappingKeys();
             });
         }
+        getIntermediateEventDatetimeAndOffset(_id: Buffer) {
+            const data = Encode(this.client).getIntermediateEventDatetimeAndOffset(_id);
+            return Call<Tx, {
+                datetimeDataPath: Buffer;
+                datetimeDataStorageId: Buffer;
+                datetimeDataStorage: string;
+                offsetDataPath: Buffer;
+                offsetDataStorageId: Buffer;
+                offsetDataStorage: string;
+            }>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).getIntermediateEventDatetimeAndOffset();
+            });
+        }
         getIntermediateEventGraphDetails(_id: Buffer) {
             const data = Encode(this.client).getIntermediateEventGraphDetails(_id);
             return Call<Tx, {
@@ -424,6 +444,12 @@ export module ProcessDefinition {
                 return Decode(this.client, exec).setDefaultTransition();
             });
         }
+        setIntermediateEventDatetimeAndOffset(_id: Buffer, _datetimeDataPath: Buffer, _datetimeDataStorageId: Buffer, _datetimeDataStorage: string, _offsetDataPath: Buffer, _offsetDataStorageId: Buffer, _offsetDataStorage: string) {
+            const data = Encode(this.client).setIntermediateEventDatetimeAndOffset(_id, _datetimeDataPath, _datetimeDataStorageId, _datetimeDataStorage, _offsetDataPath, _offsetDataStorageId, _offsetDataStorage);
+            return Call<Tx, void>(this.client, this.address, data, false, (exec: Uint8Array) => {
+                return Decode(this.client, exec).setIntermediateEventDatetimeAndOffset();
+            });
+        }
         validate() {
             const data = Encode(this.client).validate();
             return Call<Tx, {
@@ -438,6 +464,7 @@ export module ProcessDefinition {
         ERC165_ID_VERSIONED_ARTIFACT: () => { return client.encode("E10533C6", []); },
         EVENT_ID_ACTIVITY_DEFINITIONS: () => { return client.encode("AF201B90", []); },
         EVENT_ID_DATA_MAPPINGS: () => { return client.encode("6983067E", []); },
+        EVENT_ID_INTERM_EVENT_DEFINITIONS: () => { return client.encode("FD946FCD", []); },
         EVENT_ID_PROCESS_DEFINITIONS: () => { return client.encode("BA840F64", []); },
         addBoundaryEvent: (_activityId: Buffer, _id: Buffer, _eventType: number, _eventBehavior: number, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _timestampConstant: number, _durationConstant: string) => { return client.encode("581654CE", ["bytes32", "bytes32", "uint8", "uint8", "bytes32", "bytes32", "address", "uint256", "string"], _activityId, _id, _eventType, _eventBehavior, _dataPath, _dataStorageId, _dataStorage, _timestampConstant, _durationConstant); },
         addBoundaryEventAction: (_id: Buffer, _dataPath: Buffer, _dataStorageId: Buffer, _dataStorage: string, _fixedTarget: string, _actionFunction: string) => { return client.encode("89A392E6", ["bytes32", "bytes32", "bytes32", "address", "address", "string"], _id, _dataPath, _dataStorageId, _dataStorage, _fixedTarget, _actionFunction); },
@@ -476,6 +503,7 @@ export module ProcessDefinition {
         getInDataMappingDetails: (_activityId: Buffer, _id: Buffer) => { return client.encode("E3621D20", ["bytes32", "bytes32"], _activityId, _id); },
         getInDataMappingIdAtIndex: (_activityId: Buffer, _idx: number) => { return client.encode("15064393", ["bytes32", "uint256"], _activityId, _idx); },
         getInDataMappingKeys: (_activityId: Buffer) => { return client.encode("3D9A2352", ["bytes32"], _activityId); },
+        getIntermediateEventDatetimeAndOffset: (_id: Buffer) => { return client.encode("21BCDCC2", ["bytes32"], _id); },
         getIntermediateEventGraphDetails: (_id: Buffer) => { return client.encode("48191A40", ["bytes32"], _id); },
         getModel: () => { return client.encode("A0BFA1E0", []); },
         getModelId: () => { return client.encode("361A5672", []); },
@@ -494,12 +522,14 @@ export module ProcessDefinition {
         modelElementExists: (_id: Buffer) => { return client.encode("E3C83A16", ["bytes32"], _id); },
         resolveTransitionCondition: (_sourceId: Buffer, _targetId: Buffer, _dataStorage: string) => { return client.encode("5478A0C9", ["bytes32", "bytes32", "address"], _sourceId, _targetId, _dataStorage); },
         setDefaultTransition: (_gatewayId: Buffer, _targetElementId: Buffer) => { return client.encode("21A0C66F", ["bytes32", "bytes32"], _gatewayId, _targetElementId); },
+        setIntermediateEventDatetimeAndOffset: (_id: Buffer, _datetimeDataPath: Buffer, _datetimeDataStorageId: Buffer, _datetimeDataStorage: string, _offsetDataPath: Buffer, _offsetDataStorageId: Buffer, _offsetDataStorage: string) => { return client.encode("01CDFC90", ["bytes32", "bytes32", "bytes32", "address", "bytes32", "bytes32", "address"], _id, _datetimeDataPath, _datetimeDataStorageId, _datetimeDataStorage, _offsetDataPath, _offsetDataStorageId, _offsetDataStorage); },
         validate: () => { return client.encode("6901F668", []); }
     }; };
     export const Decode = <Tx>(client: Provider<Tx>, data: Uint8Array) => { return {
         ERC165_ID_VERSIONED_ARTIFACT: (): [Buffer] => { return client.decode(data, ["bytes4"]); },
         EVENT_ID_ACTIVITY_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         EVENT_ID_DATA_MAPPINGS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
+        EVENT_ID_INTERM_EVENT_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         EVENT_ID_PROCESS_DEFINITIONS: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         addBoundaryEvent: (): {
             eventId: Buffer;
@@ -607,6 +637,17 @@ export module ProcessDefinition {
         },
         getInDataMappingIdAtIndex: (): [Buffer] => { return client.decode(data, ["bytes32"]); },
         getInDataMappingKeys: (): [Buffer[]] => { return client.decode(data, ["bytes32[]"]); },
+        getIntermediateEventDatetimeAndOffset: (): {
+            datetimeDataPath: Buffer;
+            datetimeDataStorageId: Buffer;
+            datetimeDataStorage: string;
+            offsetDataPath: Buffer;
+            offsetDataStorageId: Buffer;
+            offsetDataStorage: string;
+        } => {
+            const [datetimeDataPath, datetimeDataStorageId, datetimeDataStorage, offsetDataPath, offsetDataStorageId, offsetDataStorage] = client.decode(data, ["bytes32", "bytes32", "address", "bytes32", "bytes32", "address"]);
+            return { datetimeDataPath: datetimeDataPath, datetimeDataStorageId: datetimeDataStorageId, datetimeDataStorage: datetimeDataStorage, offsetDataPath: offsetDataPath, offsetDataStorageId: offsetDataStorageId, offsetDataStorage: offsetDataStorage };
+        },
         getIntermediateEventGraphDetails: (): {
             eventType: number;
             eventBehavior: number;
@@ -666,6 +707,7 @@ export module ProcessDefinition {
         modelElementExists: (): [boolean] => { return client.decode(data, ["bool"]); },
         resolveTransitionCondition: (): [boolean] => { return client.decode(data, ["bool"]); },
         setDefaultTransition: (): void => { return; },
+        setIntermediateEventDatetimeAndOffset: (): void => { return; },
         validate: (): {
             result: boolean;
             errorMessage: Buffer;

@@ -3,6 +3,18 @@ jobs:
     build:
       contract: agreements/AgreementSignatureCheck.sol
 
+  - name: RenewalWindowManager
+    build:
+      contract: agreements/RenewalWindowManager.sol
+
+  - name: RenewalInitializer
+    build:
+      contract: agreements/RenewalInitializer.sol
+
+  - name: RenewalEvaluator
+    build:
+      contract: agreements/RenewalEvaluator.sol
+
   - name: TotalCounterCheck
     build:
       contract: active-agreements/TotalCounterCheck.sol

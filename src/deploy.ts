@@ -42,6 +42,9 @@ import { DefaultActiveAgreement } from './agreements/DefaultActiveAgreement.abi'
 import { IsoCountries100 } from './commons-standards/IsoCountries100.abi';
 import { IsoCurrencies100 } from './commons-standards/IsoCurrencies100.abi';
 import { AgreementSignatureCheck } from './agreements/AgreementSignatureCheck.abi';
+import { RenewalWindowManager } from './agreements/RenewalWindowManager.abi';
+import { RenewalInitializer } from './agreements/RenewalInitializer.abi';
+import { RenewalEvaluator } from './agreements/RenewalEvaluator.abi';
 import { ApplicationRegistry } from './bpm-runtime/ApplicationRegistry.abi';
 import { TotalCounterCheck } from './active-agreements/TotalCounterCheck.abi';
 import { SetToNameRegistry } from './lib/utils';
@@ -328,6 +331,51 @@ async function RegisterLib(doug: DOUG.Contract<CallTx>, id: string, lib: Promise
     await doug.register(id, address);
 }
 
+async function DeployRenewalWindowManager(
+    client: Client,
+    doug: DOUG.Contract<CallTx>,
+    service: Promise<DefaultBpmService.Contract<CallTx>>,
+    registry: Promise<DefaultApplicationRegistry.Contract<CallTx>>,
+    errorsLib: Promise<string>,
+) {
+    const bpmService = await service;
+    const errorsLibAddress = await errorsLib;
+    const renewalWindowManagerAddress = await RenewalWindowManager.Deploy(client, errorsLibAddress, bpmService.address);
+    const applicationRegistry = await registry;
+    await Promise.all([
+        applicationRegistry.addApplication(Buffer.from("RenewalWindowManager"), 0, renewalWindowManagerAddress, Buffer.from(''), Buffer.from('')),
+        doug.deploy("RenewalWindowManager", renewalWindowManagerAddress),
+    ]);
+}
+
+async function DeployRenewalInitializer(
+    client: Client,
+    doug: DOUG.Contract<CallTx>,
+    registry: Promise<DefaultApplicationRegistry.Contract<CallTx>>,
+    errorsLib: Promise<string>,
+) {
+    const errorsLibAddress = await errorsLib;
+    const renewalInitializer = await RenewalInitializer.Deploy(client, errorsLibAddress);
+    const applicationRegistry = await registry;
+    await Promise.all([
+        applicationRegistry.addApplication(Buffer.from("RenewalInitializer"), 0, renewalInitializer, Buffer.from(''), Buffer.from('')),
+        doug.deploy("RenewalInitializer", renewalInitializer),
+    ]);
+}
+
+async function DeployRenewalEvaluator(
+    client: Client,
+    doug: DOUG.Contract<CallTx>,
+    registry: Promise<DefaultApplicationRegistry.Contract<CallTx>>
+) {
+    const renewalEvaluator = await RenewalEvaluator.Deploy(client);
+    const applicationRegistry = await registry;
+    await Promise.all([
+        applicationRegistry.addApplication(Buffer.from("RenewalEvaluator"), 0, renewalEvaluator, Buffer.from(''), Buffer.from('')),
+        doug.deploy("RenewalEvaluator", renewalEvaluator),
+    ]);
+}
+
 export async function Deploy(client: Client) {
     const errorsLib = ErrorsLib.Deploy(client);
     const typeUtilsLib = TypeUtilsLib.Deploy(client);
@@ -373,8 +421,13 @@ export async function Deploy(client: Client) {
         appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("numberIn"), 8, 0),
         appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("totalIn"), 8, 0),
         appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("numberOut"), 8, 1),
-        appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("completedOut"), 1, 1),
+        appRegistry.addAccessPoint(Buffer.from("TotalCounterCheck"), Buffer.from("completedOut"), 1, 1)
+    ]);
 
+    await Promise.all([
+        DeployRenewalWindowManager(client, doug, bpmService, applicationRegistry, errorsLib),
+        DeployRenewalInitializer(client, doug, applicationRegistry, errorsLib),
+        DeployRenewalEvaluator(client, doug, applicationRegistry),
         DeployDeadline(client, doug, bpmService, applicationRegistry, errorsLib),
         DeployWait(client, doug, bpmService, applicationRegistry, errorsLib),
         DeployNumbers(client, applicationRegistry),

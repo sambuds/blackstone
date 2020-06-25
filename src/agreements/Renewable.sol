@@ -113,7 +113,7 @@ contract Renewable {
 	/**
 	 * @dev Returns the current renewal window state
 	 */
-	function isRenewalWindowOpen() external view returns (bool isWindowOpen);
+	function isRenewalWindowOpen() external view returns (bool);
 
   /**
 	 * @dev Returns the current renewal state indicating whether agreement will renew

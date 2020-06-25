@@ -12,7 +12,7 @@ import "agreements/DefaultArchetype.sol";
 
 contract ActiveAgreementTest {
   
-  	string constant SUCCESS = "success";
+  string constant SUCCESS = "success";
 	string constant EMPTY_STRING = "";
 	bytes32 constant EMPTY = "";
 
@@ -20,11 +20,13 @@ contract ActiveAgreementTest {
 	string constant functionSigAgreementSign = "sign()";
 	string constant functionSigAgreementCancel = "cancel()";
 	string constant functionSigAgreementRedact = "redact()";
+	string constant functionSigAgreementRenew = "castRenewalVote(bool)";
+	string constant functionSigAgreementCloseRenewal = "closeRenewalWindow()";
 	string constant functionSigAgreementSetLegalState = "setLegalState(uint8)";
 	string constant functionSigAgreementTestLegalState = "testLegalState(uint8)";
 	string constant functionSigUpgradeOwnerPermission = "upgradeOwnerPermission(address)";
 	string constant functionSigSetPrivateParametersReference = "setPrivateParametersReference(address)";
-    string constant functionSigForwardCall = "forwardCall(address,bytes)";
+  string constant functionSigForwardCall = "forwardCall(address,bytes)";
 
 	address falseAddress = 0xaAaAaAaaAaAaAaaAaAAAAAAAAaaaAaAaAaaAaaAa;
 	string dummyFileRef = "{find me}";
@@ -33,12 +35,24 @@ contract ActiveAgreementTest {
 	uint maxNumberOfEvents = 5;
 	bytes32 DATA_FIELD_AGREEMENT_PARTIES = "AGREEMENT_PARTIES";
 	bytes32 DATA_FIELD_AGREEMENT_EFFECTIVE_DATE = "Agreement Effective Date";
+	bytes32 DATA_ID_AGREEMENT_EXPIRATION_DATE = "Agreement Expiration Date";
+	bytes32 DATA_ID_AGREEMENT_RENEWAL_OPENS_AT = "Renewal Opens At";
+	bytes32 DATA_ID_AGREEMENT_RENEWAL_CLOSES_AT = "Renewal Closes At";
+	bytes32 DATA_ID_AGREEMENT_EXTEND_EXPIRATION_BY = "Extend Expiration By";
+	uint threshold;
+	int expirationDate = 1593032029;
+	int nextExpirationDate = 1593052029;
+	string opensAtOffset = "P-30D";
+	string closesAtOffset = "P-59S";
+	string extensionOffset = "P1Y";
 
 	bytes32 bogusId = "bogus";
 	UserAccount signer1;
 	UserAccount signer2;
+	UserAccount signer3;
 
 	address[] parties;
+	address[] franchisees;
 	address[] bogusArray = [0xCcD5bA65282C3dafB69b19351C7D5B77b9fDDCA6, 0x5e3621030C9E0aCbb417c8E63f0824A8215a8958, 0x8A8318bdCfFf8c83C4Da727AEEE9483806689cCF, 0x1915FBC9C4A2E610012150D102D1a916C78Aa44f];
 	address[] emptyAddressArray;
 
@@ -268,6 +282,110 @@ contract ActiveAgreementTest {
 		if (success) return "The test contract should not be allowed to change the legal state of the agreement";
 		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementSetLegalState, uint8(Agreements.LegalState.EXECUTED)));
 		if (agreement.getLegalState() != uint8(Agreements.LegalState.EXECUTED)) return "Agreement legal state should be EXECUTED after legal state controller changed it";
+
+		return SUCCESS;
+	}
+
+	/**
+	 * @dev Covers testing renewal of an active agreement
+	 */
+	function testActiveAgreementRenewal() external returns (string memory) {
+
+	  ActiveAgreement agreement;
+		Archetype archetype;
+		bool success;
+		int expDate;
+
+		address voter;
+		bool renewVote;
+		uint voteTimestamp;
+		threshold = 2;
+
+		signer1 = new DefaultUserAccount();
+		signer1.initialize(address(this), address(0));
+		signer2 = new DefaultUserAccount();
+		signer2.initialize(address(this), address(0));
+		signer3 = new DefaultUserAccount();
+		signer3.initialize(address(this), address(0));
+
+		// set up the parties.
+		// Signer1 and signer3 are direct signers
+		// Signer 2 is signing on behalf of an organization (default department)
+		Organization org1 = new DefaultOrganization();
+		org1.initialize(emptyAddressArray, EMPTY);
+		if (!org1.addUserToDepartment(address(signer2), EMPTY)) return "Unable to add user account to organization";
+		delete parties;
+		parties.push(address(signer1));
+		parties.push(address(org1));
+		parties.push(address(signer3));
+		
+		// franchisees are a subset of the parties of an agreement who have power to renew the agreement
+		franchisees.push(address(signer1));
+		franchisees.push(address(org1));
+
+		archetype = new DefaultArchetype();
+		archetype.initialize(10, false, true, falseAddress, falseAddress, falseAddress, falseAddress, emptyAddressArray);
+		agreement = new DefaultActiveAgreement();
+		agreement.initialize(address(archetype), address(this), address(this), dummyPrivateParametersFileRef, false, parties, emptyAddressArray);
+
+		// test renewal setup
+		agreement.defineRenewalTerms(franchisees, threshold, expirationDate, opensAtOffset, closesAtOffset, extensionOffset);
+
+		// renewal terms should be set on the agreement data storage
+		if (agreement.getDataValueAsInt(DATA_ID_AGREEMENT_EXPIRATION_DATE) != expirationDate) return "Expiration date should be set on the agreement";
+		if (bytes(agreement.getDataValueAsString(DATA_ID_AGREEMENT_RENEWAL_OPENS_AT)).length == 0) return "Renewal Opens At Offset should be set on the agreement";
+		if (bytes(agreement.getDataValueAsString(DATA_ID_AGREEMENT_RENEWAL_CLOSES_AT)).length == 0) return "Renewal Opens At Offset should be set on the agreement";
+		if (bytes(agreement.getDataValueAsString(DATA_ID_AGREEMENT_EXTEND_EXPIRATION_BY)).length == 0) return "Renewal Opens At Offset should be set on the agreement";
+
+		// renewal votes should be reset to empty
+		(voter, renewVote, voteTimestamp) = agreement.getRenewalVoteDetails(address(signer1));
+		if (!(voter == address(0) && !renewVote && voteTimestamp == 0)) return "Renewal vote should be initialized as empty for franchisee signer1";
+		(voter, renewVote, voteTimestamp) = agreement.getRenewalVoteDetails(address(org1));
+		if (!(voter == address(0) && !renewVote && voteTimestamp == 0)) return "Renewal vote should be initialized as empty for franchisee org1";
+
+		if (agreement.getRenewalState()) return "Agreement should evaluate to not renew on initialization";
+		if (agreement.isRenewalWindowOpen()) return "Agreement renewal window should not be open on initializetion";
+
+		// voting before the renewal window is open should fail
+		(success, ) = address(signer1).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRenew, true)));
+		if (success) return "Voting before the renewal window is open should fail";
+
+		agreement.openRenewalWindow();
+
+		// voting should be recorded correctly
+		signer1.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementRenew, true));
+		(voter, renewVote, voteTimestamp) = agreement.getRenewalVoteDetails(address(signer1));
+		if (voter == address(0) || !renewVote || voteTimestamp == 0) return "Franchisee signer1's vote should have been recorded";
+
+		// unauthorized parties should not be able to vote
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementRenew, true));
+		if (success) return "Voting from test address should fail";
+		(success, ) = address(signer3).call(abi.encodeWithSignature(functionSigForwardCall, address(agreement), abi.encodeWithSignature(functionSigAgreementRenew, true)));
+		if (success) return "Voting by a non-franchisee should fail";
+
+		// should return correct renewal state
+		if (agreement.getRenewalState()) return "Renewal state should be false since threshold votes not reached";
+		
+		signer2.forwardCall(address(agreement), abi.encodeWithSignature(functionSigAgreementRenew, true));
+		(voter, renewVote, voteTimestamp) = agreement.getRenewalVoteDetails(address(org1));
+		if (voter == address(0) || !renewVote || voteTimestamp == 0) return "Franchisee org1's vote should have been recorded";
+
+		if (!agreement.getRenewalState()) return "Renewal state should be true since threshold has been reached";
+
+		// should fail to close renewal window since the next expiration date has not been set
+		(success, ) = address(agreement).call(abi.encodeWithSignature(functionSigAgreementCloseRenewal));
+		if (success) return "Closing the window before (optimistically) setting the next expiration date should fail";
+
+		// should set next expiration date and close window
+		agreement.setNextExpirationDate(nextExpirationDate);
+		agreement.closeRenewalWindow();
+
+		// test if renewal window is closed
+		if (agreement.isRenewalWindowOpen()) return "Agreement renewal window should not be open";
+
+		// test if the next expiration date becomes the current (since the agreement is renewing)
+		( , expDate, , , ) = agreement.getRenewalTerms();
+		if (expDate != nextExpirationDate) return "The next expiration date should have been set as the current expiration date";
 
 		return SUCCESS;
 	}

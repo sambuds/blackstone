@@ -107,43 +107,47 @@ contract AbstractRenewable is Renewable {
 	 * @dev Opens the renewal window to accept votes for renewal
 	 */
 	function openRenewalWindow() external {
-		renewalWindowOpen = true;
-		emit LogAgreementRenewalWindowStateUpdate(
-			EVENT_ID_AGREEMENT_RENEWALS,
-			address(this),
-			renewalWindowOpen
-		);
+		if (!renewalWindowOpen) {
+			renewalWindowOpen = true;
+			emit LogAgreementRenewalWindowStateUpdate(
+				EVENT_ID_AGREEMENT_RENEWALS,
+				address(this),
+				renewalWindowOpen
+			);
+		}
 	}
 
 	/**
 	 * @dev Closes the renewal window to stop accepting votes for renewal
 	 */
 	function closeRenewalWindow() external {
-		renewalWindowOpen = false;
-		emit LogAgreementRenewalWindowStateUpdate(
-			EVENT_ID_AGREEMENT_RENEWALS,
-			address(this),
-			renewalWindowOpen
-		);
-		if (renew) {
-			ErrorsLib.revertIf(nextExpirationDate == 0,
-				ErrorsLib.INVALID_STATE(), "AbstractRenewable.closeRenewalWindow",
-					"Agreement is set to renew, but no updated expiration date set");
-			currentExpirationDate = nextExpirationDate;
-			nextExpirationDate = 0;
-			emit LogAgreementRenewalExpirationDateUpdate(
+		if (renewalWindowOpen) {
+			renewalWindowOpen = false;
+			emit LogAgreementRenewalWindowStateUpdate(
 				EVENT_ID_AGREEMENT_RENEWALS,
 				address(this),
-				currentExpirationDate
+				renewalWindowOpen
 			);
+			if (renew) {
+				ErrorsLib.revertIf(nextExpirationDate == 0,
+					ErrorsLib.INVALID_STATE(), "AbstractRenewable.closeRenewalWindow",
+						"Agreement is set to renew, but no updated expiration date set");
+				currentExpirationDate = nextExpirationDate;
+				nextExpirationDate = 0;
+				emit LogAgreementRenewalExpirationDateUpdate(
+					EVENT_ID_AGREEMENT_RENEWALS,
+					address(this),
+					currentExpirationDate
+				);
+			}
 		}
 	}
 
 	/**
 	 * @dev Returns the current renewal window state
 	 */
-	function isRenewalWindowOpen() external view returns (bool isWindowOpen) {
-		isWindowOpen = renewalWindowOpen;
+	function isRenewalWindowOpen() external view returns (bool) {
+		return renewalWindowOpen;
 	}
 
 	/**

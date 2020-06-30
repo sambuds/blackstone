@@ -50,8 +50,7 @@ contract RenewalWindowManager is Application {
         address franchisee
     );
 
-    // TODO change this to the action_log table
-    bytes32 constant EVENT_ID_RENEWAL_WINDOW_MANAGER = "AN://agreement-window-manager";
+    bytes32 constant EVENT_ID_RENEWAL_WINDOW_MANAGER = "AN://agreement-renewal-manager";
     bytes32 constant MAPPING_ID_PENDING_USER_TASK_ID = "pendingUserTaskId";
     BpmService bpmService;
 

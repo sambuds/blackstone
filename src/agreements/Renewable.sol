@@ -30,10 +30,18 @@ contract Renewable {
 		uint timestamp
 	);
 
-  event LogAgreementRenewalWindowStateUpdate(
+  event LogAgreementRenewalWindowOpened(
     bytes32 indexed eventURN,
     address agreementAddress,
-    bool renewalWindowOpen
+    bool renewalWindowOpen,
+		uint openedAt
+  );
+
+	event LogAgreementRenewalWindowClosed(
+    bytes32 indexed eventURN,
+    address agreementAddress,
+    bool renewalWindowOpen,
+		uint closedAt
   );
 
   event LogAgreementRenewalResultUpdate(

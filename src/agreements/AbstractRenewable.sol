@@ -109,10 +109,11 @@ contract AbstractRenewable is Renewable {
 	function openRenewalWindow() external {
 		if (!renewalWindowOpen) {
 			renewalWindowOpen = true;
-			emit LogAgreementRenewalWindowStateUpdate(
+			emit LogAgreementRenewalWindowOpened(
 				EVENT_ID_AGREEMENT_RENEWALS,
 				address(this),
-				renewalWindowOpen
+				renewalWindowOpen,
+				block.timestamp
 			);
 		}
 	}
@@ -123,10 +124,11 @@ contract AbstractRenewable is Renewable {
 	function closeRenewalWindow() external {
 		if (renewalWindowOpen) {
 			renewalWindowOpen = false;
-			emit LogAgreementRenewalWindowStateUpdate(
+			emit LogAgreementRenewalWindowClosed(
 				EVENT_ID_AGREEMENT_RENEWALS,
 				address(this),
-				renewalWindowOpen
+				renewalWindowOpen,
+				block.timestamp
 			);
 			if (renew) {
 				ErrorsLib.revertIf(nextExpirationDate == 0,

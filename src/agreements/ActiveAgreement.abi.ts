@@ -47,7 +47,8 @@ export module ActiveAgreement {
         LogAgreementRenewalResultUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalResultUpdate", this.address, callback); }
         LogAgreementRenewalTermsDefined(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalTermsDefined", this.address, callback); }
         LogAgreementRenewalVoteCast(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalVoteCast", this.address, callback); }
-        LogAgreementRenewalWindowStateUpdate(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalWindowStateUpdate", this.address, callback); }
+        LogAgreementRenewalWindowClosed(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalWindowClosed", this.address, callback); }
+        LogAgreementRenewalWindowOpened(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementRenewalWindowOpened", this.address, callback); }
         LogAgreementSignatureLogReference(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogAgreementSignatureLogReference", this.address, callback); }
         LogDataStorageUpdateAddress(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataStorageUpdateAddress", this.address, callback); }
         LogDataStorageUpdateAddressArray(callback: (err: Error, event: any) => void): Readable { return this.client.listen("LogDataStorageUpdateAddressArray", this.address, callback); }
@@ -545,9 +546,7 @@ export module ActiveAgreement {
         }
         isRenewalWindowOpen() {
             const data = Encode(this.client).isRenewalWindowOpen();
-            return Call<Tx, {
-                isWindowOpen: boolean;
-            }>(this.client, this.address, data, true, (exec: Uint8Array) => {
+            return Call<Tx, [boolean]>(this.client, this.address, data, true, (exec: Uint8Array) => {
                 return Decode(this.client, exec).isRenewalWindowOpen();
             });
         }
@@ -1024,12 +1023,7 @@ export module ActiveAgreement {
         initialize: (): void => { return; },
         initializeObjectAdministrator: (): void => { return; },
         isPrivate: (): [boolean] => { return client.decode(data, ["bool"]); },
-        isRenewalWindowOpen: (): {
-            isWindowOpen: boolean;
-        } => {
-            const [isWindowOpen] = client.decode(data, ["bool"]);
-            return { isWindowOpen: isWindowOpen };
-        },
+        isRenewalWindowOpen: (): [boolean] => { return client.decode(data, ["bool"]); },
         isSignedBy: (): [boolean] => { return client.decode(data, ["bool"]); },
         openRenewalWindow: (): void => { return; },
         redact: (): [number] => { return client.decode(data, ["uint8"]); },

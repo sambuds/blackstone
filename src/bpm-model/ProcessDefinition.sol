@@ -42,11 +42,24 @@ contract ProcessDefinition is VersionedArtifact, Bytes32Identifiable {
 		bytes32 subProcessDefinitionId
 	);
 
+	event LogIntermediateEventDefinitionCreation(
+		bytes32 indexed eventURN,
+		address processDefinitionAddress,
+		bytes32 eventId,
+		uint8 intermediateEventType,
+		uint8 intermediateEventBehavior,
+		bytes32 dataPath,
+		bytes32 dataStorageId,
+		address dataStorage,
+		uint256 timestampConstant,
+		string durationConstant
+	);
+
 	event LogDataMappingCreation(
 		bytes32 indexed eventId,
 		address processDefinitionAddress,
 		bytes32 activityId,
-    	bytes32 dataMappingId,
+    bytes32 dataMappingId,
 		bytes32 dataPath,
 		bytes32 dataStorageId,
 		address dataStorage,
@@ -55,6 +68,7 @@ contract ProcessDefinition is VersionedArtifact, Bytes32Identifiable {
 
 	bytes32 public constant EVENT_ID_PROCESS_DEFINITIONS = "AN://process-definitions";
 	bytes32 public constant EVENT_ID_ACTIVITY_DEFINITIONS = "AN://activity-definitions";
+	bytes32 public constant EVENT_ID_INTERM_EVENT_DEFINITIONS = "AN://interm-event-definitions";
 	bytes32 public constant EVENT_ID_DATA_MAPPINGS = "AN://data-mappings";
 
 	/**
@@ -100,7 +114,58 @@ contract ProcessDefinition is VersionedArtifact, Bytes32Identifiable {
 	 * @param _timestampConstant a fixed value for timer-based events representing a UNIX timestamp in secs
 	 * @param _durationConstant a fixed value for timer-based events representing a duration in secs
 	 */
-	function createIntermediateEvent(bytes32 _id, BpmModel.EventType _eventType, BpmModel.IntermediateEventBehavior _eventBehavior, bytes32 _dataPath, bytes32 _dataStorageId, address _dataStorage, uint256 _timestampConstant, string calldata _durationConstant) external;
+	function createIntermediateEvent(
+		bytes32 _id,
+		BpmModel.EventType _eventType, 
+		BpmModel.IntermediateEventBehavior _eventBehavior, 
+		bytes32 _dataPath, 
+		bytes32 _dataStorageId, 
+		address _dataStorage, 
+		uint256 _timestampConstant, 
+		string calldata _durationConstant) external;
+	
+	/**
+	 * Configures a datetime conditional data and offset conditional data for the given intermediate event.
+	 * These two can be used together to determine the timer target from a datetime + offset pair stored in
+	 * a data storage. For example the agreement can have two data storage params: expiryDate and numDaysBeforeExpiry.
+	 * If you want to configure the intermediate timer event to use those to determine its timer target,
+	 * then you would set:
+	 * 		`_datetimeDataPath`: `expiryDate`
+	 * 		`_datetimeDataStorageId`: `agreement`
+	 * 		`_offsetDataPath`: `numDaysBeforeExpiry`
+	 * 		`_offsetDataStorageId`: `agreement`
+	 * REVERTS if:
+	 * - the ID does not exist as a model element
+	 * @param _id the ID under which to register the element
+	 * @param _datetimeDataPath dataPath for a datetime param at a given data storage
+	 * @param _datetimeDataStorageId dataStorageId that references by a key the actual data storage address
+	 * @param _datetimeDataStorage dataStorage that identifies a data storage directly
+	 * @param _offsetDataPath dataPath for a datetime param at a given data storage
+	 * @param _offsetDataStorageId dataStorageId that references by a key the actual data storage address
+	 * @param _offsetDataStorage dataStorage that identifies a data storage directly
+	 */
+	function setIntermediateEventDatetimeAndOffset(
+		bytes32 _id, 
+		bytes32 _datetimeDataPath,
+		bytes32 _datetimeDataStorageId,
+		address _datetimeDataStorage,
+		bytes32 _offsetDataPath,
+		bytes32 _offsetDataStorageId,
+		address _offsetDataStorage
+	) external;
+
+	function getIntermediateEventDatetimeAndOffset(
+		bytes32 _id
+	)
+	external
+	returns (
+		bytes32 datetimeDataPath,
+		bytes32 datetimeDataStorageId,
+		address datetimeDataStorage,
+		bytes32 offsetDataPath,
+		bytes32 offsetDataStorageId,
+		address offsetDataStorage
+	);
 
 	/**
 	 * @dev Addes a boundary event to the specified activity using the provided ID, parameters, conditional (DataStorage-based)

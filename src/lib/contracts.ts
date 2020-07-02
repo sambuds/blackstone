@@ -10,6 +10,7 @@ import {
 } from './utils';
 import {ActiveAgreement} from '../agreements/ActiveAgreement.abi';
 import {Archetype} from '../agreements/Archetype.abi';
+import {RenewalWindowManager} from '../agreements/RenewalWindowManager.abi';
 import {ProcessModel} from '../bpm-model/ProcessModel.abi';
 import {ProcessDefinition} from '../bpm-model/ProcessDefinition.abi';
 import {ProcessInstance} from '../bpm-runtime/ProcessInstance.abi';
@@ -133,6 +134,35 @@ export class Contracts {
         }
     }
 
+    async defineRenewalTerms(
+        agreementAddress: string,
+        franchisees: string[],
+        threshold: number,
+        expirationDate: number,
+        renewalOpenOffset: string,
+        renewalCloseOffset: string,
+        extensionOffset: string
+    ): Promise<void> {
+        this.log.debug(`REQUEST: Defining agreement renewal obligation  for agreement at ${agreementAddress} with data 
+            ${JSON.stringify({
+                franchisees,
+                threshold,
+                expirationDate,
+                renewalOpenOffset,
+                renewalCloseOffset,
+                extensionOffset,
+            })}`);
+        const agreement = new ActiveAgreement.Contract(this.client, agreementAddress);
+        await agreement.defineRenewalTerms(
+            franchisees,
+            threshold,
+            expirationDate,
+            renewalOpenOffset,
+            renewalCloseOffset,
+            extensionOffset
+        );
+    }
+
     async createAgreementCollection(author: string, collectionType: number, packageId: string) {
         this.log.debug(`REQUEST: Create agreement collection by ${author} with type ${collectionType} ` +
             `and packageId ${packageId} created by user at ${author}`);
@@ -154,6 +184,12 @@ export class Contracts {
     async signAgreement(actingUserAddress: string, agreementAddress: string) {
         this.log.debug(`REQUEST: Sign agreement ${agreementAddress} by user ${actingUserAddress}`);
         const payload = ActiveAgreement.Encode(this.client).sign()
+        await this.callOnBehalfOf(actingUserAddress, agreementAddress, payload);
+    }
+
+    async castRenewalVote(actingUserAddress: string, agreementAddress: string, renew: boolean) {
+        this.log.debug(`REQUEST: Cast agreement renewal vote by user ${actingUserAddress} for agreement ${agreementAddress}`);
+        const payload = ActiveAgreement.Encode(this.client).castRenewalVote(renew);
         await this.callOnBehalfOf(actingUserAddress, agreementAddress, payload);
     }
 
@@ -187,6 +223,10 @@ export class Contracts {
 
     getActiveAgreement(address: string) {
         return new ActiveAgreement.Contract(this.client, address);
+    }
+
+    getRenewalWindowManager(address: string) {
+        return new RenewalWindowManager.Contract(this.client, address);
     }
 
     async startProcessFromAgreement(agreementAddress: string) {
@@ -468,6 +508,114 @@ export class Contracts {
             });
     }
 
+    async createIntermediateEvent(
+        processAddress: string,
+        eventId: string,
+        eventType: number,
+        eventBehavior: number,
+        dataPath: string,
+        dataStorageId: string,
+        dataStorage: string,
+        timestampConstant: number,
+        durationConstant: string
+    ) {
+        this.log.debug(`REQUEST: Create intermediate event with data: ${JSON.stringify({
+            processAddress,
+            eventId,
+            eventType,
+            eventBehavior,
+            dataPath,
+            dataStorageId,
+            dataStorage,
+            timestampConstant,
+            durationConstant
+        })}`);
+
+        try {
+            await new ProcessDefinition.Contract(this.client, processAddress)
+                .createIntermediateEvent(
+                    BytesFromString(eventId),
+                    eventType,
+                    eventBehavior,
+                    BytesFromString(dataPath),
+                    BytesFromString(dataStorageId),
+                    dataStorage,
+                    timestampConstant,
+                    durationConstant
+                );
+        } catch (err) {
+            this.log.error(`Failed to create intermediate event: ${err.stack} \n ${err.message}`);
+        }
+    }
+
+    async setIntermediateEventDatetimeAndOffset(
+        processAddress: string,
+        eventId: string,
+        datetimeDataPath: string,
+        datetimeDataStorageId: string,
+        datetimeDataStorage: string,
+        offsetDataPath: string,
+        offsetDataStorageId: string,
+        offsetDataStorage: string
+    ) {
+        this.log.debug(`REQUEST: Set intermediate event datetime and offset with data: ${JSON.stringify({
+            processAddress,
+            eventId,
+            datetimeDataPath,
+            datetimeDataStorageId,
+            datetimeDataStorage,
+            offsetDataPath,
+            offsetDataStorageId,
+            offsetDataStorage
+        })}`);
+        
+        await new ProcessDefinition.Contract(this.client, processAddress)
+            .setIntermediateEventDatetimeAndOffset(
+                BytesFromString(eventId),
+                BytesFromString(datetimeDataPath),
+                BytesFromString(datetimeDataStorageId),
+                datetimeDataStorage,
+                BytesFromString(offsetDataPath),
+                BytesFromString(offsetDataStorageId),
+                offsetDataStorage
+            );
+    }
+
+    async setIntermediateEventTimerTarget(piAddress: string, eventInstanceId: string, targetTime: number) {
+        this.log.debug(`REQUEST: Setting intermediate timer target with data: ${JSON.stringify({
+            piAddress,
+            eventInstanceId,
+            targetTime
+        })}`);
+
+        await new ProcessInstance.Contract(this.client, piAddress)
+            .setIntermediateEventTimerTarget(DecodeHex(eventInstanceId), targetTime);
+    }
+
+    async getIntermediateEventTimerTarget(piAddress: string, eventInstanceId: string) {
+        this.log.debug(`REQUEST: Getting intermediate timer target with data: ${JSON.stringify({
+            piAddress,
+            eventInstanceId
+        })}`);
+
+        const timerTarget = await new ProcessInstance.Contract(this.client, piAddress)
+            .getIntermediateEventTimerTarget(DecodeHex(eventInstanceId));
+        
+        return timerTarget;
+    }
+
+    async triggerIntermediateEvent(piAddress: string, eventInstanceId: string) {
+        this.log.debug(`REQUEST: Triggering completion of Intermediate Event with data: ${JSON.stringify({
+            piAddress,
+            eventInstanceId
+        })}`);
+
+        const bpmService = this.manager.BpmService.address;
+
+        await new ProcessInstance.Contract(this.client, piAddress)
+            .triggerIntermediateEvent(DecodeHex(eventInstanceId), bpmService);
+    }
+
     async createDataMapping(processAddress: string, id: string, direction: number, accessPath: string,
         dataPath: string, dataStorageId: string, dataStorage: string) {
         this.log.debug(`REQUEST: Create data mapping with data: ${JSON.stringify({
@@ -508,6 +656,7 @@ export class Contracts {
         this.log.debug(`REQUEST: Set default transition with data: ${JSON.stringify({ processAddress, gatewayId, activityId })}`);
         await new ProcessDefinition.Contract(this.client, processAddress)
             .setDefaultTransition(BytesFromString(gatewayId), BytesFromString(activityId));
+        this.log.info(`SUCCESS: Default transition set from gateway ${gatewayId} to activity ${activityId} in process at ${processAddress}`);
     }
 
     async createTransitionCondition(processAddress: string, dataType: DataType, gatewayId: string, activityId: string, dataPath: string, dataStorageId: string, dataStorage: string, operator: number, value: string) {
@@ -563,6 +712,7 @@ export class Contracts {
                 );
                 break
         }
+        this.log.info(`SUCCESS: Created transition condition for transition between ${gatewayId} and ${activityId} in process at ${processAddress}`);
     }
 
     async getModelAddressFromId(modelId: string) {

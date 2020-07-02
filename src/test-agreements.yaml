@@ -150,6 +150,18 @@ jobs:
     relation: eq
     val: success
 
+- name: testActiveAgreementRenewal
+  call:
+    destination: $ActiveAgreementTest
+    bin: ActiveAgreementTest
+    function: testActiveAgreementRenewal
+
+- name: assertActiveAgreementRenewal
+  assert:
+    key: $testActiveAgreementRenewal
+    relation: eq
+    val: success
+
 - name: testActiveAgreementCancellation
   call:
     destination: $ActiveAgreementTest

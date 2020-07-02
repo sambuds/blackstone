@@ -12,7 +12,7 @@ contract RenewalEvaluator is Application {
         bytes32 indexed eventURN,
         address agreementAddress,
         address party,
-        bool agreement_will_renew
+        bool agreementWillRenew
     );
 
     bytes32 constant MAPPING_ID_RENEWAL_LOOP_BACK = "renewalLoopBack";
@@ -20,8 +20,7 @@ contract RenewalEvaluator is Application {
     bytes32 constant EVENT_ID_RENEWAL_EVALUATOR = "AN://agreement-renewal-evaluator";
     
     /**
-     * @dev Accesses datetime and datetimeOffset parameters from the process instance via data mappings in order to
-     * emit those value for an extermal system to consume and process.
+     * @dev Retrieves the current renewal state of the Agreement and sets the value on the process instance 
      * @param _piAddress the address of the ProcessInstance in which context the application is invoked
      * @param _activityInstanceId the globally unique ID of the ActivityInstance invoking this contract
      * param _activityId the ID of the activity definition

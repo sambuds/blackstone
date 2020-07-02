@@ -18,8 +18,8 @@ contract RenewalWindowManager is Application {
         address agreementAddress,
         address processInstanceAddress,
         address performer,
-        int datetime,
-        string datetimeOffset
+        int scheduledFor,
+        string scheduledForOffset
     );
 
     event LogAgreementExpirationTimestampRequest(
@@ -28,8 +28,8 @@ contract RenewalWindowManager is Application {
         bytes32 activityId,
         address agreementAddress,
         address processInstanceAddress,
-        int datetime,
-        string datetimeOffset
+        int currentExpiration,
+        string extendExpirationBy
     );
 
     event LogPendingUserTaskCloseOffset(
@@ -39,8 +39,8 @@ contract RenewalWindowManager is Application {
         address agreementAddress,
         address processInstanceAddress,
         address performer,
-        int datetime,
-        string datetimeOffset
+        int scheduledFor,
+        string scheduledForOffset
     );
 
     event LogRenewalVoteNotificationTrigger(
@@ -71,7 +71,7 @@ contract RenewalWindowManager is Application {
     }
     
     /**
-     * @dev Accesses datetime and datetimeOffset parameters from the process instance via data mappings in order to
+     * @dev Accesses scheduledFor and scheduledForOffset parameters from the process instance via data mappings in order to
      * emit those value for an extermal system to consume and process.
      * @param _piAddress the address of the ProcessInstance in which context the application is invoked
      * @param _activityInstanceId the globally unique ID of the ActivityInstance invoking this contract
@@ -133,7 +133,7 @@ contract RenewalWindowManager is Application {
 
     /**
      * Emits a request for an external system to calculate the next expiration date from the given
-     * datetime and offset values
+     * scheduledFor and scheduledForOffset values
      */
     function emitExpirationTimestampRequest(
         bytes32 _activityInstanceId, 
@@ -160,7 +160,7 @@ contract RenewalWindowManager is Application {
      * This is useful in situations where there may be a pending user task blocking the process from moving forward.
      * By configuring the activityId of such a task as a data mapping on the current activity, we can attempt to close them.
      */
-    function emitPendingUserTaskDetails(bytes32 _activityInstanceId, address _piAddress, address _agreement, int _datetime, string memory _offset) public {
+    function emitPendingUserTaskDetails(bytes32 _activityInstanceId, address _piAddress, address _agreement, int _scheduledFor, string memory _offset) public {
         bytes32 pendingUserTaskId = ProcessInstance(_piAddress).getActivityInDataAsBytes32(_activityInstanceId, MAPPING_ID_PENDING_USER_TASK_ID);
         if (pendingUserTaskId != "") {
             for (uint i = 0; i < ProcessInstance(_piAddress).getNumberOfActivityInstances(); i++) {
@@ -169,7 +169,7 @@ contract RenewalWindowManager is Application {
                 if (pendingUserTaskId == activityId) {
                     // The pendingUserTaskId must be set on the process instance in order for this event
                     // to be emitted indicating a request to close any instances of the activity 
-                    // at the correct datetime +/- offset.
+                    // at the correct scheduledFor +/- offset.
                     // If it's not set, we don't want to emit any task closure events because we don't know which
                     // tasks need to be closed.
                     emit LogPendingUserTaskCloseOffset(
@@ -179,7 +179,7 @@ contract RenewalWindowManager is Application {
                         _agreement,
                         _piAddress,
                         performer,
-                        _datetime,
+                        _scheduledFor,
                         _offset
                     );
                 }

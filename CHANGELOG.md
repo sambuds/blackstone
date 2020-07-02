@@ -2,6 +2,9 @@
 
 ## Release History
 
+- Version [2.0.0](#v2.0.0)
+- Version [1.2.0](#v1.2.0)
+- Version [1.1.0](#v1.1.0)
 - Version [1.0.0](#v1.0.0)
 - Version [0.10.0](#v0.10.0)
 - Version [0.9.1](#v0.9.1)
@@ -12,6 +15,26 @@
 - Version [0.6.0](#v0.6.0)
 - Version [0.5.2](#v0.5.2)
 - Version [0.5.1](#v0.5.1)
+
+## <a name="v2.0.0">Release 2.0.0</a>
+
+### Added
+
+- Intermediate events (timers)
+- Renewal management (events and windows manger)
+
+## <a name="v1.2.0">Release 1.2.0</a>
+
+### Fixed
+- Use pg-listen and throw error on sync failure
+- Fix deployment pushes
+
+## <a name="v1.1.0">Release 1.1.0</a>
+
+### Added
+
+- Approvers and representative parameters
+
 
 ## <a name="v1.0.0">Release 1.0.0</a>
 

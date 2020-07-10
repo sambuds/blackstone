@@ -174,7 +174,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     {
         ErrorsLib.revertIf(!self.activities.rows[_activityInstanceId].exists,
             ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.triggerBoundaryEvent", "The specified ActivityInstance cannot be found");
-        
+
         BpmRuntime.ActivityInstance storage activityInstance = self.activities.rows[_activityInstanceId].value;
 
         ErrorsLib.revertIf(!activityInstance.boundaryEvents.rows[_eventInstanceId].exists,
@@ -211,11 +211,13 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
 
         BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
 
+        if (instance.state == BpmRuntime.ActivityInstanceState.COMPLETED) {
+            // already triggered, this is fine
+            return;
+        }
+
         ErrorsLib.revertIf(instance.timerTarget == 0,
                 ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "The specified target event instance ID does not have timer set");
-
-        ErrorsLib.revertIf(instance.state == BpmRuntime.ActivityInstanceState.COMPLETED,
-                ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "intermediate event has already fired");
 
         ErrorsLib.revertIf(instance.timerTarget > block.timestamp,
                 ErrorsLib.INVALID_STATE(), "ProcessInstance.triggerIntermediateEvent", "Attempt to fire intermediate event before timer expired");
@@ -252,7 +254,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
         if (error != BaseErrors.NO_ERROR()) {
             return (error);
         }
-        
+
         if (self.activities.rows[_activityInstanceId].value.state == BpmRuntime.ActivityInstanceState.COMPLETED) {
             BpmRuntime.ActivityInstance storage ai = self.activities.rows[_activityInstanceId].value;
             self.graph.activities[ai.activityId].instancesCompleted++;
@@ -634,9 +636,14 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
 
         BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
 
+        if (instance.timerTarget == _targetTime) {
+            // Allow setting time to be idempotent, but err if attempt is made to set a different time
+            return;
+        }
+
         ErrorsLib.revertIf(instance.timerTarget != 0,
-            ErrorsLib.OVERWRITE_NOT_ALLOWED(), "DefaultProcessInstance.setIntermediateEventTimerTarget", "The specified target IntermediateEventInstance already has timer set");
-            
+            ErrorsLib.OVERWRITE_NOT_ALLOWED(), "DefaultProcessInstance.setIntermediateEventTimerTarget", "The specified target IntermediateEventInstance already has timer set to a different value and must be completed before being re-set");
+
         instance.updateIntermediateEventTimerTarget(_targetTime);
     }
 
@@ -648,7 +655,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     function getIntermediateEventTimerTarget(bytes32 _eventInstanceId) public returns (uint timerTarget) {
         ErrorsLib.revertIf(!self.intermediateEvents.rows[_eventInstanceId].exists,
             ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.getIntermediateEventTimerTarget", "The specified IntermediateEventInstance cannot be found");
-        
+
         BpmRuntime.IntermediateEventInstance storage instance = self.intermediateEvents.rows[_eventInstanceId].value;
         return instance.timerTarget;
     }
@@ -671,7 +678,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
             ErrorsLib.NULL_PARAMETER_NOT_ALLOWED(), "DefaultProcessInstance.setBoundaryEventTimerTarget", "The target time parameter must be greater zero");
         ErrorsLib.revertIf(!self.activities.rows[_activityInstanceId].exists,
             ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.setBoundaryEventTimerTarget", "The specified ActivityInstance cannot be found");
-        
+
         BpmRuntime.ActivityInstance storage activityInstance = self.activities.rows[_activityInstanceId].value;
 
         ErrorsLib.revertIf(!activityInstance.boundaryEvents.rows[_eventInstanceId].exists,
@@ -681,7 +688,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
 
         ErrorsLib.revertIf(instance.timerTarget != 0,
             ErrorsLib.OVERWRITE_NOT_ALLOWED(), "DefaultProcessInstance.setBoundaryEventTimerTarget", "The specified target BoundaryEventInstance already has timer set");
-        
+
         instance.timerTarget = _targetTime;
         // attempt to activate the boundary event after setting the timer target
         instance.activateBoundaryEvent(this, self.processDefinition);
@@ -784,7 +791,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
     function getBoundaryEventDetails(bytes32 _activityInstanceId, bytes32 _eventInstanceId) external view returns (uint8 state, uint timerResolution) {
         ErrorsLib.revertIf(!self.activities.rows[_activityInstanceId].value.boundaryEvents.rows[_eventInstanceId].exists,
             ErrorsLib.RESOURCE_NOT_FOUND(), "DefaultProcessInstance.getBoundaryEventDetails", "No BoundaryEventInstance found for the given ID");
-        
+
         BpmRuntime.BoundaryEventInstance storage instance = self.activities.rows[_activityInstanceId].value.boundaryEvents.rows[_eventInstanceId].value;
         return (uint8(instance.state), instance.timerTarget);
     }
@@ -795,7 +802,7 @@ contract DefaultProcessInstance is AbstractVersionedArtifact(1,0,0), AbstractDel
 	 * @return created - the creation timestamp
 	 * @return completed - the completion timestamp
 	 * @return performer - the account who is performing the activity (for interactive activities only)
-	 * @return completedBy - the account who completed the activity (for interactive activities only) 
+	 * @return completedBy - the account who completed the activity (for interactive activities only)
 	 * @return activityId - the ID of the activity as defined by the process definition
 	 * @return state - the uint8 representation of the BpmRuntime.ActivityInstanceState of this activity instance
 	 */

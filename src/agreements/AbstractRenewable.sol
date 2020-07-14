@@ -136,6 +136,7 @@ contract AbstractRenewable is Renewable {
 						"Agreement is set to renew, but no updated expiration date set");
 				currentExpirationDate = nextExpirationDate;
 				nextExpirationDate = 0;
+				DataStorage(address(this)).setDataValueAsInt(DATA_ID_AGREEMENT_EXPIRATION_DATE, currentExpirationDate);
 				emit LogAgreementRenewalExpirationDateUpdate(
 					EVENT_ID_AGREEMENT_RENEWALS,
 					address(this),
